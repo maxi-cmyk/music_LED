@@ -1,10 +1,10 @@
-# 🎵 Rhythm: Audio Reactive LED System
+# 🎵 Audio Reactive LED System
 
 ![Arduino](https://img.shields.io/badge/Arduino-00979D?style=for-the-badge&logo=Arduino&logoColor=white)
 ![C++](https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white)
 ![Hardware](https://img.shields.io/badge/Hardware-ESP32%2FArduino-181717?style=for-the-badge&logo=espressif&logoColor=white)
 
-> An adaptive audio-visualizer that maps sound amplitude to brightness and frequency to color using real-time signal processing.
+> An adaptive audio-visualizer that maps sound amplitude to brightness and frequency to colour using real-time signal processing.
 
 <div align="center">
   <img src="./assets/demo.gif" width="600" alt="LED Demo" />
@@ -21,7 +21,7 @@ The system samples audio in `50ms` windows (frames). It processes each frame thr
     * Uses a **Decaying Threshold**: The trigger point jumps up when a beat is hit, then decays by a factor of `0.95` every cycle.
     * *Result:* The lights flash on the *kick drum* but don't stay stuck "on" during loud sections.
 
-2.  **Frequency (Color Mapping):**
+2.  **Frequency (Colour Mapping):**
     * Uses **Zero-Crossing Rate (ZCR)** analysis to estimate pitch.
     * Maps low frequencies (Bass) to Red/Green and high frequencies (Treble) to Blue/Purple.
 
@@ -38,7 +38,7 @@ The system samples audio in `50ms` windows (frames). It processes each frame thr
 ## 🧩 Key Code Snippets
 
 ### The Audio Frame Struct
-I organized the raw data into a structured frame to keep the signal processing clean:
+I organised the raw data into a structured frame to keep the signal processing clean:
 
 ```cpp
 struct AudioFrame {
