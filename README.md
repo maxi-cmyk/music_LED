@@ -34,10 +34,10 @@ The `B G R -` marking identifies a common-cathode RGB module. Connect `-` to GND
 
 | HW-479 pin | ESP32 GPIO |
 |---|---:|
-| R | 25 |
-| G | 26 |
-| B | 27 |
-| - | GND |
+| R | GPIO 19 (D19) |
+| G | GPIO 18 (D18) |
+| B | GPIO 5 (D5) |
+| - | lower GND rail |
 
 The ESP32 uses PWM through `analogWrite()` to set LED colour. Red means OLED setup failed; amber means Wi-Fi/Spotify bridge credentials have not been configured; green means local credentials exist.
 
