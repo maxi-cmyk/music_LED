@@ -58,7 +58,7 @@ From the repository root, compile the firmware with:
   compile --fqbn esp32:esp32:esp32 --output-dir build/esp32 firmware/music_LED
 ```
 
-The bridge renders track and artist text into OLED bitmaps, supporting Simplified Chinese, Korean, Japanese, Spanish, French, and Vietnamese through the Mac's system fonts. It also downloads, resizes, and dithers Spotify cover art into a 32×32 monochrome track-change intro. Long names pause before scrolling, pause again at the end, and then loop smoothly; the artist line uses a smaller regular font. Playback time is displayed as `minutes:seconds`, and no volume indicator is shown.
+The bridge renders track and artist text into OLED bitmaps, supporting Simplified Chinese, Korean, Japanese, Spanish, French, and Vietnamese through the Mac's system fonts. It also downloads, resizes, and dithers Spotify cover art into a permanent 32×32 monochrome thumbnail. The dashboard keeps artwork on the left, title, artist, and playback time on the right, the timeline across the bottom, and the dancing mascot at its side. Long names pause before scrolling, pause again at the end, and then loop smoothly; the artist line uses a smaller regular font. Playback time is displayed as `minutes:seconds`, and no volume indicator is shown.
 
 The OLED has distinct playing, paused, nothing-playing, and reconnecting screens. During inactivity it dims after one minute, shifts the panel offset periodically, sleeps after five minutes, and wakes automatically when playback resumes.
 
