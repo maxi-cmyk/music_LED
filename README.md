@@ -58,6 +58,6 @@ From the repository root, compile the firmware with:
   compile --fqbn esp32:esp32:esp32 --output-dir build/esp32 firmware/music_LED
 ```
 
-The bridge renders track and artist text into OLED bitmaps, supporting Simplified Chinese, Korean, Japanese, Spanish, French, and Vietnamese through the Mac's system fonts. Playback time is displayed as `minutes:seconds`.
+The bridge renders track and artist text into OLED bitmaps, supporting Simplified Chinese, Korean, Japanese, Spanish, French, and Vietnamese through the Mac's system fonts. Long names scroll smoothly from right to left; the artist line uses a smaller regular font. Playback time is displayed as `minutes:seconds`, and no volume indicator is shown.
 
 Run bridge tests with `cd bridge && npm test`. The firmware requires the ESP32 Arduino core, ArduinoJson, Adafruit SSD1306, and Adafruit GFX Library.

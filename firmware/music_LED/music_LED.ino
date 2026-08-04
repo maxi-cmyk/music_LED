@@ -6,10 +6,10 @@
 
 namespace {
 const PlaybackState kSetupState = {
-    "Spotify bridge pending", "Add Wi-Fi and bridge URL", nullptr, nullptr, 0, 1, 0, false};
+    "Spotify bridge pending", "Add Wi-Fi and bridge URL", nullptr, 0, nullptr, 0, 0, 1, 0, false};
 PlaybackState playbackState = kSetupState;
-unsigned long lastDisplayRefresh = 0;
-constexpr unsigned long kDisplayRefreshMs = 2000;
+unsigned long lastBridgeRefresh = 0;
+constexpr unsigned long kBridgeRefreshMs = 2000;
 bool bridgeHealthy = false;
 bool playbackStateLogged = false;
 bool lastLoggedPlaying = false;
@@ -35,8 +35,9 @@ void setup() {
 
 void loop() {
   updateAudioReactive(bridgeHealthy && playbackState.isPlaying);
-  if (millis() - lastDisplayRefresh < kDisplayRefreshMs) return;
-  lastDisplayRefresh = millis();
+  renderPlayback(playbackState);
+  if (millis() - lastBridgeRefresh < kBridgeRefreshMs) return;
+  lastBridgeRefresh = millis();
   if (refreshPlayback(&playbackState)) {
     bridgeHealthy = true;
     if (!playbackStateLogged || playbackState.isPlaying != lastLoggedPlaying ||
@@ -52,13 +53,12 @@ void loop() {
       lastPlaybackLog = millis();
     }
     if (!playbackState.isPlaying) stopAudioReactive();
-    renderPlayback(playbackState);
   } else {
     bridgeHealthy = false;
     stopAudioReactive();
     Serial.print("Bridge error: ");
     Serial.println(bridgeError());
     setStatusLed(120, 50, 0);
-    renderPlayback(kSetupState);
+    playbackState = kSetupState;
   }
 }

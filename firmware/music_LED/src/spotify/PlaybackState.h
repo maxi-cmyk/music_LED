@@ -6,9 +6,11 @@ struct PlaybackState {
   const char* trackTitle;
   const char* artistName;
   const uint8_t* trackTitleBitmap;
+  uint16_t trackTitleBitmapWidth;
   const uint8_t* artistNameBitmap;
+  uint16_t artistNameBitmapWidth;
   unsigned long elapsedMs;
   unsigned long durationMs;
-  uint8_t volumePercent;
+  unsigned long syncedAtMs;
   bool isPlaying;
 };

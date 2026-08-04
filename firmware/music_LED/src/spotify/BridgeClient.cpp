@@ -10,9 +10,13 @@ namespace {
 String title;
 String artist;
 String lastError;
-constexpr size_t kTextBitmapBytes = 128 * 14 / 8;
-uint8_t titleBitmap[kTextBitmapBytes];
-uint8_t artistBitmap[kTextBitmapBytes];
+constexpr uint16_t kMaxTextBitmapWidth = 2048;
+constexpr uint8_t kTitleBitmapHeight = 14;
+constexpr uint8_t kArtistBitmapHeight = 12;
+constexpr size_t kTitleBitmapCapacity = kMaxTextBitmapWidth * kTitleBitmapHeight / 8;
+constexpr size_t kArtistBitmapCapacity = kMaxTextBitmapWidth * kArtistBitmapHeight / 8;
+uint8_t titleBitmap[kTitleBitmapCapacity];
+uint8_t artistBitmap[kArtistBitmapCapacity];
 constexpr unsigned long kWifiTimeoutMs = 15'000;
 
 int hexValue(char value) {
@@ -22,10 +26,15 @@ int hexValue(char value) {
   return -1;
 }
 
-bool decodeBitmap(JsonVariantConst value, uint8_t* output) {
+bool decodeBitmap(JsonVariantConst value, uint16_t width, uint8_t height, uint8_t* output,
+                  size_t outputCapacity) {
   const char* encoded = value.as<const char*>();
-  if (encoded == nullptr || strlen(encoded) != kTextBitmapBytes * 2) return false;
-  for (size_t index = 0; index < kTextBitmapBytes; ++index) {
+  if (width == 0 || width > kMaxTextBitmapWidth || width % 8 != 0) return false;
+  const size_t bitmapBytes = static_cast<size_t>(width) * height / 8;
+  if (bitmapBytes > outputCapacity || encoded == nullptr || strlen(encoded) != bitmapBytes * 2) {
+    return false;
+  }
+  for (size_t index = 0; index < bitmapBytes; ++index) {
     const int high = hexValue(encoded[index * 2]);
     const int low = hexValue(encoded[index * 2 + 1]);
     if (high < 0 || low < 0) return false;
@@ -85,11 +94,19 @@ bool refreshPlayback(PlaybackState* state) {
   artist = document["artist"].as<const char*>() ?: "Unknown artist";
   state->trackTitle = title.c_str();
   state->artistName = artist.c_str();
-  state->trackTitleBitmap = decodeBitmap(document["titleBitmap"], titleBitmap) ? titleBitmap : nullptr;
-  state->artistNameBitmap = decodeBitmap(document["artistBitmap"], artistBitmap) ? artistBitmap : nullptr;
+  const uint16_t titleWidth = document["titleBitmapWidth"] | 0;
+  const uint16_t artistWidth = document["artistBitmapWidth"] | 0;
+  const bool titleReady = decodeBitmap(document["titleBitmap"], titleWidth, kTitleBitmapHeight,
+                                       titleBitmap, sizeof(titleBitmap));
+  const bool artistReady = decodeBitmap(document["artistBitmap"], artistWidth, kArtistBitmapHeight,
+                                        artistBitmap, sizeof(artistBitmap));
+  state->trackTitleBitmap = titleReady ? titleBitmap : nullptr;
+  state->trackTitleBitmapWidth = titleReady ? titleWidth : 0;
+  state->artistNameBitmap = artistReady ? artistBitmap : nullptr;
+  state->artistNameBitmapWidth = artistReady ? artistWidth : 0;
   state->elapsedMs = document["progressMs"] | 0UL;
   state->durationMs = document["durationMs"] | 1UL;
-  state->volumePercent = document["volumePercent"] | 0;
+  state->syncedAtMs = millis();
   state->isPlaying = document["isPlaying"] | false;
   lastError = "";
   return true;

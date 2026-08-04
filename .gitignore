@@ -11,3 +11,4 @@ firmware/music_LED/src/config/Secrets.h
 bridge/.env
 bridge/data/
 bridge/node_modules/
+bridge/*.log

@@ -1,39 +1,60 @@
 const { createCanvas } = require('@napi-rs/canvas');
 
-const BITMAP_WIDTH = 128;
-const BITMAP_HEIGHT = 14;
-const BYTES_PER_BITMAP = (BITMAP_WIDTH * BITMAP_HEIGHT) / 8;
+const SCREEN_WIDTH = 128;
+const TITLE_HEIGHT = 14;
+const ARTIST_HEIGHT = 12;
+const MAX_BITMAP_WIDTH = 2048;
 const MAX_CACHE_ENTRIES = 100;
+const FONT_FAMILY = '"PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo", "Noto Sans", sans-serif';
 const cache = new Map();
 
-function renderTextBitmap(value) {
+const textStyles = {
+  title: { font: `600 12px ${FONT_FAMILY}`, height: TITLE_HEIGHT },
+  artist: { font: `400 10px ${FONT_FAMILY}`, height: ARTIST_HEIGHT },
+};
+
+function renderTextBitmap(value, styleName = 'title') {
   const text = String(value || '');
-  const cached = cache.get(text);
+  const style = textStyles[styleName] || textStyles.title;
+  const cacheKey = `${styleName}:${text}`;
+  const cached = cache.get(cacheKey);
   if (cached) return cached;
 
-  const canvas = createCanvas(BITMAP_WIDTH, BITMAP_HEIGHT);
+  const measurementCanvas = createCanvas(1, 1);
+  const measurementContext = measurementCanvas.getContext('2d');
+  measurementContext.font = style.font;
+  const measuredWidth = Math.ceil(measurementContext.measureText(text).width) + 2;
+  const width = Math.min(MAX_BITMAP_WIDTH, Math.max(8, Math.ceil(measuredWidth / 8) * 8));
+
+  const canvas = createCanvas(width, style.height);
   const context = canvas.getContext('2d');
   context.fillStyle = 'black';
-  context.fillRect(0, 0, BITMAP_WIDTH, BITMAP_HEIGHT);
+  context.fillRect(0, 0, width, style.height);
   context.fillStyle = 'white';
-  context.font = '12px "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo", "Noto Sans", sans-serif';
+  context.font = style.font;
   context.textBaseline = 'top';
   context.fillText(text, 0, 0);
 
-  const pixels = context.getImageData(0, 0, BITMAP_WIDTH, BITMAP_HEIGHT).data;
-  const bitmap = Buffer.alloc(BYTES_PER_BITMAP);
-  for (let y = 0; y < BITMAP_HEIGHT; y += 1) {
-    for (let x = 0; x < BITMAP_WIDTH; x += 1) {
-      const pixelOffset = (y * BITMAP_WIDTH + x) * 4;
+  const pixels = context.getImageData(0, 0, width, style.height).data;
+  const bitmap = Buffer.alloc((width * style.height) / 8);
+  for (let y = 0; y < style.height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const pixelOffset = (y * width + x) * 4;
       const lit = pixels[pixelOffset + 3] > 0 && pixels[pixelOffset] >= 96;
-      if (lit) bitmap[y * (BITMAP_WIDTH / 8) + Math.floor(x / 8)] |= 0x80 >> (x % 8);
+      if (lit) bitmap[y * (width / 8) + Math.floor(x / 8)] |= 0x80 >> (x % 8);
     }
   }
 
-  const encoded = bitmap.toString('hex');
+  const result = { data: bitmap.toString('hex'), width, height: style.height };
   if (cache.size >= MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value);
-  cache.set(text, encoded);
-  return encoded;
+  cache.set(cacheKey, result);
+  return result;
 }
 
-module.exports = { BITMAP_WIDTH, BITMAP_HEIGHT, BYTES_PER_BITMAP, renderTextBitmap };
+module.exports = {
+  SCREEN_WIDTH,
+  TITLE_HEIGHT,
+  ARTIST_HEIGHT,
+  MAX_BITMAP_WIDTH,
+  renderTextBitmap,
+};

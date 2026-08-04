@@ -18,7 +18,7 @@ test('reports healthy without exposing Spotify credentials', async (t) => {
 });
 
 test('serves display-ready playback only to a request with the bridge key', async (t) => {
-  const expected = { available: true, title: 'Song', artist: 'Artist', progressMs: 100, durationMs: 200, volumePercent: 80, isPlaying: true };
+  const expected = { available: true, title: 'Song', artist: 'Artist', progressMs: 100, durationMs: 200, isPlaying: true };
   const { server, baseUrl } = await startServer({ bridgeKey: 'local-key', getPlayback: async () => expected });
   t.after(() => server.close());
 
