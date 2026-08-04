@@ -1,6 +1,6 @@
 # Spotify OLED bridge (Mac)
 
-This local Node service owns Spotify OAuth tokens and returns only display-ready playback JSON to the ESP32. It has no npm dependencies; Node 18+ is enough.
+This local Node service owns Spotify OAuth tokens and returns only display-ready playback JSON to the ESP32. It also renders Unicode track and artist names into 1-bit OLED bitmaps. Node 18+ is required.
 
 ## What it supports
 
@@ -26,6 +26,7 @@ openssl rand -hex 32
 
 ```bash
 cd bridge
+npm install
 set -a; source .env; set +a
 OPEN_LOGIN=1 npm start
 ```
@@ -41,6 +42,8 @@ The browser opens Spotify’s consent page. Sign in to the Spotify account whose
     "available": true,
     "title": "Track title",
     "artist": "Artist",
+    "titleBitmap": "1-bit bitmap encoded as hexadecimal",
+    "artistBitmap": "1-bit bitmap encoded as hexadecimal",
     "progressMs": 12345,
     "durationMs": 180000,
     "volumePercent": 70,

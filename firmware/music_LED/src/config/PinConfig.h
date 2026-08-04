@@ -9,5 +9,7 @@ constexpr uint8_t kOledScl = 22;
 constexpr uint8_t kRgbRed = 19;
 constexpr uint8_t kRgbGreen = 18;
 constexpr uint8_t kRgbBlue = 5;
+// ADC1 remains usable while ESP32 Wi-Fi is active.
+constexpr uint8_t kMicrophoneAnalog = 34;
 constexpr uint8_t kOledI2cAddress = 0x3C;
 }  // namespace pins

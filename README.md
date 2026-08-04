@@ -1,6 +1,6 @@
 # music_LED
 
-An ESP32 Spotify now-playing display with an SSD1306 OLED and an HW-479 / KY-016 common-cathode RGB status LED.
+An ESP32 Spotify now-playing display with an SSD1306 OLED, an analog microphone, and an HW-479 / KY-016 common-cathode RGB light.
 
 ## Structure
 
@@ -23,8 +23,13 @@ The bridge owns the Spotify tokens and exposes display-safe JSON over the local 
 | RGB LED | G | GPIO 18 |
 | RGB LED | B | GPIO 5 |
 | RGB LED | - | GND |
+| Microphone | AO | GPIO 34 |
+| Microphone | VCC | 3V3 |
+| Microphone | GND | GND |
 
-The OLED uses I2C address `0x3C`. Red means OLED setup failed, amber means Wi-Fi or the bridge failed, and green means playback data refreshed successfully.
+Use an analog microphone module such as a MAX4466 or the analog output of a KY-037. GPIO 34 is an ADC1 input, so it works while Wi-Fi is active.
+
+While Spotify is playing, red follows bass (50-250 Hz), green follows mids (300-1000 Hz), and blue follows treble (1050-2500 Hz). The light turns off when playback pauses. Solid red means OLED setup failed; solid amber means Wi-Fi or the bridge failed.
 
 ## Configure
 
@@ -41,6 +46,7 @@ Set the bridge URL to `http://<mac-lan-ip>:3000/api/now-playing` and use the sam
 
 ```bash
 cd bridge
+npm install
 set -a; source .env; set +a
 npm start
 ```
@@ -51,5 +57,7 @@ From the repository root, compile the firmware with:
 /Applications/Arduino\ IDE.app/Contents/Resources/app/lib/backend/resources/arduino-cli \
   compile --fqbn esp32:esp32:esp32 --output-dir build/esp32 firmware/music_LED
 ```
+
+The bridge renders track and artist text into OLED bitmaps, supporting Simplified Chinese, Korean, Japanese, Spanish, French, and Vietnamese through the Mac's system fonts. Playback time is displayed as `minutes:seconds`.
 
 Run bridge tests with `cd bridge && npm test`. The firmware requires the ESP32 Arduino core, ArduinoJson, Adafruit SSD1306, and Adafruit GFX Library.

@@ -9,6 +9,8 @@
 namespace {
 constexpr int kScreenWidth = 128;
 constexpr int kScreenHeight = 64;
+constexpr int kTextBitmapWidth = 128;
+constexpr int kTextBitmapHeight = 14;
 Adafruit_SSD1306 display(kScreenWidth, kScreenHeight, &Wire, -1);
 
 void drawTruncatedText(const char* text, int16_t x, int16_t y, uint8_t maxCharacters) {
@@ -18,6 +20,16 @@ void drawTruncatedText(const char* text, int16_t x, int16_t y, uint8_t maxCharac
   }
   display.setCursor(x, y);
   display.print(value);
+}
+
+void drawTime(unsigned long milliseconds) {
+  const unsigned long totalSeconds = milliseconds / 1000UL;
+  const unsigned long minutes = totalSeconds / 60UL;
+  const unsigned long seconds = totalSeconds % 60UL;
+  display.print(minutes);
+  display.print(':');
+  if (seconds < 10) display.print('0');
+  display.print(seconds);
 }
 }  // namespace
 
@@ -52,15 +64,22 @@ void renderPlayback(const PlaybackState& state) {
   display.setTextColor(SSD1306_WHITE);
   display.setTextSize(1);
 
-  drawTruncatedText(state.trackTitle, 0, 0, 21);
-  drawTruncatedText(state.artistName, 0, 12, 21);
+  if (state.trackTitleBitmap != nullptr) {
+    display.drawBitmap(0, 0, state.trackTitleBitmap, kTextBitmapWidth, kTextBitmapHeight, SSD1306_WHITE);
+  } else {
+    drawTruncatedText(state.trackTitle, 0, 0, 21);
+  }
+  if (state.artistNameBitmap != nullptr) {
+    display.drawBitmap(0, 14, state.artistNameBitmap, kTextBitmapWidth, kTextBitmapHeight, SSD1306_WHITE);
+  } else {
+    drawTruncatedText(state.artistName, 0, 14, 21);
+  }
 
-  display.setCursor(0, 27);
+  display.setCursor(0, 29);
   display.print(state.isPlaying ? F("> ") : F("|| "));
-  display.print(state.elapsedMs / 1000);
+  drawTime(state.elapsedMs);
   display.print('/');
-  display.print(state.durationMs / 1000);
-  display.print(F(" s"));
+  drawTime(state.durationMs);
 
   const int progress = state.durationMs == 0
                            ? 0

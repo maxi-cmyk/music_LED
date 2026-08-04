@@ -10,7 +10,29 @@ namespace {
 String title;
 String artist;
 String lastError;
+constexpr size_t kTextBitmapBytes = 128 * 14 / 8;
+uint8_t titleBitmap[kTextBitmapBytes];
+uint8_t artistBitmap[kTextBitmapBytes];
 constexpr unsigned long kWifiTimeoutMs = 15'000;
+
+int hexValue(char value) {
+  if (value >= '0' && value <= '9') return value - '0';
+  if (value >= 'a' && value <= 'f') return value - 'a' + 10;
+  if (value >= 'A' && value <= 'F') return value - 'A' + 10;
+  return -1;
+}
+
+bool decodeBitmap(JsonVariantConst value, uint8_t* output) {
+  const char* encoded = value.as<const char*>();
+  if (encoded == nullptr || strlen(encoded) != kTextBitmapBytes * 2) return false;
+  for (size_t index = 0; index < kTextBitmapBytes; ++index) {
+    const int high = hexValue(encoded[index * 2]);
+    const int low = hexValue(encoded[index * 2 + 1]);
+    if (high < 0 || low < 0) return false;
+    output[index] = static_cast<uint8_t>((high << 4) | low);
+  }
+  return true;
+}
 
 bool connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return true;
@@ -63,6 +85,8 @@ bool refreshPlayback(PlaybackState* state) {
   artist = document["artist"].as<const char*>() ?: "Unknown artist";
   state->trackTitle = title.c_str();
   state->artistName = artist.c_str();
+  state->trackTitleBitmap = decodeBitmap(document["titleBitmap"], titleBitmap) ? titleBitmap : nullptr;
+  state->artistNameBitmap = decodeBitmap(document["artistBitmap"], artistBitmap) ? artistBitmap : nullptr;
   state->elapsedMs = document["progressMs"] | 0UL;
   state->durationMs = document["durationMs"] | 1UL;
   state->volumePercent = document["volumePercent"] | 0;
