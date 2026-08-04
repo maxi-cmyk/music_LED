@@ -1,0 +1,11 @@
+{
+  "name": "spotify-oled-bridge",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local authenticated Spotify now-playing bridge for the ESP32 OLED display",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "node src/index.js"
+  },
+  "engines": { "node": ">=18" }
+}

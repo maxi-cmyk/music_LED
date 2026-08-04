@@ -5,4 +5,5 @@
 
 #define MUSIC_LED_WIFI_SSID "your-wifi-name"
 #define MUSIC_LED_WIFI_PASSWORD "your-wifi-password"
-#define MUSIC_LED_BRIDGE_URL "http://192.168.1.2:3000/api/now-playing"
+#define MUSIC_LED_BRIDGE_URL "http://YOUR_MAC_LAN_IP:3000/api/now-playing"
+#define MUSIC_LED_BRIDGE_KEY "the-same-random-key-as-bridge-dot-env"

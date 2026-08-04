@@ -7,4 +7,6 @@ build/
 *.eep
 *.map
 .DS_Store
-src/config/Secrets.h
+firmware/music_LED/src/config/Secrets.h
+bridge/.env
+bridge/data/

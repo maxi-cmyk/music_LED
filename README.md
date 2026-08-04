@@ -1,61 +1,55 @@
 # music_LED
 
-An ESP32 Spotify now-playing display with a 0.96-inch monochrome OLED and an HW-479 / KY-016 common-cathode RGB status LED.
+An ESP32 Spotify now-playing display with an SSD1306 OLED and an HW-479 / KY-016 common-cathode RGB status LED.
 
-## Firmware structure
+## Structure
 
 ```text
-music_LED.ino             # setup + display refresh loop
-src/
-  config/                 # pins and local network settings
-  display/                # SSD1306 OLED rendering
-  spotify/                # playback data model; bridge client comes next
-  status/                 # HW-479 RGB status LED
+firmware/music_LED/  ESP32 Arduino sketch
+bridge/              Mac-hosted Spotify OAuth and playback service
 ```
 
-There is intentionally **no microphone sampling or beat controller**. This project is now a Spotify-display add-on.
+The bridge owns the Spotify tokens and exposes display-safe JSON over the local network. The ESP32 owns only Wi-Fi credentials, the bridge URL, and the shared bridge key.
 
-## Current hardware wiring
+## Wiring
 
-### OLED (assumes common SSD1306 I2C module)
+| Component | Pin | ESP32 |
+|---|---|---:|
+| OLED | VCC | 3V3 |
+| OLED | GND | GND |
+| OLED | SDA | GPIO 21 |
+| OLED | SCL | GPIO 22 |
+| RGB LED | R | GPIO 19 |
+| RGB LED | G | GPIO 18 |
+| RGB LED | B | GPIO 5 |
+| RGB LED | - | GND |
 
-| OLED | ESP32 GPIO |
-|---|---:|
-| VCC | 3V3 |
-| GND | GND |
-| SDA | 21 |
-| SCL | 22 |
+The OLED uses I2C address `0x3C`. Red means OLED setup failed, amber means Wi-Fi or the bridge failed, and green means playback data refreshed successfully.
 
-The code initially uses I2C address `0x3C`. If the screen remains blank, run an I2C scanner and update `kOledI2cAddress` in `src/config/PinConfig.h`.
+## Configure
 
-### HW-479 / KY-016 RGB LED
+Follow [`bridge/README.md`](bridge/README.md) for Spotify OAuth setup. Then create the ignored firmware configuration:
 
-The `B G R -` marking identifies a common-cathode RGB module. Connect `-` to GND.
+```bash
+cp firmware/music_LED/src/config/Secrets.example.h \
+  firmware/music_LED/src/config/Secrets.h
+```
 
-| HW-479 pin | ESP32 GPIO |
-|---|---:|
-| R | GPIO 19 (D19) |
-| G | GPIO 18 (D18) |
-| B | GPIO 5 (D5) |
-| - | lower GND rail |
+Set the bridge URL to `http://<mac-lan-ip>:3000/api/now-playing` and use the same bridge key as `bridge/.env`. Keep Spotify tokens out of the firmware.
 
-The ESP32 uses PWM through `analogWrite()` to set LED colour. Red means OLED setup failed; amber means Wi-Fi/Spotify bridge credentials have not been configured; green means local credentials exist.
+## Run and verify
 
-## Spotify architecture
+```bash
+cd bridge
+set -a; source .env; set +a
+npm start
+```
 
-Spotify playback state requires user OAuth. Do **not** put a Spotify refresh token inside ESP32 firmware.
-
-1. Copy `src/config/Secrets.example.h` to `src/config/Secrets.h`.
-2. Put Wi-Fi credentials and the URL of a local/hosted Spotify bridge in `Secrets.h`.
-3. Keep the bridge responsible for the Spotify refresh token and return only safe display JSON to the ESP32.
-
-`Secrets.h` is Git-ignored. The current firmware validates the OLED and shows a setup screen; the next module is the authenticated bridge client that turns JSON into `PlaybackState`.
-
-## Compile
+From the repository root, compile the firmware with:
 
 ```bash
 /Applications/Arduino\ IDE.app/Contents/Resources/app/lib/backend/resources/arduino-cli \
-  compile --fqbn esp32:esp32:esp32 --output-dir build/esp32 .
+  compile --fqbn esp32:esp32:esp32 --output-dir build/esp32 firmware/music_LED
 ```
 
-Required on this Mac: ESP32 Arduino core and `Adafruit SSD1306` / `Adafruit GFX Library`.
+Run bridge tests with `cd bridge && npm test`. The firmware requires the ESP32 Arduino core, ArduinoJson, Adafruit SSD1306, and Adafruit GFX Library.
