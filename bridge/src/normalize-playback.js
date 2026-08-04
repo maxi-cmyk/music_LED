@@ -18,6 +18,7 @@ function displayState(
     albumArtBitmap: albumArt?.data || null,
     albumArtWidth: albumArt?.width || 0,
     albumArtHeight: albumArt?.height || 0,
+    albumPalette: albumArt?.palette || [],
     progressMs,
     durationMs,
     isPlaying,

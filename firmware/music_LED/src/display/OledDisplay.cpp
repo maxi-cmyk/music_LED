@@ -60,6 +60,7 @@ MarqueeState titleMarquee;
 MarqueeState artistMarquee;
 unsigned long lastAnimationMs = 0;
 unsigned long wipeStartedAt = 0;
+unsigned long celebrateUntil = 0;
 unsigned long lastActiveMs = 0;
 bool displaySleeping = false;
 bool displayDimmed = false;
@@ -152,6 +153,7 @@ void syncTrackState(const PlaybackState& state, unsigned long now) {
   if (trackKey.length() > 0 && trackKey != lastTrackKey) {
     lastTrackKey = trackKey;
     wipeStartedAt = now;
+    celebrateUntil = now + 1200UL;
   } else if (!state.available) {
     lastTrackKey = "";
   }
@@ -215,10 +217,24 @@ void drawDancer(bool playbackActive, unsigned long now) {
     drawSleepingDancer();
     return;
   }
-  const uint8_t danceFrame = (now / 90UL + audio.beatCount) % 8;
-  const int16_t hop = audio.beatStrength / 96 + (danceFrame % 2);
+  const uint16_t frameMs = max(audio.dancerFrameMs, static_cast<uint16_t>(45));
+  uint8_t danceFrame = 0;
+  if (now < celebrateUntil) {
+    danceFrame = (now / 55UL) % 8;
+  } else if (audio.bpm >= 140) {
+    const uint8_t headbangFrames[] = {1, 5, 1, 7};
+    danceFrame = headbangFrames[(now / frameMs + audio.beatCount) % 4];
+  } else if (audio.bpm > 0 && audio.bpm <= 95) {
+    const uint8_t swayFrames[] = {2, 3, 6, 7};
+    danceFrame = swayFrames[(now / (frameMs + 45UL)) % 4];
+  } else {
+    danceFrame = (now / frameMs + audio.beatCount) % 8;
+  }
+  const float intensity = max(0.5f, audio.dancerIntensity / 128.0f);
+  const int16_t hop = constrain(
+      static_cast<int16_t>((audio.beatStrength / 96 + (danceFrame % 2)) * intensity), 0, 5);
   drawDancerSprite(danceFrame, kAvatarTop - hop);
-  if (audio.treble > 150) {
+  if (audio.treble > 150 || now < celebrateUntil) {
     display.drawPixel(kAvatarLeft, kAvatarTop, SSD1306_WHITE);
     display.drawPixel(kAvatarLeft + 15, kAvatarTop + 4, SSD1306_WHITE);
   }

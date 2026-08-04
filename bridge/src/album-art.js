@@ -4,6 +4,7 @@ const ART_WIDTH = 32;
 const ART_HEIGHT = 32;
 const MAX_CACHE_ENTRIES = 40;
 const cache = new Map();
+const FALLBACK_PALETTE = [[255, 0, 140], [20, 70, 255], [0, 255, 80]];
 const bayer4x4 = [
   [0, 8, 2, 10],
   [12, 4, 14, 6],
@@ -27,6 +28,58 @@ function pixelsToBitmap(pixels, width = ART_WIDTH, height = ART_HEIGHT) {
   return bitmap;
 }
 
+function extractDominantPalette(pixels) {
+  const buckets = new Map();
+  for (let offset = 0; offset < pixels.length; offset += 4) {
+    if (pixels[offset + 3] < 128) continue;
+    const red = pixels[offset];
+    const green = pixels[offset + 1];
+    const blue = pixels[offset + 2];
+    const maximum = Math.max(red, green, blue);
+    const minimum = Math.min(red, green, blue);
+    const saturation = maximum === 0 ? 0 : (maximum - minimum) / maximum;
+    if (maximum < 35 || maximum > 245 || saturation < 0.16) continue;
+    const key = `${red >> 5}:${green >> 5}:${blue >> 5}`;
+    const bucket = buckets.get(key) || { red: 0, green: 0, blue: 0, count: 0, score: 0 };
+    bucket.red += red;
+    bucket.green += green;
+    bucket.blue += blue;
+    bucket.count += 1;
+    bucket.score += saturation * (0.45 + maximum / 510);
+    buckets.set(key, bucket);
+  }
+
+  const candidates = [...buckets.values()]
+    .map((bucket) => ({
+      color: [
+        Math.round(bucket.red / bucket.count),
+        Math.round(bucket.green / bucket.count),
+        Math.round(bucket.blue / bucket.count),
+      ],
+      score: bucket.score,
+    }))
+    .sort((left, right) => right.score - left.score);
+
+  const palette = [];
+  for (const candidate of candidates) {
+    const distinct = palette.every((color) => {
+      const distance = Math.hypot(
+        color[0] - candidate.color[0],
+        color[1] - candidate.color[1],
+        color[2] - candidate.color[2],
+      );
+      return distance >= 75;
+    });
+    if (distinct) palette.push(candidate.color);
+    if (palette.length === 3) break;
+  }
+  for (const fallback of FALLBACK_PALETTE) {
+    if (palette.length === 3) break;
+    palette.push(fallback);
+  }
+  return palette;
+}
+
 async function renderAlbumArtBitmap(url, fetchImplementation = fetch) {
   if (!url) return null;
   if (cache.has(url)) return cache.get(url);
@@ -46,6 +99,7 @@ async function renderAlbumArtBitmap(url, fetchImplementation = fetch) {
         data: pixelsToBitmap(pixels).toString('hex'),
         width: ART_WIDTH,
         height: ART_HEIGHT,
+        palette: extractDominantPalette(pixels),
       };
     } catch {
       return null;
@@ -57,4 +111,10 @@ async function renderAlbumArtBitmap(url, fetchImplementation = fetch) {
   return pending;
 }
 
-module.exports = { ART_WIDTH, ART_HEIGHT, pixelsToBitmap, renderAlbumArtBitmap };
+module.exports = {
+  ART_WIDTH,
+  ART_HEIGHT,
+  extractDominantPalette,
+  pixelsToBitmap,
+  renderAlbumArtBitmap,
+};

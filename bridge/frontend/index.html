@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Music LED Control Deck</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <main>
+      <header class="masthead reveal">
+        <div>
+          <p class="eyebrow">ESP32 / LOCAL CONTROL SURFACE</p>
+          <h1>MUSIC<br /><span>LED</span></h1>
+        </div>
+        <div class="masthead-status">
+          <span class="local-badge">LOOPBACK ONLY</span>
+          <div class="connection"><i id="connection-light"></i><span id="connection-copy">Waiting for board</span></div>
+        </div>
+      </header>
+
+      <section class="telemetry reveal delay-1" aria-labelledby="signal-heading">
+        <div class="section-heading">
+          <p>01 / LIVE SIGNAL</p>
+          <h2 id="signal-heading">THE ROOM, TRANSLATED.</h2>
+        </div>
+        <div class="readouts">
+          <article><span>BPM</span><strong id="bpm">—</strong><small id="confidence">NO LOCK</small></article>
+          <article><span>MIC</span><strong id="microphone">—</strong><small id="noise-floor">FLOOR —</small></article>
+          <article><span>WI-FI</span><strong id="wifi">—</strong><small>DBM</small></article>
+        </div>
+        <div class="bands" aria-label="Audio spectrum levels">
+          <label><span>BASS</span><b><i id="bass-meter"></i></b><output id="bass-value">0</output></label>
+          <label><span>MID</span><b><i id="mid-meter"></i></b><output id="mid-value">0</output></label>
+          <label><span>TREBLE</span><b><i id="treble-meter"></i></b><output id="treble-value">0</output></label>
+        </div>
+      </section>
+
+      <form id="control-form" class="control-grid reveal delay-2">
+        <section class="control-panel pulse-panel">
+          <div class="panel-number">02</div>
+          <h2>PULSE ENGINE</h2>
+          <p>Shape how quickly the room becomes light.</p>
+          <div class="sliders">
+            <label data-setting="beatSensitivity"><span>Beat sensitivity</span><output></output><input type="range" min="0.5" max="2" step="0.05" /></label>
+            <label data-setting="tempoCorrection"><span>Tempo correction</span><output></output><input type="range" min="0.05" max="0.8" step="0.05" /></label>
+            <label data-setting="tempoHoldMs" data-suffix=" ms"><span>Tempo memory</span><output></output><input type="range" min="1000" max="5000" step="100" /></label>
+            <label data-setting="flashDecay"><span>Flash tail</span><output></output><input type="range" min="0.4" max="0.85" step="0.01" /></label>
+          </div>
+        </section>
+
+        <section class="control-panel colour-panel">
+          <div class="panel-number">03</div>
+          <h2>COLOUR LAB</h2>
+          <p>Correct the physical LED, then choose its source.</p>
+          <fieldset class="palette-switch">
+            <legend>Palette source</legend>
+            <label><input type="radio" name="paletteMode" value="album" /><span>ALBUM</span></label>
+            <label><input type="radio" name="paletteMode" value="club" /><span>CLUB</span></label>
+            <label><input type="radio" name="paletteMode" value="spectrum" /><span>SPECTRUM</span></label>
+          </fieldset>
+          <div class="sliders compact">
+            <label data-setting="maxBrightness"><span>Peak</span><output></output><input type="range" min="80" max="255" step="1" /></label>
+            <label data-setting="idleBrightness"><span>Between beats</span><output></output><input type="range" min="0" max="60" step="1" /></label>
+            <label class="red" data-setting="redGain"><span>Red gain</span><output></output><input type="range" min="0.25" max="2" step="0.05" /></label>
+            <label class="green" data-setting="greenGain"><span>Green gain</span><output></output><input type="range" min="0.25" max="2" step="0.05" /></label>
+            <label class="blue" data-setting="blueGain"><span>Blue gain</span><output></output><input type="range" min="0.25" max="2" step="0.05" /></label>
+            <label data-setting="gamma"><span>Gamma</span><output></output><input type="range" min="1" max="2.8" step="0.1" /></label>
+          </div>
+        </section>
+
+        <section class="control-panel mascot-panel">
+          <div class="panel-number">04</div>
+          <h2>MASCOT ENERGY</h2>
+          <p>Tempo chooses the personality. You choose the commitment.</p>
+          <div class="mascot-stage" aria-hidden="true"><div class="mascot">♪</div><i></i><i></i><i></i></div>
+          <div class="sliders">
+            <label data-setting="dancerSpeed"><span>Movement speed</span><output></output><input type="range" min="0.5" max="2" step="0.05" /></label>
+            <label data-setting="dancerIntensity"><span>Jump intensity</span><output></output><input type="range" min="0.5" max="2" step="0.05" /></label>
+          </div>
+        </section>
+
+        <footer class="action-strip">
+          <p id="save-status">Changes are applied on the ESP32’s next playback poll.</p>
+          <button type="button" id="reset-button">RESET</button>
+          <button type="submit" id="save-button">SEND TO LIGHTS <span>↗</span></button>
+        </footer>
+      </form>
+    </main>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

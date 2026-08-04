@@ -12,12 +12,10 @@ constexpr uint32_t kSampleRateHz = 6400;
 constexpr uint32_t kSampleIntervalUs = 1000000UL / kSampleRateHz;
 constexpr unsigned long kFrameIntervalMs = 30;
 constexpr unsigned long kMinimumBeatIntervalMs = 140;
-constexpr unsigned long kMinimumTempoIntervalMs = 180;
-constexpr unsigned long kMaximumTempoIntervalMs = 1200;
-constexpr unsigned long kTempoHoldMs = 2500;
+constexpr unsigned long kMinimumTempoIntervalMs = 300;
+constexpr unsigned long kMaximumTempoIntervalMs = 1000;
 constexpr float kPi = 3.14159265358979323846f;
-constexpr float kSilenceRms = 18.0f;
-constexpr float kMaximumBrightness = 240.0f;
+constexpr float kInitialNoiseFloor = 18.0f;
 
 struct BandTracker {
   float peak = 1.0f;
@@ -58,7 +56,14 @@ float overallPeak = 80.0f;
 bool bassBaselineReady = false;
 bool tempoLocked = false;
 bool ledActive = false;
-AudioVisualState visualState = {0, 0, 0, 0, 0, false};
+float noiseFloorRms = kInitialNoiseFloor;
+float tempoConfidence = 0.0f;
+RgbColor trackPalette[3];
+uint8_t trackPaletteCount = 0;
+AudioReactiveConfig reactiveConfig = {
+    1.0f, 0.25f, 2500, 0.65f, 18, 240, 1.0f, 1.0f, 1.0f, 1.6f, 1.0f, 1.0f,
+    AudioPaletteMode::Album};
+AudioVisualState visualState{};
 
 uint8_t clampByte(float value) {
   return static_cast<uint8_t>(constrain(static_cast<int>(value), 0, 255));
@@ -128,12 +133,23 @@ float normalizeBand(float energy, BandTracker* tracker) {
 }
 
 void applyChannel(float target, float* output) {
-  target = min(target, kMaximumBrightness);
+  target = min(target, static_cast<float>(reactiveConfig.maxBrightness));
   if (target >= *output) {
     *output = *output * 0.15f + target * 0.85f;
   } else {
     *output = *output * 0.35f + target * 0.65f;
   }
+}
+
+uint8_t correctedChannel(float value, float gain) {
+  const float scaled = constrain(value * gain, 0.0f, 255.0f) / 255.0f;
+  return clampByte(powf(scaled, reactiveConfig.gamma) * 255.0f);
+}
+
+void showRgb(float red, float green, float blue) {
+  setStatusLed(correctedChannel(red, reactiveConfig.redGain),
+               correctedChannel(green, reactiveConfig.greenGain),
+               correctedChannel(blue, reactiveConfig.blueGain));
 }
 
 void updateVisualState(float bassShare, float midShare, float trebleShare, float level) {
@@ -142,6 +158,12 @@ void updateVisualState(float bassShare, float midShare, float trebleShare, float
   visualState.treble = clampByte(trebleShare * 255.0f);
   const float motionStrength = max(beatFlash, 0.35f + level * 0.55f);
   visualState.beatStrength = clampByte(motionStrength * 255.0f);
+  visualState.bpm = tempoLocked ? 60000UL / max(estimatedBeatIntervalMs, 1UL) : 0;
+  visualState.beatConfidence = clampByte(tempoConfidence * 255.0f);
+  visualState.dancerFrameMs =
+      static_cast<uint16_t>(constrain(90.0f / reactiveConfig.dancerSpeed, 45.0f, 180.0f));
+  visualState.dancerIntensity =
+      clampByte(constrain(reactiveConfig.dancerIntensity / 2.0f, 0.0f, 1.0f) * 255.0f);
   visualState.active = true;
 }
 
@@ -157,7 +179,7 @@ void fadeOutputs(float factor) {
   visualState.mid = 0;
   visualState.treble = 0;
   visualState.beatStrength = clampByte(beatFlash * 255.0f);
-  setStatusLed(clampByte(redOutput), clampByte(greenOutput), clampByte(blueOutput));
+  showRgb(redOutput, greenOutput, blueOutput);
 }
 
 void triggerBeatPulse(float strength) {
@@ -175,39 +197,74 @@ void detectBeatAndTempo(float bass, unsigned long now) {
 
   const float transient = bass - bassAverage;
   bassAverage = bassAverage * 0.88f + bass * 0.12f;
-  if (bass > 0.45f && transient > 0.08f && now - lastBeatMs >= kMinimumBeatIntervalMs) {
+  const float bassThreshold = 0.45f / sqrtf(reactiveConfig.beatSensitivity);
+  const float transientThreshold = 0.08f / reactiveConfig.beatSensitivity;
+  if (bass > bassThreshold && transient > transientThreshold &&
+      now - lastBeatMs >= kMinimumBeatIntervalMs) {
     const unsigned long interval = now - lastBeatMs;
-    if (lastBeatMs != 0 && interval >= kMinimumTempoIntervalMs &&
-        interval <= kMaximumTempoIntervalMs) {
+    unsigned long tempoInterval = interval;
+    while (tempoInterval < kMinimumTempoIntervalMs) tempoInterval *= 2UL;
+    while (tempoInterval > kMaximumTempoIntervalMs) tempoInterval /= 2UL;
+    if (lastBeatMs != 0 && tempoInterval >= kMinimumTempoIntervalMs &&
+        tempoInterval <= kMaximumTempoIntervalMs) {
       estimatedBeatIntervalMs = tempoLocked
-                                    ? (estimatedBeatIntervalMs * 3UL + interval) / 4UL
-                                    : interval;
+                                    ? static_cast<unsigned long>(
+                                          estimatedBeatIntervalMs *
+                                              (1.0f - reactiveConfig.tempoCorrection) +
+                                          tempoInterval * reactiveConfig.tempoCorrection)
+                                    : tempoInterval;
       tempoLocked = true;
+      tempoConfidence = min(1.0f, tempoConfidence + 0.18f);
     }
     lastBeatMs = now;
     nextTempoPulseMs = now + estimatedBeatIntervalMs;
     triggerBeatPulse(0.78f + transient * 1.8f);
-  } else if (tempoLocked && now - lastBeatMs <= kTempoHoldMs &&
+  } else if (tempoLocked && now - lastBeatMs <= reactiveConfig.tempoHoldMs &&
              static_cast<int32_t>(now - nextTempoPulseMs) >= 0) {
     do {
       nextTempoPulseMs += estimatedBeatIntervalMs;
     } while (static_cast<int32_t>(now - nextTempoPulseMs) >= 0);
     triggerBeatPulse(0.92f);
   } else {
-    beatFlash *= 0.65f;
+    beatFlash *= reactiveConfig.flashDecay;
+    tempoConfidence *= 0.999f;
   }
 
-  if (tempoLocked && now - lastBeatMs > kTempoHoldMs) {
+  if (tempoLocked && now - lastBeatMs > reactiveConfig.tempoHoldMs) {
     tempoLocked = false;
     nextTempoPulseMs = 0;
+    tempoConfidence = 0.0f;
   }
+}
+
+RgbColor saturatedColor(RgbColor color) {
+  const uint8_t minimum = min(color.red, min(color.green, color.blue));
+  const uint8_t maximum = max(color.red, max(color.green, color.blue));
+  if (maximum <= minimum) return color;
+  const float scale = 255.0f / (maximum - minimum);
+  return {clampByte((color.red - minimum) * scale),
+          clampByte((color.green - minimum) * scale),
+          clampByte((color.blue - minimum) * scale)};
+}
+
+RgbColor selectedBeatColor(float bassShare, float midShare, float trebleShare) {
+  if (reactiveConfig.paletteMode == AudioPaletteMode::Album && trackPaletteCount > 0) {
+    return saturatedColor(trackPalette[visualState.beatCount % trackPaletteCount]);
+  }
+  if (reactiveConfig.paletteMode == AudioPaletteMode::Spectrum) {
+    if (bassShare >= midShare && bassShare >= trebleShare) return {255, 0, 150};
+    if (midShare >= trebleShare) return {20, 70, 255};
+    return {0, 255, 120};
+  }
+  return kBeatPalette[visualState.beatCount %
+                      (sizeof(kBeatPalette) / sizeof(kBeatPalette[0]))];
 }
 
 void renderClubPalette(float bassShare, float midShare, float trebleShare, float level) {
   // Use the bands' real spectral share for colour and adaptive overall volume
   // only for brightness. Normalizing every colour independently makes even a
   // weak band read as full strength and caused the LED to settle on cyan.
-  const float baseBrightness = 18.0f + level * 35.0f;
+  const float baseBrightness = reactiveConfig.idleBrightness + level * 35.0f;
   float targetRed =
       baseBrightness * (bassShare + midShare * 0.10f + trebleShare * 0.05f);
   float targetGreen =
@@ -216,9 +273,10 @@ void renderClubPalette(float bassShare, float midShare, float trebleShare, float
       baseBrightness * (bassShare * 0.75f + midShare + trebleShare * 0.65f);
 
   if (beatFlash > 0.02f) {
-    const RgbColor& beatColor =
-        kBeatPalette[visualState.beatCount % (sizeof(kBeatPalette) / sizeof(kBeatPalette[0]))];
-    const float flashBrightness = (185.0f + level * 55.0f) * beatFlash;
+    const RgbColor beatColor = selectedBeatColor(bassShare, midShare, trebleShare);
+    const float flashBrightness =
+        (reactiveConfig.maxBrightness * 0.78f + level * reactiveConfig.maxBrightness * 0.22f) *
+        beatFlash;
     const float baseMix = 1.0f - beatFlash;
     targetRed = targetRed * baseMix + beatColor.red / 255.0f * flashBrightness;
     targetGreen = targetGreen * baseMix + beatColor.green / 255.0f * flashBrightness;
@@ -228,7 +286,22 @@ void renderClubPalette(float bassShare, float midShare, float trebleShare, float
   applyChannel(targetRed, &redOutput);
   applyChannel(targetGreen, &greenOutput);
   applyChannel(targetBlue, &blueOutput);
-  setStatusLed(clampByte(redOutput), clampByte(greenOutput), clampByte(blueOutput));
+  showRgb(redOutput, greenOutput, blueOutput);
+}
+
+void calibrateMicrophone() {
+  float mean = 0.0f;
+  float sumSquares = 0.0f;
+  constexpr size_t kCalibrationSamples = 512;
+  for (size_t index = 1; index <= kCalibrationSamples; ++index) {
+    const float sample = analogRead(pins::kMicrophoneAnalog);
+    const float delta = sample - mean;
+    mean += delta / index;
+    sumSquares += delta * (sample - mean);
+    delayMicroseconds(100);
+  }
+  const float measuredRms = sqrtf(sumSquares / (kCalibrationSamples - 1));
+  noiseFloorRms = constrain(measuredRms * 1.35f, 6.0f, 80.0f);
 }
 }  // namespace
 
@@ -239,6 +312,7 @@ void setupAudioReactive() {
   for (size_t index = 0; index < kSampleCount; ++index) {
     window[index] = 0.54f - 0.46f * cosf(2.0f * kPi * index / (kSampleCount - 1));
   }
+  calibrateMicrophone();
 }
 
 void stopAudioReactive() {
@@ -256,11 +330,14 @@ void stopAudioReactive() {
   lastBeatMs = 0;
   bassBaselineReady = false;
   tempoLocked = false;
+  tempoConfidence = 0.0f;
   ledActive = false;
   visualState.bass = 0;
   visualState.mid = 0;
   visualState.treble = 0;
   visualState.beatStrength = 0;
+  visualState.bpm = 0;
+  visualState.beatConfidence = 0;
   visualState.active = false;
   setStatusLed(0, 0, 0);
 }
@@ -296,8 +373,15 @@ void updateAudioReactive(bool playbackActive) {
     realSamples[index] = centered * window[index];
   }
   rms = sqrtf(rms / static_cast<float>(kSampleCount));
+  visualState.microphoneLevel = static_cast<uint16_t>(constrain(rms, 0.0f, 4095.0f));
+  visualState.noiseFloor = static_cast<uint16_t>(noiseFloorRms);
 
-  if (rms < kSilenceRms) {
+  if (rms < noiseFloorRms * 2.0f) {
+    noiseFloorRms = noiseFloorRms * 0.998f + rms * 0.002f;
+  }
+
+  const float silenceThreshold = max(6.0f, noiseFloorRms * 1.30f);
+  if (rms < silenceThreshold) {
     fadeOutputs(0.35f);
     return;
   }
@@ -316,10 +400,23 @@ void updateAudioReactive(bool playbackActive) {
   const float trebleShare = trebleEnergy / totalEnergy;
   overallPeak = max(rms, overallPeak * 0.985f);
   const float level =
-      constrain((rms - kSilenceRms) / max(overallPeak - kSilenceRms, 1.0f), 0.0f, 1.0f);
+      constrain((rms - silenceThreshold) / max(overallPeak - silenceThreshold, 1.0f), 0.0f,
+                1.0f);
   detectBeatAndTempo(bass, now);
   updateVisualState(bassShare, midShare, trebleShare, level);
   renderClubPalette(bassShare, midShare, trebleShare, level);
 }
 
 const AudioVisualState& audioVisualState() { return visualState; }
+
+const AudioReactiveConfig& audioReactiveConfig() { return reactiveConfig; }
+
+void configureAudioReactive(const AudioReactiveConfig& config) { reactiveConfig = config; }
+
+void setAudioTrackPalette(const uint8_t* rgbValues, uint8_t colorCount) {
+  trackPaletteCount = min(colorCount, static_cast<uint8_t>(3));
+  for (uint8_t index = 0; index < trackPaletteCount; ++index) {
+    trackPalette[index] =
+        {rgbValues[index * 3], rgbValues[index * 3 + 1], rgbValues[index * 3 + 2]};
+  }
+}

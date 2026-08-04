@@ -14,7 +14,12 @@ test('converts Spotify currently-playing data into the ESP32 display contract', 
       duration_ms: 243_000,
       artists: [{ name: 'M83' }, { name: 'Featured Artist' }],
     },
-  }, renderText, { data: 'album-bitmap', width: 32, height: 32 });
+  }, renderText, {
+    data: 'album-bitmap',
+    width: 32,
+    height: 32,
+    palette: [[240, 20, 90], [20, 80, 240], [30, 220, 100]],
+  });
 
   assert.deepEqual(result, {
     available: true,
@@ -28,6 +33,7 @@ test('converts Spotify currently-playing data into the ESP32 display contract', 
     albumArtBitmap: 'album-bitmap',
     albumArtWidth: 32,
     albumArtHeight: 32,
+    albumPalette: [[240, 20, 90], [20, 80, 240], [30, 220, 100]],
     progressMs: 12_345,
     durationMs: 243_000,
     isPlaying: true,
@@ -48,6 +54,7 @@ test('returns an unavailable display state when Spotify has no active track', ()
     albumArtBitmap: null,
     albumArtWidth: 0,
     albumArtHeight: 0,
+    albumPalette: [],
     progressMs: 0,
     durationMs: 1,
     isPlaying: false,

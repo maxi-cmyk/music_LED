@@ -13,6 +13,8 @@ struct PlaybackState {
   const uint8_t* albumArtBitmap;
   uint8_t albumArtWidth;
   uint8_t albumArtHeight;
+  const uint8_t* albumPalette;
+  uint8_t albumPaletteCount;
   unsigned long elapsedMs;
   unsigned long durationMs;
   unsigned long syncedAtMs;

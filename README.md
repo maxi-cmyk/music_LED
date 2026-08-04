@@ -9,7 +9,7 @@ firmware/music_LED/  ESP32 Arduino sketch
 bridge/              Mac-hosted Spotify OAuth and playback service
 ```
 
-The bridge owns the Spotify tokens and exposes display-safe JSON over the local network. The ESP32 owns only Wi-Fi credentials, the bridge URL, and the shared bridge key.
+The bridge owns the Spotify tokens and exposes display-safe JSON over the local network. Its backend lives in `bridge/src`; the separate browser frontend lives in `bridge/frontend` and is served only to loopback clients. The ESP32 owns only Wi-Fi credentials, the bridge URL, and the shared bridge key.
 
 ## Wiring
 
@@ -29,7 +29,7 @@ The bridge owns the Spotify tokens and exposes display-safe JSON over the local 
 
 Use an analog microphone module such as a MAX4466 or the analog output of a KY-037. GPIO 34 is an ADC1 input, so it works while Wi-Fi is active.
 
-While Spotify is playing, the microphone splits the audio into bass (50-250 Hz), mids (300-1000 Hz), and treble (1050-2500 Hz). Overall brightness adapts to room volume while each band's real share of the spectrum drives the base colour. Bass transients establish an estimated tempo, and both detected and predicted beats produce sharp, saturated flashes through a pink, blue, green, purple, cyan, and crimson club palette. The LEDs dim rapidly between pulses instead of blending successive colours into white. The mini dancer beside the progress bar moves continuously, jumps harder with the music, and sleeps when playback is paused. The light turns off when playback pauses. Solid red means OLED setup failed; solid amber means Wi-Fi or the bridge failed.
+While Spotify is playing, the microphone automatically calibrates its room-noise floor and splits the audio into bass (50-250 Hz), mids (300-1000 Hz), and treble (1050-2500 Hz). Bass transients establish tempo, and both detected and predicted beats produce sharp saturated flashes. RGB gains, gamma, sensitivity, decay, brightness, and palette source are adjustable from the local control deck. Album mode extracts three colours from each cover; club and spectrum modes remain available. The mascot sways, dances, or headbangs according to tempo, celebrates track changes, and sleeps when paused. The light turns off when playback pauses. Solid red means OLED setup failed; solid amber means Wi-Fi or the bridge failed.
 
 ## Configure
 
@@ -47,9 +47,10 @@ Set the bridge URL to `http://<mac-lan-ip>:3000/api/now-playing` and use the sam
 ```bash
 cd bridge
 npm install
-set -a; source .env; set +a
-npm start
+npm run dev
 ```
+
+`npm run dev` loads `bridge/.env`, starts the backend, and serves the control deck at <http://127.0.0.1:3000/>. Dashboard assets and tuning APIs reject non-loopback clients; only the authenticated ESP32 playback and telemetry routes are reachable over the LAN.
 
 From the repository root, compile the firmware with:
 
@@ -61,5 +62,7 @@ From the repository root, compile the firmware with:
 The bridge renders track and artist text into OLED bitmaps, supporting Simplified Chinese, Korean, Japanese, Spanish, French, and Vietnamese through the Mac's system fonts. It also downloads, resizes, and dithers Spotify cover art into a permanent 32×32 monochrome thumbnail. The dashboard keeps artwork on the left, title, artist, and playback time on the right, the timeline across the bottom, and the dancing mascot at its side. Long names pause before scrolling, pause again at the end, and then loop smoothly; the artist line uses a smaller regular font. Playback time is displayed as `minutes:seconds`, and no volume indicator is shown.
 
 The OLED has distinct playing, paused, nothing-playing, and reconnecting screens. During inactivity it dims after one minute, shifts the panel offset periodically, sleeps after five minutes, and wakes automatically when playback resumes.
+
+After the first USB flash, authenticated Arduino OTA is advertised as `music-led.local`. Select the `music-led` network port in Arduino IDE and use the bridge key as its OTA password. Keep USB available as the recovery path.
 
 Run bridge tests with `cd bridge && npm test`. The firmware requires the ESP32 Arduino core, ArduinoJson, Adafruit SSD1306, and Adafruit GFX Library.

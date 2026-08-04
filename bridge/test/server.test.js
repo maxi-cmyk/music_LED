@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createBridgeServer } = require('../src/server');
+const { createBridgeServer, isLoopbackAddress } = require('../src/server');
+const { TelemetryStore } = require('../src/telemetry-store');
 
 async function startServer(options) {
   const server = createBridgeServer(options);
@@ -41,4 +42,55 @@ test('rejects routes other than the health and display endpoints', async (t) => 
 
   const response = await fetch(`${baseUrl}/tokens`);
   assert.equal(response.status, 404);
+});
+
+test('recognises only loopback addresses as local dashboard clients', () => {
+  assert.equal(isLoopbackAddress('127.0.0.1'), true);
+  assert.equal(isLoopbackAddress('::1'), true);
+  assert.equal(isLoopbackAddress('::ffff:127.0.0.1'), true);
+  assert.equal(isLoopbackAddress('192.168.50.6'), false);
+});
+
+test('reads and updates display settings through the local-only API', async (t) => {
+  let config = { beatSensitivity: 1 };
+  const configStore = {
+    get: () => config,
+    update: (values) => (config = { ...config, ...values }),
+  };
+  const { server, baseUrl } = await startServer({ getPlayback: async () => ({}), configStore });
+  t.after(() => server.close());
+
+  const initial = await fetch(`${baseUrl}/api/config`);
+  assert.deepEqual(await initial.json(), { beatSensitivity: 1 });
+  const updated = await fetch(`${baseUrl}/api/config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ beatSensitivity: 1.4 }),
+  });
+  assert.deepEqual(await updated.json(), { beatSensitivity: 1.4 });
+});
+
+test('accepts authenticated ESP32 telemetry and exposes it locally', async (t) => {
+  const telemetryStore = new TelemetryStore();
+  const { server, baseUrl } = await startServer({
+    bridgeKey: 'local-key',
+    getPlayback: async () => ({}),
+    telemetryStore,
+  });
+  t.after(() => server.close());
+
+  const rejected = await fetch(`${baseUrl}/api/telemetry`, {
+    method: 'POST',
+    body: JSON.stringify({ bpm: 120 }),
+  });
+  assert.equal(rejected.status, 401);
+
+  const accepted = await fetch(`${baseUrl}/api/telemetry`, {
+    method: 'POST',
+    headers: { 'X-Bridge-Key': 'local-key', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bpm: 120, beatConfidence: 87 }),
+  });
+  assert.equal(accepted.status, 202);
+  const telemetry = await fetch(`${baseUrl}/api/telemetry`);
+  assert.equal((await telemetry.json()).bpm, 120);
 });

@@ -1,6 +1,6 @@
 # Spotify OLED bridge (Mac)
 
-This local Node service owns Spotify OAuth tokens and returns only display-ready playback JSON to the ESP32. It also renders Unicode track and artist names into 1-bit OLED bitmaps. Node 18+ is required.
+This local Node backend owns Spotify OAuth tokens and returns display-ready playback JSON to the ESP32. It renders Unicode text, dithers album covers, extracts album colours, stores visual settings, and receives ESP32 diagnostics. The separate static frontend in `frontend/` is a loopback-only control deck. Node 18+ is required.
 
 ## What it supports
 
@@ -27,11 +27,10 @@ openssl rand -hex 32
 ```bash
 cd bridge
 npm install
-set -a; source .env; set +a
-OPEN_LOGIN=1 npm start
+npm run dev
 ```
 
-The browser opens Spotify’s consent page. Sign in to the Spotify account whose playback should appear on the OLED. Tokens are stored locally in `bridge/data/spotify-tokens.json` and refreshed automatically.
+Open <http://127.0.0.1:3000/login> once to authorise Spotify, then use <http://127.0.0.1:3000/> for tuning and diagnostics. `npm run dev` loads `.env` itself; no shell export step is required. Tokens and display settings are stored under `bridge/data/` and remain ignored.
 
 ## Endpoints
 
@@ -50,13 +49,28 @@ The browser opens Spotify’s consent page. Sign in to the Spotify account whose
     "albumArtBitmap": "32x32 1-bit bitmap encoded as hexadecimal",
     "albumArtWidth": 32,
     "albumArtHeight": 32,
+    "albumPalette": [[255, 0, 120], [20, 80, 255], [0, 220, 100]],
+    "visualConfig": { "paletteMode": "album", "beatSensitivity": 1 },
     "progressMs": 12345,
     "durationMs": 180000,
     "isPlaying": true
   }
   ```
 
-Bitmap widths preserve long names so the ESP32 can scroll them smoothly. The title uses a larger semibold font; the artist uses a smaller regular font. Album art is fetched once per cover, cached in memory, resized, and dithered into a 128-byte monochrome bitmap. Artwork failure does not interrupt playback updates. The ESP32 integration must use the Mac’s LAN IP in `MUSIC_LED_BRIDGE_URL` and send the same bridge key. Do not expose this service to the public internet.
+- `POST /api/telemetry` with the bridge key accepts ESP32 BPM, microphone, spectrum, and Wi-Fi diagnostics.
+- `GET/PUT /api/config`, `GET /api/telemetry`, `/`, `/app.js`, and `/styles.css` accept loopback clients only.
+
+Bitmap widths preserve long names so the ESP32 can scroll them smoothly. Album art is fetched once per cover, cached in memory, resized, dithered into 128 bytes, and analysed for three dominant colours. Artwork failure does not interrupt playback updates. The ESP32 integration must use the Mac’s LAN IP in `MUSIC_LED_BRIDGE_URL` and send the same bridge key.
+
+## Start automatically at login
+
+Stop any active development bridge, then run the one-time installer:
+
+```bash
+npm run service:install
+```
+
+This installs a user LaunchAgent that loads `.env`, starts the same backend/frontend process at login, restarts it after failure, and writes ignored logs inside `bridge/`. Remove it with `npm run service:uninstall`. Development still needs only `npm run dev`; installing the service is optional and is not performed automatically.
 
 ## Verify
 

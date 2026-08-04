@@ -28,6 +28,8 @@ test('downloads, resizes, and dithers album artwork for the ESP32', async () => 
   assert.equal(result.width, 32);
   assert.equal(result.height, 32);
   assert.equal(result.data.length, 256);
+  assert.equal(result.palette.length, 3);
+  assert.equal(result.palette.every((color) => color.length === 3), true);
   assert.notEqual(result.data, '00'.repeat(128));
   assert.notEqual(result.data, 'ff'.repeat(128));
 });

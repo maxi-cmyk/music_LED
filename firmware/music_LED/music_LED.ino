@@ -3,12 +3,14 @@
 #include "src/display/OledDisplay.h"
 #include "src/spotify/BridgeClient.h"
 #include "src/status/StatusLed.h"
+#include "src/update/OtaUpdate.h"
 
 namespace {
 const PlaybackState kSetupState = {
     "",          "Spotify bridge pending", "Add Wi-Fi and bridge URL", nullptr, 0,
     nullptr,     0,                         nullptr,                   0,       0,
-    0,           1,                         0,                         false,   false};
+    nullptr,     0,                         0,                         1,       0,
+    false,       false};
 PlaybackState playbackState = kSetupState;
 unsigned long lastBridgeRefresh = 0;
 constexpr unsigned long kBridgeRefreshMs = 2000;
@@ -42,6 +44,7 @@ void loop() {
     delay(1000);
     return;
   }
+  handleOtaUpdates();
   updateAudioReactive(bridgeHealthy && playbackState.isPlaying);
   if (bridgeHealthy) {
     renderPlayback(playbackState);
@@ -65,6 +68,7 @@ void loop() {
       lastPlaybackLog = millis();
     }
     if (!playbackState.isPlaying) stopAudioReactive();
+    reportTelemetry(audioVisualState());
   } else {
     bridgeHealthy = false;
     stopAudioReactive();

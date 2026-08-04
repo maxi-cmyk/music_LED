@@ -7,6 +7,11 @@ const { TokenStore } = require('./token-store');
 const { buildAuthoriseUrl, exchangeCode, refreshAccessToken, fetchCurrentlyPlaying } = require('./spotify-client');
 const { normalizePlayback } = require('./normalize-playback');
 const { renderAlbumArtBitmap } = require('./album-art');
+const { loadEnv } = require('./load-env');
+const { ConfigStore } = require('./config-store');
+const { TelemetryStore } = require('./telemetry-store');
+
+loadEnv(path.join(__dirname, '..', '.env'));
 
 const open = promisify(execFile);
 const port = Number(process.env.PORT || 3000);
@@ -24,6 +29,8 @@ const config = {
   redirectUri,
 };
 const tokens = new TokenStore(path.join(__dirname, '..', 'data', 'spotify-tokens.json'));
+const displayConfig = new ConfigStore(path.join(__dirname, '..', 'data', 'display-config.json'));
+const telemetry = new TelemetryStore();
 let expectedState = null;
 
 async function accessToken() {
@@ -50,12 +57,15 @@ async function getPlayback() {
   const images = playback?.item?.album?.images || [];
   const artworkUrl = images.at(-1)?.url || images[0]?.url;
   const albumArt = await renderAlbumArtBitmap(artworkUrl);
-  return normalizePlayback(playback, undefined, albumArt);
+  return { ...normalizePlayback(playback, undefined, albumArt), visualConfig: displayConfig.get() };
 }
 
 const server = createBridgeServer({
   bridgeKey: config.bridgeKey,
   getPlayback,
+  configStore: displayConfig,
+  telemetryStore: telemetry,
+  frontendRoot: path.join(__dirname, '..', 'frontend'),
   onLogin: async () => {
     expectedState = crypto.randomBytes(24).toString('hex');
     return buildAuthoriseUrl({ ...config, state: expectedState });
@@ -73,6 +83,7 @@ const server = createBridgeServer({
 server.listen(port, '0.0.0.0', async () => {
   const loginUrl = `http://127.0.0.1:${port}/login`;
   console.log(`Spotify OLED bridge listening on port ${port}.`);
+  console.log(`Local control deck: http://127.0.0.1:${port}/`);
   console.log(`Open ${loginUrl} to link Spotify.`);
   if (process.env.OPEN_LOGIN === '1') {
     await open('open', [loginUrl]);

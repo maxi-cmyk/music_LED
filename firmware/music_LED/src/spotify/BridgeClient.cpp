@@ -4,6 +4,7 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 
+#include "../audio/AudioReactive.h"
 #include "../config/NetworkConfig.h"
 
 namespace {
@@ -21,6 +22,7 @@ uint8_t artistBitmap[kArtistBitmapCapacity];
 constexpr uint8_t kAlbumArtWidth = 32;
 constexpr uint8_t kAlbumArtHeight = 32;
 uint8_t albumArtBitmap[kAlbumArtWidth * kAlbumArtHeight / 8];
+uint8_t albumPalette[9];
 constexpr unsigned long kWifiTimeoutMs = 15'000;
 
 int hexValue(char value) {
@@ -58,6 +60,31 @@ bool connectWifi() {
     return false;
   }
   return true;
+}
+
+AudioPaletteMode parsePaletteMode(const char* value) {
+  if (value != nullptr && strcmp(value, "club") == 0) return AudioPaletteMode::Club;
+  if (value != nullptr && strcmp(value, "spectrum") == 0) return AudioPaletteMode::Spectrum;
+  return AudioPaletteMode::Album;
+}
+
+void applyVisualConfig(JsonObjectConst json) {
+  if (json.isNull()) return;
+  AudioReactiveConfig config = audioReactiveConfig();
+  config.beatSensitivity = json["beatSensitivity"] | config.beatSensitivity;
+  config.tempoCorrection = json["tempoCorrection"] | config.tempoCorrection;
+  config.tempoHoldMs = json["tempoHoldMs"] | config.tempoHoldMs;
+  config.flashDecay = json["flashDecay"] | config.flashDecay;
+  config.idleBrightness = json["idleBrightness"] | config.idleBrightness;
+  config.maxBrightness = json["maxBrightness"] | config.maxBrightness;
+  config.redGain = json["redGain"] | config.redGain;
+  config.greenGain = json["greenGain"] | config.greenGain;
+  config.blueGain = json["blueGain"] | config.blueGain;
+  config.gamma = json["gamma"] | config.gamma;
+  config.dancerSpeed = json["dancerSpeed"] | config.dancerSpeed;
+  config.dancerIntensity = json["dancerIntensity"] | config.dancerIntensity;
+  config.paletteMode = parsePaletteMode(json["paletteMode"] | "album");
+  configureAudioReactive(config);
 }
 }  // namespace
 
@@ -119,6 +146,18 @@ bool refreshPlayback(PlaybackState* state) {
   state->albumArtBitmap = albumReady ? albumArtBitmap : nullptr;
   state->albumArtWidth = albumReady ? albumWidth : 0;
   state->albumArtHeight = albumReady ? albumHeight : 0;
+  uint8_t paletteCount = 0;
+  for (JsonArrayConst color : document["albumPalette"].as<JsonArrayConst>()) {
+    if (paletteCount >= 3 || color.size() < 3) break;
+    albumPalette[paletteCount * 3] = color[0] | 0;
+    albumPalette[paletteCount * 3 + 1] = color[1] | 0;
+    albumPalette[paletteCount * 3 + 2] = color[2] | 0;
+    ++paletteCount;
+  }
+  state->albumPalette = paletteCount > 0 ? albumPalette : nullptr;
+  state->albumPaletteCount = paletteCount;
+  setAudioTrackPalette(albumPalette, paletteCount);
+  applyVisualConfig(document["visualConfig"].as<JsonObjectConst>());
   state->elapsedMs = document["progressMs"] | 0UL;
   state->durationMs = document["durationMs"] | 1UL;
   state->syncedAtMs = millis();
@@ -126,6 +165,32 @@ bool refreshPlayback(PlaybackState* state) {
   state->isPlaying = document["isPlaying"] | false;
   lastError = "";
   return true;
+}
+
+bool reportTelemetry(const AudioVisualState& state) {
+  if (!kNetworkConfigured || WiFi.status() != WL_CONNECTED) return false;
+  String telemetryUrl = MUSIC_LED_BRIDGE_URL;
+  telemetryUrl.replace("/api/now-playing", "/api/telemetry");
+
+  JsonDocument document;
+  document["bpm"] = state.bpm;
+  document["beatConfidence"] = state.beatConfidence * 100UL / 255UL;
+  document["microphoneLevel"] = state.microphoneLevel;
+  document["noiseFloor"] = state.noiseFloor;
+  document["bass"] = state.bass;
+  document["mid"] = state.mid;
+  document["treble"] = state.treble;
+  document["wifiRssi"] = WiFi.RSSI();
+  String body;
+  serializeJson(document, body);
+
+  HTTPClient request;
+  request.begin(telemetryUrl);
+  request.addHeader("X-Bridge-Key", MUSIC_LED_BRIDGE_KEY);
+  request.addHeader("Content-Type", "application/json");
+  const int status = request.POST(body);
+  request.end();
+  return status == HTTP_CODE_ACCEPTED;
 }
 
 const char* bridgeError() { return lastError.c_str(); }
