@@ -11,7 +11,7 @@ constexpr size_t kSampleCount = 128;
 constexpr uint32_t kSampleRateHz = 6400;
 constexpr uint32_t kSampleIntervalUs = 1000000UL / kSampleRateHz;
 constexpr unsigned long kFrameIntervalMs = 30;
-constexpr unsigned long kMinimumBeatIntervalMs = 180;
+constexpr unsigned long kMinimumBeatIntervalMs = 140;
 constexpr float kPi = 3.14159265358979323846f;
 constexpr float kSilenceRms = 18.0f;
 constexpr float kMaximumBrightness = 220.0f;
@@ -47,6 +47,7 @@ float greenOutput = 0.0f;
 float blueOutput = 0.0f;
 float bassAverage = 0.0f;
 float beatFlash = 0.0f;
+float overallPeak = 80.0f;
 bool bassBaselineReady = false;
 bool ledActive = false;
 AudioVisualState visualState = {0, 0, 0, 0, 0, false};
@@ -127,11 +128,12 @@ void applyChannel(float target, float* output) {
   }
 }
 
-void updateVisualState(float bass, float mid, float treble) {
-  visualState.bass = clampByte(bass * 255.0f);
-  visualState.mid = clampByte(mid * 255.0f);
-  visualState.treble = clampByte(treble * 255.0f);
-  visualState.beatStrength = clampByte(beatFlash * 255.0f);
+void updateVisualState(float bassShare, float midShare, float trebleShare, float level) {
+  visualState.bass = clampByte(bassShare * 255.0f);
+  visualState.mid = clampByte(midShare * 255.0f);
+  visualState.treble = clampByte(trebleShare * 255.0f);
+  const float motionStrength = max(beatFlash, 0.35f + level * 0.55f);
+  visualState.beatStrength = clampByte(motionStrength * 255.0f);
   visualState.active = true;
 }
 
@@ -159,7 +161,7 @@ void detectBeat(float bass, unsigned long now) {
 
   const float transient = bass - bassAverage;
   bassAverage = bassAverage * 0.88f + bass * 0.12f;
-  if (bass > 0.58f && transient > 0.18f && now - lastBeatMs >= kMinimumBeatIntervalMs) {
+  if (bass > 0.45f && transient > 0.08f && now - lastBeatMs >= kMinimumBeatIntervalMs) {
     lastBeatMs = now;
     ++visualState.beatCount;
     beatFlash = constrain(0.62f + transient * 1.6f, 0.0f, 1.0f);
@@ -168,12 +170,16 @@ void detectBeat(float bass, unsigned long now) {
   }
 }
 
-void renderClubPalette(float bass, float mid, float treble) {
-  // Bass is purple, mids are cyan, and treble is blue-white. Independent
-  // band normalization keeps one part of the spectrum from owning the colour.
-  float targetRed = bass * 65.0f + treble * 35.0f;
-  float targetGreen = mid * 165.0f + treble * 75.0f;
-  float targetBlue = bass * 155.0f + mid * 125.0f + treble * 210.0f;
+void renderClubPalette(float bassShare, float midShare, float trebleShare, float level) {
+  // Use the bands' real spectral share for colour and adaptive overall volume
+  // only for brightness. Normalizing every colour independently makes even a
+  // weak band read as full strength and caused the LED to settle on cyan.
+  const float brightness = 55.0f + level * 165.0f;
+  float targetRed = brightness * (bassShare + midShare * 0.10f + trebleShare * 0.05f);
+  float targetGreen =
+      brightness * (bassShare * 0.05f + midShare * 0.32f + trebleShare * 0.90f);
+  float targetBlue =
+      brightness * (bassShare * 0.75f + midShare + trebleShare * 0.65f);
 
   if (beatFlash > 0.02f) {
     const RgbColor& beatColor =
@@ -208,6 +214,7 @@ void stopAudioReactive() {
   blueOutput = 0.0f;
   bassAverage = 0.0f;
   beatFlash = 0.0f;
+  overallPeak = 80.0f;
   bassBaselineReady = false;
   ledActive = false;
   visualState.bass = 0;
@@ -257,12 +264,22 @@ void updateAudioReactive(bool playbackActive) {
 
   fft();
   // At 6.4 kHz with 128 samples, each FFT bin represents 50 Hz.
-  const float bass = normalizeBand(bandEnergy(1, 5), &bassTracker);       // 50-250 Hz
-  const float mid = normalizeBand(bandEnergy(6, 20), &midTracker);        // 300-1000 Hz
-  const float treble = normalizeBand(bandEnergy(21, 50), &trebleTracker); // 1050-2500 Hz
+  const float bassEnergy = bandEnergy(1, 5);       // 50-250 Hz
+  const float midEnergy = bandEnergy(6, 20);       // 300-1000 Hz
+  const float trebleEnergy = bandEnergy(21, 50);   // 1050-2500 Hz
+  const float bass = normalizeBand(bassEnergy, &bassTracker);
+  normalizeBand(midEnergy, &midTracker);
+  normalizeBand(trebleEnergy, &trebleTracker);
+  const float totalEnergy = max(bassEnergy + midEnergy + trebleEnergy, 1.0f);
+  const float bassShare = bassEnergy / totalEnergy;
+  const float midShare = midEnergy / totalEnergy;
+  const float trebleShare = trebleEnergy / totalEnergy;
+  overallPeak = max(rms, overallPeak * 0.985f);
+  const float level =
+      constrain((rms - kSilenceRms) / max(overallPeak - kSilenceRms, 1.0f), 0.0f, 1.0f);
   detectBeat(bass, now);
-  updateVisualState(bass, mid, treble);
-  renderClubPalette(bass, mid, treble);
+  updateVisualState(bassShare, midShare, trebleShare, level);
+  renderClubPalette(bassShare, midShare, trebleShare, level);
 }
 
 const AudioVisualState& audioVisualState() { return visualState; }

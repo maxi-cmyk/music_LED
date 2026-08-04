@@ -97,35 +97,36 @@ void drawDancer(bool playbackActive) {
     return;
   }
 
-  const int16_t hop = audio.beatStrength / 85;
-  const int16_t centerX = kAvatarLeft + 8;
+  const uint8_t danceFrame = (millis() / 110UL) % 4;
+  const int16_t hop = 1 + audio.beatStrength / 64 + (danceFrame % 2);
+  const int16_t centerX = kAvatarLeft + 8 + (danceFrame == 1 ? -1 : danceFrame == 3 ? 1 : 0);
   const int16_t headY = kAvatarTop + 3 - hop;
   const int16_t shoulderY = kAvatarTop + 6 - hop;
   const int16_t hipY = kAvatarTop + 11 - hop;
-  const uint8_t pose = audio.beatCount % 4;
+  const uint8_t pose = (danceFrame + audio.beatCount) % 4;
 
   display.fillCircle(centerX, headY, 2, SSD1306_WHITE);
   display.drawLine(centerX, shoulderY, centerX, hipY, SSD1306_WHITE);
   if (pose == 0) {
-    display.drawLine(centerX, shoulderY + 1, centerX - 4, shoulderY - 2, SSD1306_WHITE);
-    display.drawLine(centerX, shoulderY + 1, centerX + 4, shoulderY - 2, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX - 3, hipY + 4, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX + 3, hipY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX - 6, shoulderY - 3, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX + 6, shoulderY - 3, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX - 4, hipY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX + 4, hipY + 4, SSD1306_WHITE);
   } else if (pose == 1) {
-    display.drawLine(centerX, shoulderY + 1, centerX - 4, shoulderY - 3, SSD1306_WHITE);
-    display.drawLine(centerX, shoulderY + 1, centerX + 4, shoulderY + 3, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX - 4, hipY + 2, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX + 2, hipY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX - 6, shoulderY - 4, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX + 5, shoulderY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX - 5, hipY + 2, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX + 3, hipY + 4, SSD1306_WHITE);
   } else if (pose == 2) {
-    display.drawLine(centerX, shoulderY + 1, centerX - 5, shoulderY + 1, SSD1306_WHITE);
-    display.drawLine(centerX, shoulderY + 1, centerX + 5, shoulderY + 1, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX - 2, hipY + 4, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX + 4, hipY + 2, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX - 6, shoulderY + 2, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX + 6, shoulderY + 2, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX - 3, hipY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX + 5, hipY + 1, SSD1306_WHITE);
   } else {
-    display.drawLine(centerX, shoulderY + 1, centerX - 4, shoulderY + 3, SSD1306_WHITE);
-    display.drawLine(centerX, shoulderY + 1, centerX + 4, shoulderY - 3, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX - 2, hipY + 4, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX + 4, hipY + 2, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX - 5, shoulderY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX + 6, shoulderY - 4, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX - 3, hipY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX + 5, hipY + 2, SSD1306_WHITE);
   }
 
   if (audio.treble > 150) {
