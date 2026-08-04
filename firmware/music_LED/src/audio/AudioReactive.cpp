@@ -12,9 +12,12 @@ constexpr uint32_t kSampleRateHz = 6400;
 constexpr uint32_t kSampleIntervalUs = 1000000UL / kSampleRateHz;
 constexpr unsigned long kFrameIntervalMs = 30;
 constexpr unsigned long kMinimumBeatIntervalMs = 140;
+constexpr unsigned long kMinimumTempoIntervalMs = 180;
+constexpr unsigned long kMaximumTempoIntervalMs = 1200;
+constexpr unsigned long kTempoHoldMs = 2500;
 constexpr float kPi = 3.14159265358979323846f;
 constexpr float kSilenceRms = 18.0f;
-constexpr float kMaximumBrightness = 220.0f;
+constexpr float kMaximumBrightness = 240.0f;
 
 struct BandTracker {
   float peak = 1.0f;
@@ -28,10 +31,12 @@ struct RgbColor {
 };
 
 constexpr RgbColor kBeatPalette[] = {
-    {220, 0, 255},   // purple
+    {255, 0, 140},   // hot pink
+    {20, 70, 255},   // electric blue
+    {0, 255, 80},    // laser green
+    {190, 0, 255},   // purple
     {0, 220, 255},   // cyan
-    {55, 85, 255},   // electric blue
-    {255, 0, 155},   // hot pink
+    {255, 25, 55},   // crimson
 };
 
 float realSamples[kSampleCount];
@@ -39,6 +44,8 @@ float imaginarySamples[kSampleCount];
 float window[kSampleCount];
 unsigned long lastFrameMs = 0;
 unsigned long lastBeatMs = 0;
+unsigned long estimatedBeatIntervalMs = 500;
+unsigned long nextTempoPulseMs = 0;
 BandTracker bassTracker;
 BandTracker midTracker;
 BandTracker trebleTracker;
@@ -49,6 +56,7 @@ float bassAverage = 0.0f;
 float beatFlash = 0.0f;
 float overallPeak = 80.0f;
 bool bassBaselineReady = false;
+bool tempoLocked = false;
 bool ledActive = false;
 AudioVisualState visualState = {0, 0, 0, 0, 0, false};
 
@@ -122,9 +130,9 @@ float normalizeBand(float energy, BandTracker* tracker) {
 void applyChannel(float target, float* output) {
   target = min(target, kMaximumBrightness);
   if (target >= *output) {
-    *output = target;
+    *output = *output * 0.15f + target * 0.85f;
   } else {
-    *output = *output * 0.74f + target * 0.26f;
+    *output = *output * 0.35f + target * 0.65f;
   }
 }
 
@@ -152,21 +160,46 @@ void fadeOutputs(float factor) {
   setStatusLed(clampByte(redOutput), clampByte(greenOutput), clampByte(blueOutput));
 }
 
-void detectBeat(float bass, unsigned long now) {
+void triggerBeatPulse(float strength) {
+  ++visualState.beatCount;
+  beatFlash = max(beatFlash, constrain(strength, 0.0f, 1.0f));
+}
+
+void detectBeatAndTempo(float bass, unsigned long now) {
   if (!bassBaselineReady) {
     bassAverage = bass;
     bassBaselineReady = true;
+    beatFlash *= 0.65f;
     return;
   }
 
   const float transient = bass - bassAverage;
   bassAverage = bassAverage * 0.88f + bass * 0.12f;
   if (bass > 0.45f && transient > 0.08f && now - lastBeatMs >= kMinimumBeatIntervalMs) {
+    const unsigned long interval = now - lastBeatMs;
+    if (lastBeatMs != 0 && interval >= kMinimumTempoIntervalMs &&
+        interval <= kMaximumTempoIntervalMs) {
+      estimatedBeatIntervalMs = tempoLocked
+                                    ? (estimatedBeatIntervalMs * 3UL + interval) / 4UL
+                                    : interval;
+      tempoLocked = true;
+    }
     lastBeatMs = now;
-    ++visualState.beatCount;
-    beatFlash = constrain(0.62f + transient * 1.6f, 0.0f, 1.0f);
+    nextTempoPulseMs = now + estimatedBeatIntervalMs;
+    triggerBeatPulse(0.78f + transient * 1.8f);
+  } else if (tempoLocked && now - lastBeatMs <= kTempoHoldMs &&
+             static_cast<int32_t>(now - nextTempoPulseMs) >= 0) {
+    do {
+      nextTempoPulseMs += estimatedBeatIntervalMs;
+    } while (static_cast<int32_t>(now - nextTempoPulseMs) >= 0);
+    triggerBeatPulse(0.92f);
   } else {
-    beatFlash *= 0.80f;
+    beatFlash *= 0.65f;
+  }
+
+  if (tempoLocked && now - lastBeatMs > kTempoHoldMs) {
+    tempoLocked = false;
+    nextTempoPulseMs = 0;
   }
 }
 
@@ -174,19 +207,22 @@ void renderClubPalette(float bassShare, float midShare, float trebleShare, float
   // Use the bands' real spectral share for colour and adaptive overall volume
   // only for brightness. Normalizing every colour independently makes even a
   // weak band read as full strength and caused the LED to settle on cyan.
-  const float brightness = 55.0f + level * 165.0f;
-  float targetRed = brightness * (bassShare + midShare * 0.10f + trebleShare * 0.05f);
+  const float baseBrightness = 18.0f + level * 35.0f;
+  float targetRed =
+      baseBrightness * (bassShare + midShare * 0.10f + trebleShare * 0.05f);
   float targetGreen =
-      brightness * (bassShare * 0.05f + midShare * 0.32f + trebleShare * 0.90f);
+      baseBrightness * (bassShare * 0.05f + midShare * 0.32f + trebleShare * 0.90f);
   float targetBlue =
-      brightness * (bassShare * 0.75f + midShare + trebleShare * 0.65f);
+      baseBrightness * (bassShare * 0.75f + midShare + trebleShare * 0.65f);
 
   if (beatFlash > 0.02f) {
     const RgbColor& beatColor =
         kBeatPalette[visualState.beatCount % (sizeof(kBeatPalette) / sizeof(kBeatPalette[0]))];
-    targetRed = max(targetRed, beatColor.red * beatFlash);
-    targetGreen = max(targetGreen, beatColor.green * beatFlash);
-    targetBlue = max(targetBlue, beatColor.blue * beatFlash);
+    const float flashBrightness = (185.0f + level * 55.0f) * beatFlash;
+    const float baseMix = 1.0f - beatFlash;
+    targetRed = targetRed * baseMix + beatColor.red / 255.0f * flashBrightness;
+    targetGreen = targetGreen * baseMix + beatColor.green / 255.0f * flashBrightness;
+    targetBlue = targetBlue * baseMix + beatColor.blue / 255.0f * flashBrightness;
   }
 
   applyChannel(targetRed, &redOutput);
@@ -215,7 +251,11 @@ void stopAudioReactive() {
   bassAverage = 0.0f;
   beatFlash = 0.0f;
   overallPeak = 80.0f;
+  estimatedBeatIntervalMs = 500;
+  nextTempoPulseMs = 0;
+  lastBeatMs = 0;
   bassBaselineReady = false;
+  tempoLocked = false;
   ledActive = false;
   visualState.bass = 0;
   visualState.mid = 0;
@@ -258,7 +298,7 @@ void updateAudioReactive(bool playbackActive) {
   rms = sqrtf(rms / static_cast<float>(kSampleCount));
 
   if (rms < kSilenceRms) {
-    fadeOutputs(0.55f);
+    fadeOutputs(0.35f);
     return;
   }
 
@@ -277,7 +317,7 @@ void updateAudioReactive(bool playbackActive) {
   overallPeak = max(rms, overallPeak * 0.985f);
   const float level =
       constrain((rms - kSilenceRms) / max(overallPeak - kSilenceRms, 1.0f), 0.0f, 1.0f);
-  detectBeat(bass, now);
+  detectBeatAndTempo(bass, now);
   updateVisualState(bassShare, midShare, trebleShare, level);
   renderClubPalette(bassShare, midShare, trebleShare, level);
 }
