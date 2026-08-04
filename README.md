@@ -58,6 +58,8 @@ From the repository root, compile the firmware with:
   compile --fqbn esp32:esp32:esp32 --output-dir build/esp32 firmware/music_LED
 ```
 
-The bridge renders track and artist text into OLED bitmaps, supporting Simplified Chinese, Korean, Japanese, Spanish, French, and Vietnamese through the Mac's system fonts. Long names scroll smoothly from right to left; the artist line uses a smaller regular font. Playback time is displayed as `minutes:seconds`, and no volume indicator is shown.
+The bridge renders track and artist text into OLED bitmaps, supporting Simplified Chinese, Korean, Japanese, Spanish, French, and Vietnamese through the Mac's system fonts. It also downloads, resizes, and dithers Spotify cover art into a 32×32 monochrome track-change intro. Long names pause before scrolling, pause again at the end, and then loop smoothly; the artist line uses a smaller regular font. Playback time is displayed as `minutes:seconds`, and no volume indicator is shown.
+
+The OLED has distinct playing, paused, nothing-playing, and reconnecting screens. During inactivity it dims after one minute, shifts the panel offset periodically, sleeps after five minutes, and wakes automatically when playback resumes.
 
 Run bridge tests with `cd bridge && npm test`. The firmware requires the ESP32 Arduino core, ArduinoJson, Adafruit SSD1306, and Adafruit GFX Library.

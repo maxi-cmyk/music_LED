@@ -9,6 +9,7 @@
 namespace {
 String title;
 String artist;
+String trackId;
 String lastError;
 constexpr uint16_t kMaxTextBitmapWidth = 2048;
 constexpr uint8_t kTitleBitmapHeight = 14;
@@ -17,6 +18,9 @@ constexpr size_t kTitleBitmapCapacity = kMaxTextBitmapWidth * kTitleBitmapHeight
 constexpr size_t kArtistBitmapCapacity = kMaxTextBitmapWidth * kArtistBitmapHeight / 8;
 uint8_t titleBitmap[kTitleBitmapCapacity];
 uint8_t artistBitmap[kArtistBitmapCapacity];
+constexpr uint8_t kAlbumArtWidth = 32;
+constexpr uint8_t kAlbumArtHeight = 32;
+uint8_t albumArtBitmap[kAlbumArtWidth * kAlbumArtHeight / 8];
 constexpr unsigned long kWifiTimeoutMs = 15'000;
 
 int hexValue(char value) {
@@ -92,6 +96,8 @@ bool refreshPlayback(PlaybackState* state) {
 
   title = document["title"].as<const char*>() ?: "Unknown track";
   artist = document["artist"].as<const char*>() ?: "Unknown artist";
+  trackId = document["trackId"].as<const char*>() ?: "";
+  state->trackId = trackId.c_str();
   state->trackTitle = title.c_str();
   state->artistName = artist.c_str();
   const uint16_t titleWidth = document["titleBitmapWidth"] | 0;
@@ -104,9 +110,19 @@ bool refreshPlayback(PlaybackState* state) {
   state->trackTitleBitmapWidth = titleReady ? titleWidth : 0;
   state->artistNameBitmap = artistReady ? artistBitmap : nullptr;
   state->artistNameBitmapWidth = artistReady ? artistWidth : 0;
+  const uint8_t albumWidth = document["albumArtWidth"] | 0;
+  const uint8_t albumHeight = document["albumArtHeight"] | 0;
+  const bool albumReady =
+      albumWidth == kAlbumArtWidth && albumHeight == kAlbumArtHeight &&
+      decodeBitmap(document["albumArtBitmap"], albumWidth, albumHeight, albumArtBitmap,
+                   sizeof(albumArtBitmap));
+  state->albumArtBitmap = albumReady ? albumArtBitmap : nullptr;
+  state->albumArtWidth = albumReady ? albumWidth : 0;
+  state->albumArtHeight = albumReady ? albumHeight : 0;
   state->elapsedMs = document["progressMs"] | 0UL;
   state->durationMs = document["durationMs"] | 1UL;
   state->syncedAtMs = millis();
+  state->available = document["available"] | false;
   state->isPlaying = document["isPlaying"] | false;
   lastError = "";
   return true;

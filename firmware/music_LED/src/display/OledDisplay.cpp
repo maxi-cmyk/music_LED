@@ -14,18 +14,60 @@ constexpr uint8_t kTitleBitmapHeight = 14;
 constexpr uint8_t kArtistBitmapHeight = 12;
 constexpr uint16_t kMarqueeGap = 24;
 constexpr unsigned long kAnimationIntervalMs = 50;
+constexpr unsigned long kMarqueeStartHoldMs = 1400;
+constexpr unsigned long kMarqueeEndHoldMs = 1000;
+constexpr unsigned long kAlbumIntroMs = 2500;
+constexpr unsigned long kTextOnlyIntroMs = 900;
+constexpr unsigned long kWipeDurationMs = 350;
+constexpr unsigned long kDimAfterMs = 60'000;
+constexpr unsigned long kSleepAfterMs = 5UL * 60UL * 1000UL;
 constexpr int16_t kAvatarLeft = 112;
 constexpr int16_t kAvatarTop = 41;
 constexpr int16_t kProgressWidth = 108;
+
+struct MarqueeState {
+  uint16_t offset = 0;
+  unsigned long holdUntil = 0;
+  bool endHeld = false;
+};
+
+// Eight hand-drawn 16x14 frames. Keeping them as bitmap sprites makes the
+// figure bolder and more legible than one-pixel procedural stick limbs.
+constexpr uint16_t kDancerFrames[8][14] PROGMEM = {
+    {0x03C0, 0x07E0, 0x03C0, 0x0180, 0x2184, 0x1308, 0x0DB0, 0x03C0, 0x0180,
+     0x03C0, 0x0660, 0x0C30, 0x1818, 0x0000},
+    {0x03C0, 0x07E0, 0x03C0, 0x0180, 0x2100, 0x1380, 0x0F84, 0x0388, 0x0190,
+     0x03A0, 0x0660, 0x0C20, 0x1810, 0x0000},
+    {0x03C0, 0x07E0, 0x03C0, 0x0180, 0x0084, 0x01C8, 0x01B0, 0x03C0, 0x0780,
+     0x0D80, 0x1980, 0x3180, 0x6000, 0x0000},
+    {0x03C0, 0x07E0, 0x03C0, 0x0180, 0x2084, 0x11C8, 0x0DB0, 0x03C0, 0x0180,
+     0x03C0, 0x0620, 0x0C60, 0x180C, 0x0000},
+    {0x03C0, 0x07E0, 0x03C0, 0x0180, 0x1008, 0x0C30, 0x07E0, 0x03C0, 0x0180,
+     0x03C0, 0x0660, 0x0C30, 0x1818, 0x0000},
+    {0x03C0, 0x07E0, 0x03C0, 0x0180, 0x0084, 0x01C8, 0x21B0, 0x13C0, 0x0980,
+     0x05C0, 0x0660, 0x0430, 0x0818, 0x0000},
+    {0x03C0, 0x07E0, 0x03C0, 0x0180, 0x2100, 0x1380, 0x0F80, 0x03C0, 0x01E0,
+     0x01B0, 0x0198, 0x018C, 0x0006, 0x0000},
+    {0x03C0, 0x07E0, 0x03C0, 0x0180, 0x2084, 0x11C8, 0x0DB0, 0x03C0, 0x0180,
+     0x03C0, 0x0460, 0x0630, 0x300C, 0x0000},
+};
+
 Adafruit_SSD1306 display(kScreenWidth, kScreenHeight, &Wire, -1);
 String lastTitle;
 String lastArtist;
-uint16_t titleOffset = 0;
-uint16_t artistOffset = 0;
+String lastTrackKey;
+MarqueeState titleMarquee;
+MarqueeState artistMarquee;
 unsigned long lastAnimationMs = 0;
+unsigned long albumIntroUntil = 0;
+unsigned long wipeStartedAt = 0;
+unsigned long lastActiveMs = 0;
+bool displaySleeping = false;
+bool displayDimmed = false;
+uint8_t displayOffset = 0;
 
 void drawTruncatedText(const char* text, int16_t x, int16_t y, uint8_t maxCharacters) {
-  String value(text);
+  String value(text ?: "");
   if (value.length() > maxCharacters) {
     value = value.substring(0, maxCharacters - 3) + "...";
   }
@@ -68,81 +110,223 @@ void drawTime(unsigned long milliseconds) {
   display.print(seconds);
 }
 
-void resetMarqueeIfTextChanged(const PlaybackState& state) {
+void resetMarquee(MarqueeState* marquee, unsigned long now) {
+  marquee->offset = 0;
+  marquee->holdUntil = now + kMarqueeStartHoldMs;
+  marquee->endHeld = false;
+}
+
+void updateMarquee(MarqueeState* marquee, uint16_t width, unsigned long now) {
+  if (width <= kScreenWidth || now < marquee->holdUntil) return;
+  const uint16_t endOffset = width - kScreenWidth;
+  if (marquee->offset < endOffset) {
+    ++marquee->offset;
+    return;
+  }
+  if (!marquee->endHeld) {
+    marquee->endHeld = true;
+    marquee->holdUntil = now + kMarqueeEndHoldMs;
+    return;
+  }
+  ++marquee->offset;
+  if (marquee->offset >= width + kMarqueeGap) {
+    resetMarquee(marquee, now);
+  }
+}
+
+void syncTrackState(const PlaybackState& state, unsigned long now) {
   if (lastTitle != state.trackTitle) {
     lastTitle = state.trackTitle;
-    titleOffset = 0;
+    resetMarquee(&titleMarquee, now);
   }
   if (lastArtist != state.artistName) {
     lastArtist = state.artistName;
-    artistOffset = 0;
+    resetMarquee(&artistMarquee, now);
   }
+
+  String trackKey = state.trackId ?: "";
+  if (trackKey.length() == 0 && state.available) {
+    trackKey = String(state.trackTitle) + '|' + state.artistName;
+  }
+  if (trackKey.length() > 0 && trackKey != lastTrackKey) {
+    lastTrackKey = trackKey;
+    albumIntroUntil = now + (state.albumArtBitmap == nullptr ? kTextOnlyIntroMs : kAlbumIntroMs);
+    wipeStartedAt = albumIntroUntil;
+  } else if (!state.available) {
+    lastTrackKey = "";
+  }
+}
+
+void setDisplayOffset(uint8_t offset) {
+  if (displayOffset == offset) return;
+  display.ssd1306_command(SSD1306_SETDISPLAYOFFSET);
+  display.ssd1306_command(offset);
+  displayOffset = offset;
+}
+
+bool prepareDisplay(bool active, unsigned long now) {
+  if (active) lastActiveMs = now;
+  const unsigned long idleMs = now - lastActiveMs;
+  if (!active && idleMs >= kSleepAfterMs) {
+    if (!displaySleeping) {
+      display.ssd1306_command(SSD1306_DISPLAYOFF);
+      displaySleeping = true;
+    }
+    return false;
+  }
+  if (displaySleeping) {
+    display.ssd1306_command(SSD1306_DISPLAYON);
+    displaySleeping = false;
+  }
+
+  const bool shouldDim = !active && idleMs >= kDimAfterMs;
+  if (shouldDim != displayDimmed) {
+    display.dim(shouldDim);
+    displayDimmed = shouldDim;
+  }
+  setDisplayOffset(shouldDim ? (now / 30'000UL) % 2 : 0);
+  return true;
 }
 
 void drawSleepingDancer() {
   display.drawCircle(kAvatarLeft + 5, kAvatarTop + 9, 3, SSD1306_WHITE);
   display.drawLine(kAvatarLeft + 8, kAvatarTop + 11, kAvatarLeft + 14, kAvatarTop + 13,
                    SSD1306_WHITE);
-  display.drawPixel(kAvatarLeft + 11, kAvatarTop + 3, SSD1306_WHITE);
-  display.drawLine(kAvatarLeft + 12, kAvatarTop + 2, kAvatarLeft + 14, kAvatarTop + 2,
+  display.drawLine(kAvatarLeft + 11, kAvatarTop + 2, kAvatarLeft + 14, kAvatarTop + 2,
                    SSD1306_WHITE);
   display.drawLine(kAvatarLeft + 12, kAvatarTop + 4, kAvatarLeft + 14, kAvatarTop + 4,
                    SSD1306_WHITE);
 }
 
-void drawDancer(bool playbackActive) {
+void drawDancerSprite(uint8_t frame, int16_t y) {
+  for (uint8_t row = 0; row < 14; ++row) {
+    const uint16_t pixels = pgm_read_word(&kDancerFrames[frame][row]);
+    for (uint8_t column = 0; column < 16; ++column) {
+      if (pixels & (0x8000 >> column)) {
+        display.drawPixel(kAvatarLeft + column, y + row, SSD1306_WHITE);
+      }
+    }
+  }
+}
+
+void drawDancer(bool playbackActive, unsigned long now) {
   const AudioVisualState& audio = audioVisualState();
   if (!playbackActive || !audio.active) {
     drawSleepingDancer();
     return;
   }
-
-  const uint8_t danceFrame = (millis() / 110UL) % 4;
-  const int16_t hop = 1 + audio.beatStrength / 64 + (danceFrame % 2);
-  const int16_t centerX = kAvatarLeft + 8 + (danceFrame == 1 ? -1 : danceFrame == 3 ? 1 : 0);
-  const int16_t headY = kAvatarTop + 3 - hop;
-  const int16_t shoulderY = kAvatarTop + 6 - hop;
-  const int16_t hipY = kAvatarTop + 11 - hop;
-  const uint8_t pose = (danceFrame + audio.beatCount) % 4;
-
-  display.fillCircle(centerX, headY, 2, SSD1306_WHITE);
-  display.drawLine(centerX, shoulderY, centerX, hipY, SSD1306_WHITE);
-  if (pose == 0) {
-    display.drawLine(centerX, shoulderY + 1, centerX - 6, shoulderY - 3, SSD1306_WHITE);
-    display.drawLine(centerX, shoulderY + 1, centerX + 6, shoulderY - 3, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX - 4, hipY + 4, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX + 4, hipY + 4, SSD1306_WHITE);
-  } else if (pose == 1) {
-    display.drawLine(centerX, shoulderY + 1, centerX - 6, shoulderY - 4, SSD1306_WHITE);
-    display.drawLine(centerX, shoulderY + 1, centerX + 5, shoulderY + 4, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX - 5, hipY + 2, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX + 3, hipY + 4, SSD1306_WHITE);
-  } else if (pose == 2) {
-    display.drawLine(centerX, shoulderY + 1, centerX - 6, shoulderY + 2, SSD1306_WHITE);
-    display.drawLine(centerX, shoulderY + 1, centerX + 6, shoulderY + 2, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX - 3, hipY + 4, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX + 5, hipY + 1, SSD1306_WHITE);
-  } else {
-    display.drawLine(centerX, shoulderY + 1, centerX - 5, shoulderY + 4, SSD1306_WHITE);
-    display.drawLine(centerX, shoulderY + 1, centerX + 6, shoulderY - 4, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX - 3, hipY + 4, SSD1306_WHITE);
-    display.drawLine(centerX, hipY, centerX + 5, hipY + 2, SSD1306_WHITE);
-  }
-
+  const uint8_t danceFrame = (now / 90UL + audio.beatCount) % 8;
+  const int16_t hop = audio.beatStrength / 96 + (danceFrame % 2);
+  drawDancerSprite(danceFrame, kAvatarTop - hop);
   if (audio.treble > 150) {
-    display.drawPixel(kAvatarLeft + 1, kAvatarTop + 1, SSD1306_WHITE);
-    display.drawPixel(kAvatarLeft + 14, kAvatarTop + 5, SSD1306_WHITE);
+    display.drawPixel(kAvatarLeft, kAvatarTop, SSD1306_WHITE);
+    display.drawPixel(kAvatarLeft + 15, kAvatarTop + 4, SSD1306_WHITE);
   }
+}
+
+void drawProgress(const PlaybackState& state, unsigned long displayedElapsed, unsigned long now) {
+  const int progress = state.durationMs == 0
+                           ? 0
+                           : constrain(static_cast<int>((static_cast<uint64_t>(displayedElapsed) *
+                                                         (kProgressWidth - 2)) /
+                                                        state.durationMs),
+                                       0, kProgressWidth - 2);
+  const uint8_t pulse = state.isPlaying ? audioVisualState().beatStrength / 100 : 0;
+  const int16_t top = 46 - min(pulse, static_cast<uint8_t>(1));
+  const int16_t height = 9 + min(pulse, static_cast<uint8_t>(1)) * 2;
+  display.drawRect(0, top, kProgressWidth, height, SSD1306_WHITE);
+  display.fillRect(1, top + 1, progress, height - 2, SSD1306_WHITE);
+  drawDancer(state.isPlaying, now);
+}
+
+void drawAlbumPlaceholder() {
+  display.drawCircle(54, 20, 5, SSD1306_WHITE);
+  display.drawCircle(72, 15, 5, SSD1306_WHITE);
+  display.drawLine(59, 19, 59, 4, SSD1306_WHITE);
+  display.drawLine(77, 14, 77, 0, SSD1306_WHITE);
+  display.drawLine(59, 4, 77, 0, SSD1306_WHITE);
+}
+
+void drawAlbumIntro(const PlaybackState& state) {
+  if (state.albumArtBitmap != nullptr) {
+    display.drawBitmap(48, 0, state.albumArtBitmap, state.albumArtWidth, state.albumArtHeight,
+                       SSD1306_WHITE);
+  } else {
+    drawAlbumPlaceholder();
+  }
+  display.setCursor(33, 36);
+  display.print(F("NOW PLAYING"));
+  if (state.trackTitleBitmap != nullptr) {
+    drawBitmapLine(state.trackTitleBitmap, state.trackTitleBitmapWidth, kTitleBitmapHeight, 49,
+                   titleMarquee.offset);
+  } else {
+    drawTruncatedText(state.trackTitle, 0, 49, 21);
+  }
+}
+
+void drawNothingPlaying() {
+  display.drawCircle(12, 26, 6, SSD1306_WHITE);
+  display.drawLine(18, 25, 18, 7, SSD1306_WHITE);
+  display.drawLine(18, 7, 29, 4, SSD1306_WHITE);
+  display.setCursor(38, 10);
+  display.print(F("NOTHING"));
+  display.setCursor(38, 20);
+  display.print(F("PLAYING"));
+  display.setCursor(19, 45);
+  display.print(F("Open Spotify"));
+}
+
+void drawPausedPlayback(const PlaybackState& state, unsigned long displayedElapsed,
+                        unsigned long now) {
+  display.fillRect(0, 0, 43, 11, SSD1306_WHITE);
+  display.setTextColor(SSD1306_BLACK);
+  display.setCursor(4, 2);
+  display.print(F("PAUSED"));
+  display.setTextColor(SSD1306_WHITE);
+  if (state.trackTitleBitmap != nullptr) {
+    drawBitmapLine(state.trackTitleBitmap, state.trackTitleBitmapWidth, kTitleBitmapHeight, 14,
+                   titleMarquee.offset);
+  } else {
+    drawTruncatedText(state.trackTitle, 0, 14, 21);
+  }
+  if (state.artistNameBitmap != nullptr) {
+    drawBitmapLine(state.artistNameBitmap, state.artistNameBitmapWidth, kArtistBitmapHeight, 29,
+                   artistMarquee.offset);
+  } else {
+    drawTruncatedText(state.artistName, 0, 29, 21);
+  }
+  drawProgress(state, displayedElapsed, now);
+}
+
+void drawPlayingPlayback(const PlaybackState& state, unsigned long displayedElapsed,
+                         unsigned long now) {
+  if (state.trackTitleBitmap != nullptr) {
+    drawBitmapLine(state.trackTitleBitmap, state.trackTitleBitmapWidth, kTitleBitmapHeight, 0,
+                   titleMarquee.offset);
+  } else {
+    drawTruncatedText(state.trackTitle, 0, 0, 21);
+  }
+  if (state.artistNameBitmap != nullptr) {
+    drawBitmapLine(state.artistNameBitmap, state.artistNameBitmapWidth, kArtistBitmapHeight, 15,
+                   artistMarquee.offset);
+  } else {
+    drawTruncatedText(state.artistName, 0, 15, 21);
+  }
+  display.setCursor(0, 30);
+  display.print(F("> "));
+  drawTime(displayedElapsed);
+  display.print('/');
+  drawTime(state.durationMs);
+  drawProgress(state, displayedElapsed, now);
 }
 }  // namespace
 
 bool setupOled() {
   Wire.begin(pins::kOledSda, pins::kOledScl);
   Wire.setClock(400000);
-  if (!display.begin(SSD1306_SWITCHCAPVCC, pins::kOledI2cAddress)) {
-    return false;
-  }
+  if (!display.begin(SSD1306_SWITCHCAPVCC, pins::kOledI2cAddress)) return false;
 
+  lastActiveMs = millis();
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
   display.setTextSize(1);
@@ -163,53 +347,60 @@ void showOledError(const char* message) {
   display.display();
 }
 
+void renderConnectionStatus(const char* detail) {
+  const unsigned long now = millis();
+  if (now - lastAnimationMs < kAnimationIntervalMs || !prepareDisplay(false, now)) return;
+  lastAnimationMs = now;
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(1);
+  display.setCursor(19, 5);
+  display.print(F("RECONNECTING"));
+  const uint8_t spinner = (now / 180UL) % 4;
+  const int8_t x[] = {5, 10, 5, 0};
+  const int8_t y[] = {0, 5, 10, 5};
+  display.fillCircle(59 + x[spinner], 24 + y[spinner], 2, SSD1306_WHITE);
+  drawTruncatedText(detail && detail[0] ? detail : "Starting Wi-Fi", 0, 42, 21);
+  display.setCursor(0, 54);
+  display.print(F("Retrying automatically"));
+  display.display();
+}
+
 void renderPlayback(const PlaybackState& state) {
   const unsigned long now = millis();
-  if (now - lastAnimationMs < kAnimationIntervalMs) return;
+  if (now - lastAnimationMs < kAnimationIntervalMs || !prepareDisplay(state.isPlaying, now)) {
+    return;
+  }
   lastAnimationMs = now;
-  resetMarqueeIfTextChanged(state);
+  syncTrackState(state, now);
 
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
   display.setTextSize(1);
 
-  if (state.trackTitleBitmap != nullptr) {
-    drawBitmapLine(state.trackTitleBitmap, state.trackTitleBitmapWidth, kTitleBitmapHeight, 0,
-                   titleOffset);
-  } else {
-    drawTruncatedText(state.trackTitle, 0, 0, 21);
-  }
-  if (state.artistNameBitmap != nullptr) {
-    drawBitmapLine(state.artistNameBitmap, state.artistNameBitmapWidth, kArtistBitmapHeight, 15,
-                   artistOffset);
-  } else {
-    drawTruncatedText(state.artistName, 0, 15, 21);
-  }
-
   unsigned long displayedElapsed = state.elapsedMs;
   if (state.isPlaying) displayedElapsed += now - state.syncedAtMs;
   displayedElapsed = min(displayedElapsed, state.durationMs);
-  display.setCursor(0, 30);
-  display.print(state.isPlaying ? F("> ") : F("|| "));
-  drawTime(displayedElapsed);
-  display.print('/');
-  drawTime(state.durationMs);
 
-  const int progress = state.durationMs == 0
-                           ? 0
-                           : constrain(static_cast<int>((static_cast<uint64_t>(displayedElapsed) *
-                                                         (kProgressWidth - 2)) /
-                                                        state.durationMs),
-                                       0, kProgressWidth - 2);
-  display.drawRect(0, 46, kProgressWidth, 9, SSD1306_WHITE);
-  display.fillRect(1, 47, progress, 7, SSD1306_WHITE);
-  drawDancer(state.isPlaying);
+  if (!state.available) {
+    drawNothingPlaying();
+  } else if (now < albumIntroUntil) {
+    drawAlbumIntro(state);
+  } else if (!state.isPlaying) {
+    drawPausedPlayback(state, displayedElapsed, now);
+  } else {
+    drawPlayingPlayback(state, displayedElapsed, now);
+  }
+
+  if (state.available && now >= wipeStartedAt && now - wipeStartedAt < kWipeDurationMs) {
+    const int16_t revealed =
+        static_cast<int16_t>((now - wipeStartedAt) * kScreenWidth / kWipeDurationMs);
+    display.fillRect(revealed, 0, kScreenWidth - revealed, kScreenHeight, SSD1306_BLACK);
+  }
   display.display();
 
-  if (state.trackTitleBitmapWidth > kScreenWidth) {
-    titleOffset = (titleOffset + 1) % (state.trackTitleBitmapWidth + kMarqueeGap);
-  }
-  if (state.artistNameBitmapWidth > kScreenWidth) {
-    artistOffset = (artistOffset + 1) % (state.artistNameBitmapWidth + kMarqueeGap);
+  if (state.available && now >= albumIntroUntil) {
+    updateMarquee(&titleMarquee, state.trackTitleBitmapWidth, now);
+    updateMarquee(&artistMarquee, state.artistNameBitmapWidth, now);
   }
 }

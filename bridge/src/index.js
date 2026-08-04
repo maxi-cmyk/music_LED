@@ -6,6 +6,7 @@ const { createBridgeServer } = require('./server');
 const { TokenStore } = require('./token-store');
 const { buildAuthoriseUrl, exchangeCode, refreshAccessToken, fetchCurrentlyPlaying } = require('./spotify-client');
 const { normalizePlayback } = require('./normalize-playback');
+const { renderAlbumArtBitmap } = require('./album-art');
 
 const open = promisify(execFile);
 const port = Number(process.env.PORT || 3000);
@@ -45,7 +46,11 @@ async function accessToken() {
 }
 
 async function getPlayback() {
-  return normalizePlayback(await fetchCurrentlyPlaying({ accessToken: await accessToken() }));
+  const playback = await fetchCurrentlyPlaying({ accessToken: await accessToken() });
+  const images = playback?.item?.album?.images || [];
+  const artworkUrl = images.at(-1)?.url || images[0]?.url;
+  const albumArt = await renderAlbumArtBitmap(artworkUrl);
+  return normalizePlayback(playback, undefined, albumArt);
 }
 
 const server = createBridgeServer({

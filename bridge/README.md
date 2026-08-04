@@ -40,19 +40,23 @@ The browser opens Spotify’s consent page. Sign in to the Spotify account whose
   ```json
   {
     "available": true,
+    "trackId": "spotify-track-id",
     "title": "Track title",
     "artist": "Artist",
     "titleBitmap": "1-bit bitmap encoded as hexadecimal",
     "titleBitmapWidth": 128,
     "artistBitmap": "1-bit bitmap encoded as hexadecimal",
     "artistBitmapWidth": 96,
+    "albumArtBitmap": "32x32 1-bit bitmap encoded as hexadecimal",
+    "albumArtWidth": 32,
+    "albumArtHeight": 32,
     "progressMs": 12345,
     "durationMs": 180000,
     "isPlaying": true
   }
   ```
 
-Bitmap widths preserve long names so the ESP32 can scroll them smoothly. The title uses a larger semibold font; the artist uses a smaller regular font. The ESP32 integration must use the Mac’s LAN IP in `MUSIC_LED_BRIDGE_URL` and send the same bridge key. Do not expose this service to the public internet.
+Bitmap widths preserve long names so the ESP32 can scroll them smoothly. The title uses a larger semibold font; the artist uses a smaller regular font. Album art is fetched once per cover, cached in memory, resized, and dithered into a 128-byte monochrome bitmap. Artwork failure does not interrupt playback updates. The ESP32 integration must use the Mac’s LAN IP in `MUSIC_LED_BRIDGE_URL` and send the same bridge key. Do not expose this service to the public internet.
 
 ## Verify
 
