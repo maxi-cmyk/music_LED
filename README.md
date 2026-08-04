@@ -29,7 +29,7 @@ The bridge owns the Spotify tokens and exposes display-safe JSON over the local 
 
 Use an analog microphone module such as a MAX4466 or the analog output of a KY-037. GPIO 34 is an ADC1 input, so it works while Wi-Fi is active.
 
-While Spotify is playing, red follows bass (50-250 Hz), green follows mids (300-1000 Hz), and blue follows treble (1050-2500 Hz). The light turns off when playback pauses. Solid red means OLED setup failed; solid amber means Wi-Fi or the bridge failed.
+While Spotify is playing, the microphone splits the audio into bass (50-250 Hz), mids (300-1000 Hz), and treble (1050-2500 Hz). Each band adapts independently to the room volume, producing a cooler purple, cyan, blue, and hot-pink club palette instead of letting bass dominate the colour. Detected beats rotate through accent colours and drive the mini dancer beside the progress bar; it sleeps when playback is paused. The light turns off when playback pauses. Solid red means OLED setup failed; solid amber means Wi-Fi or the bridge failed.
 
 ## Configure
 

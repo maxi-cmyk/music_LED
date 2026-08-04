@@ -4,6 +4,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
 
+#include "../audio/AudioReactive.h"
 #include "../config/PinConfig.h"
 
 namespace {
@@ -13,6 +14,9 @@ constexpr uint8_t kTitleBitmapHeight = 14;
 constexpr uint8_t kArtistBitmapHeight = 12;
 constexpr uint16_t kMarqueeGap = 24;
 constexpr unsigned long kAnimationIntervalMs = 50;
+constexpr int16_t kAvatarLeft = 112;
+constexpr int16_t kAvatarTop = 41;
+constexpr int16_t kProgressWidth = 108;
 Adafruit_SSD1306 display(kScreenWidth, kScreenHeight, &Wire, -1);
 String lastTitle;
 String lastArtist;
@@ -72,6 +76,61 @@ void resetMarqueeIfTextChanged(const PlaybackState& state) {
   if (lastArtist != state.artistName) {
     lastArtist = state.artistName;
     artistOffset = 0;
+  }
+}
+
+void drawSleepingDancer() {
+  display.drawCircle(kAvatarLeft + 5, kAvatarTop + 9, 3, SSD1306_WHITE);
+  display.drawLine(kAvatarLeft + 8, kAvatarTop + 11, kAvatarLeft + 14, kAvatarTop + 13,
+                   SSD1306_WHITE);
+  display.drawPixel(kAvatarLeft + 11, kAvatarTop + 3, SSD1306_WHITE);
+  display.drawLine(kAvatarLeft + 12, kAvatarTop + 2, kAvatarLeft + 14, kAvatarTop + 2,
+                   SSD1306_WHITE);
+  display.drawLine(kAvatarLeft + 12, kAvatarTop + 4, kAvatarLeft + 14, kAvatarTop + 4,
+                   SSD1306_WHITE);
+}
+
+void drawDancer(bool playbackActive) {
+  const AudioVisualState& audio = audioVisualState();
+  if (!playbackActive || !audio.active) {
+    drawSleepingDancer();
+    return;
+  }
+
+  const int16_t hop = audio.beatStrength / 85;
+  const int16_t centerX = kAvatarLeft + 8;
+  const int16_t headY = kAvatarTop + 3 - hop;
+  const int16_t shoulderY = kAvatarTop + 6 - hop;
+  const int16_t hipY = kAvatarTop + 11 - hop;
+  const uint8_t pose = audio.beatCount % 4;
+
+  display.fillCircle(centerX, headY, 2, SSD1306_WHITE);
+  display.drawLine(centerX, shoulderY, centerX, hipY, SSD1306_WHITE);
+  if (pose == 0) {
+    display.drawLine(centerX, shoulderY + 1, centerX - 4, shoulderY - 2, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX + 4, shoulderY - 2, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX - 3, hipY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX + 3, hipY + 4, SSD1306_WHITE);
+  } else if (pose == 1) {
+    display.drawLine(centerX, shoulderY + 1, centerX - 4, shoulderY - 3, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX + 4, shoulderY + 3, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX - 4, hipY + 2, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX + 2, hipY + 4, SSD1306_WHITE);
+  } else if (pose == 2) {
+    display.drawLine(centerX, shoulderY + 1, centerX - 5, shoulderY + 1, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX + 5, shoulderY + 1, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX - 2, hipY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX + 4, hipY + 2, SSD1306_WHITE);
+  } else {
+    display.drawLine(centerX, shoulderY + 1, centerX - 4, shoulderY + 3, SSD1306_WHITE);
+    display.drawLine(centerX, shoulderY + 1, centerX + 4, shoulderY - 3, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX - 2, hipY + 4, SSD1306_WHITE);
+    display.drawLine(centerX, hipY, centerX + 4, hipY + 2, SSD1306_WHITE);
+  }
+
+  if (audio.treble > 150) {
+    display.drawPixel(kAvatarLeft + 1, kAvatarTop + 1, SSD1306_WHITE);
+    display.drawPixel(kAvatarLeft + 14, kAvatarTop + 5, SSD1306_WHITE);
   }
 }
 }  // namespace
@@ -138,11 +197,12 @@ void renderPlayback(const PlaybackState& state) {
   const int progress = state.durationMs == 0
                            ? 0
                            : constrain(static_cast<int>((static_cast<uint64_t>(displayedElapsed) *
-                                                         126ULL) /
+                                                         (kProgressWidth - 2)) /
                                                         state.durationMs),
-                                       0, 126);
-  display.drawRect(0, 45, 128, 10, SSD1306_WHITE);
-  display.fillRect(1, 46, progress, 8, SSD1306_WHITE);
+                                       0, kProgressWidth - 2);
+  display.drawRect(0, 46, kProgressWidth, 9, SSD1306_WHITE);
+  display.fillRect(1, 47, progress, 7, SSD1306_WHITE);
+  drawDancer(state.isPlaying);
   display.display();
 
   if (state.trackTitleBitmapWidth > kScreenWidth) {
