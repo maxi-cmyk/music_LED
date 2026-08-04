@@ -1,17 +1,45 @@
-#include "src/audio/AudioSampler.h"
-#include "src/visual/BeatDetector.h"
-#include "src/visual/LedController.h"
+#include "src/config/NetworkConfig.h"
+#include "src/display/OledDisplay.h"
+#include "src/status/StatusLed.h"
 
 namespace {
-BeatDetector beatDetector;
+const PlaybackState kSetupState = {
+    "Spotify bridge pending",
+    "Add Wi-Fi and bridge URL",
+    0,
+    1,
+    0,
+    false,
+};
+
+unsigned long lastDisplayRefresh = 0;
+constexpr unsigned long kDisplayRefreshMs = 1000;
 }
 
 void setup() {
-  setupLedOutputs();
+  Serial.begin(115200);
+  setupStatusLed();
+
+  if (!setupOled()) {
+    setStatusLed(255, 0, 0);
+    Serial.println("OLED not found. Check SDA, SCL, power, and I2C address.");
+    return;
+  }
+
+  if (kNetworkConfigured) {
+    setStatusLed(0, 120, 0);
+  } else {
+    setStatusLed(120, 50, 0);
+  }
+  renderPlayback(kSetupState);
 }
 
 void loop() {
-  const AudioFrame frame = sampleAudio();
-  const BeatState beatState = beatDetector.update(frame, millis());
-  renderLeds(beatState, frame.frequencyCrossings);
+  if (millis() - lastDisplayRefresh < kDisplayRefreshMs) {
+    return;
+  }
+  lastDisplayRefresh = millis();
+
+  // The Spotify bridge client will replace this setup state once credentials exist.
+  renderPlayback(kSetupState);
 }

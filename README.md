@@ -1,46 +1,61 @@
 # music_LED
 
-A music-reactive LED project being extended with a Spotify now-playing OLED display.
+An ESP32 Spotify now-playing display with a 0.96-inch monochrome OLED and an HW-479 / KY-016 common-cathode RGB status LED.
 
-## Current firmware structure
+## Firmware structure
 
 ```text
-music_LED.ino             # Arduino entry point: setup + loop only
+music_LED.ino             # setup + display refresh loop
 src/
-  audio/                  # microphone sampling and audio-frame data
-  visual/                 # beat detection and LED rendering
-  config/                 # board-specific pins and tuning constants
+  config/                 # pins and local network settings
+  display/                # SSD1306 OLED rendering
+  spotify/                # playback data model; bridge client comes next
+  status/                 # HW-479 RGB status LED
 ```
 
-The original sketch has been split by responsibility while retaining its current AVR/Arduino behaviour:
+There is intentionally **no microphone sampling or beat controller**. This project is now a Spotify-display add-on.
 
-- `AudioSampler` samples the microphone and produces amplitude/frequency-crossing data.
-- `BeatDetector` owns adaptive beat-threshold, cooldown, active-LED, and brightness state.
-- `LedController` maps frequency and brightness to the existing discrete LEDs and RGB LED.
-- `config/` isolates values that will change during the ESP32 migration.
+## Current hardware wiring
 
-## ESP32 + Spotify OLED migration
+### OLED (assumes common SSD1306 I2C module)
 
-The existing `LedController` is **AVR-specific**: it uses `DDRD` and `PORTD`, which do not exist on ESP32. Do not upload this legacy LED controller to the ESP32.
+| OLED | ESP32 GPIO |
+|---|---:|
+| VCC | 3V3 |
+| GND | GND |
+| SDA | 21 |
+| SCL | 22 |
 
-The next change should replace that hardware layer with ESP32 GPIO writes and add:
+The code initially uses I2C address `0x3C`. If the screen remains blank, run an I2C scanner and update `kOledI2cAddress` in `src/config/PinConfig.h`.
 
-```text
-src/display/   # SSD1306 OLED UI
-src/spotify/   # Wi-Fi client for a token-safe playback-state bridge
+### HW-479 / KY-016 RGB LED
+
+The `B G R -` marking identifies a common-cathode RGB module. Connect `-` to GND.
+
+| HW-479 pin | ESP32 GPIO |
+|---|---:|
+| R | 25 |
+| G | 26 |
+| B | 27 |
+| - | GND |
+
+The ESP32 uses PWM through `analogWrite()` to set LED colour. Red means OLED setup failed; amber means Wi-Fi/Spotify bridge credentials have not been configured; green means local credentials exist.
+
+## Spotify architecture
+
+Spotify playback state requires user OAuth. Do **not** put a Spotify refresh token inside ESP32 firmware.
+
+1. Copy `src/config/Secrets.example.h` to `src/config/Secrets.h`.
+2. Put Wi-Fi credentials and the URL of a local/hosted Spotify bridge in `Secrets.h`.
+3. Keep the bridge responsible for the Spotify refresh token and return only safe display JSON to the ESP32.
+
+`Secrets.h` is Git-ignored. The current firmware validates the OLED and shows a setup screen; the next module is the authenticated bridge client that turns JSON into `PlaybackState`.
+
+## Compile
+
+```bash
+/Applications/Arduino\ IDE.app/Contents/Resources/app/lib/backend/resources/arduino-cli \
+  compile --fqbn esp32:esp32:esp32 --output-dir build/esp32 .
 ```
 
-Spotify playback state needs user OAuth. Keep the Spotify refresh token in a local/hosted bridge, not in the ESP32 firmware. The ESP32 should only request display-ready JSON from that bridge.
-
-## Hardware details still needed
-
-Before the ESP32 migration, record:
-
-1. Exact ESP32 board model.
-2. OLED driver and I2C address (commonly SSD1306 at `0x3C`, but verify with an I2C scan).
-3. What the HW-479 module is and its pinout/link.
-4. Which GPIO pins are already occupied by LEDs and microphone.
-
-## Build
-
-This repository needs Arduino CLI (or Arduino IDE) configured with the intended board core before it can be compiled. The current source targets the original AVR wiring; the ESP32 migration is deliberately pending the pin map above.
+Required on this Mac: ESP32 Arduino core and `Adafruit SSD1306` / `Adafruit GFX Library`.

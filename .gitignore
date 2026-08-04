@@ -7,3 +7,4 @@ build/
 *.eep
 *.map
 .DS_Store
+src/config/Secrets.h
