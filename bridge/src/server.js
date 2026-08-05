@@ -33,6 +33,10 @@ function createBridgeServer({
   configStore,
   telemetryStore,
   frontendRoot,
+  sceneStore,
+  rgbTestStore,
+  calibrate,
+  getSystemHealth,
 }) {
   return http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://localhost');
@@ -61,9 +65,51 @@ function createBridgeServer({
           return sendJson(response, 200, configStore.update(await readJson(request)));
         }
       }
+      if (url.pathname === '/api/scenes' && sceneStore && configStore) {
+        if (!localRequest) return sendJson(response, 403, { error: 'local access only' });
+        if (request.method === 'GET') return sendJson(response, 200, sceneStore.list());
+        if (request.method === 'POST') {
+          const { name } = await readJson(request);
+          return sendJson(response, 201, sceneStore.save(name, configStore.get()));
+        }
+      }
+      const sceneMatch = url.pathname.match(/^\/api\/scenes\/([^/]+)(\/apply)?$/);
+      if (sceneMatch && sceneStore && configStore) {
+        if (!localRequest) return sendJson(response, 403, { error: 'local access only' });
+        const id = decodeURIComponent(sceneMatch[1]);
+        if (request.method === 'POST' && sceneMatch[2] === '/apply') {
+          const scene = sceneStore.find(id);
+          if (!scene) return sendJson(response, 404, { error: 'scene not found' });
+          return sendJson(response, 200, configStore.update(scene.config));
+        }
+        if (request.method === 'DELETE' && !sceneMatch[2]) {
+          return sceneStore.remove(id)
+            ? sendJson(response, 200, { ok: true })
+            : sendJson(response, 404, { error: 'scene not found' });
+        }
+      }
+      if (url.pathname === '/api/rgb-test' && rgbTestStore) {
+        if (!localRequest) return sendJson(response, 403, { error: 'local access only' });
+        if (request.method === 'POST') {
+          const { mode, durationMs } = await readJson(request);
+          return sendJson(response, 200, rgbTestStore.start(mode, durationMs));
+        }
+        if (request.method === 'DELETE') return sendJson(response, 200, rgbTestStore.stop());
+      }
+      if (url.pathname === '/api/calibrate' && calibrate && configStore) {
+        if (!localRequest) return sendJson(response, 403, { error: 'local access only' });
+        if (request.method === 'POST') {
+          const { samples } = await readJson(request);
+          return sendJson(response, 200, configStore.update(calibrate(samples)));
+        }
+      }
       if (request.method === 'GET' && url.pathname === '/api/telemetry' && telemetryStore) {
         if (!localRequest) return sendJson(response, 403, { error: 'local access only' });
         return sendJson(response, 200, telemetryStore.get() || { waiting: true });
+      }
+      if (request.method === 'GET' && url.pathname === '/api/system' && getSystemHealth) {
+        if (!localRequest) return sendJson(response, 403, { error: 'local access only' });
+        return sendJson(response, 200, getSystemHealth());
       }
       if (request.method === 'GET' && url.pathname === '/login' && onLogin) {
         if (!localRequest) return sendJson(response, 403, { error: 'local access only' });

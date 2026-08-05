@@ -38,26 +38,52 @@
       </section>
 
       <form id="control-form" class="control-grid reveal delay-2">
-        <section class="control-panel pulse-panel">
+        <section class="control-panel scene-panel">
           <div class="panel-number">02</div>
+          <div>
+            <h2>SCENE MEMORY</h2>
+            <p>Recall the whole room in one move, or capture the settings you have now.</p>
+          </div>
+          <div id="scene-list" class="scene-list" aria-live="polite"></div>
+          <div class="scene-capture">
+            <label for="scene-name">New scene name</label>
+            <input id="scene-name" type="text" maxlength="24" placeholder="MY ROOM" autocomplete="off" />
+            <button type="button" id="save-scene">CAPTURE CURRENT</button>
+          </div>
+        </section>
+
+        <section class="control-panel pulse-panel">
+          <div class="panel-number">03</div>
           <h2>PULSE ENGINE</h2>
           <p>Shape how quickly the room becomes light.</p>
           <div class="sliders">
             <label data-setting="beatSensitivity"><span>Beat sensitivity</span><output></output><input type="range" min="0.5" max="2" step="0.05" /></label>
+            <label data-setting="noiseGateMultiplier"><span>Noise gate</span><output></output><input type="range" min="1.1" max="2" step="0.05" /></label>
             <label data-setting="tempoCorrection"><span>Tempo correction</span><output></output><input type="range" min="0.05" max="0.8" step="0.05" /></label>
             <label data-setting="tempoHoldMs" data-suffix=" ms"><span>Tempo memory</span><output></output><input type="range" min="1000" max="5000" step="100" /></label>
             <label data-setting="flashDecay"><span>Flash tail</span><output></output><input type="range" min="0.4" max="0.85" step="0.01" /></label>
+            <button type="button" id="calibrate-button" class="calibrate-button">◎ AUTO-CALIBRATE 10 SEC</button>
+            <small id="calibration-status" class="calibration-status">Play music at your normal listening level.</small>
             <button type="button" class="section-reset" data-reset-group="pulse">&#8634; RESET PULSE DEFAULTS</button>
           </div>
         </section>
 
         <section class="control-panel colour-panel">
-          <div class="panel-number">03</div>
+          <div class="panel-number">04</div>
           <h2>COLOUR LAB</h2>
           <p>Correct the physical LED, then choose its source.</p>
           <button type="button" id="rgb-toggle" class="rgb-toggle" aria-pressed="true">
             <span>RGB MASTER</span><strong>OUTPUT ON</strong><i aria-hidden="true"></i>
           </button>
+          <fieldset class="rgb-test-bench">
+            <legend>10-second hardware test</legend>
+            <button type="button" data-rgb-test="red">R</button>
+            <button type="button" data-rgb-test="green">G</button>
+            <button type="button" data-rgb-test="blue">B</button>
+            <button type="button" data-rgb-test="white">W</button>
+            <button type="button" data-rgb-test="sweep">SWEEP</button>
+            <button type="button" data-rgb-test="off">STOP</button>
+          </fieldset>
           <fieldset class="palette-switch">
             <legend>Palette source</legend>
             <label><input type="radio" name="paletteMode" value="album" /><span>ALBUM</span></label>
@@ -76,7 +102,7 @@
         </section>
 
         <section class="control-panel mascot-panel">
-          <div class="panel-number">04</div>
+          <div class="panel-number">05</div>
           <h2>MASCOT ENERGY</h2>
           <p>Tempo chooses the personality. You choose the commitment.</p>
           <div class="mascot-stage" aria-hidden="true"><div class="mascot">♪</div><i></i><i></i><i></i></div>
@@ -84,6 +110,37 @@
             <label data-setting="dancerSpeed"><span>Movement speed</span><output></output><input type="range" min="0.5" max="2" step="0.05" /></label>
             <label data-setting="dancerIntensity"><span>Jump intensity</span><output></output><input type="range" min="0.5" max="2" step="0.05" /></label>
             <button type="button" class="section-reset" data-reset-group="mascot">&#8634; RESET MASCOT DEFAULTS</button>
+          </div>
+        </section>
+
+        <section class="control-panel automation-panel">
+          <div class="panel-number">06</div>
+          <div class="night-controls">
+            <h2>NIGHT SHIFT</h2>
+            <p>Let the OLED work late while the room light stays civil.</p>
+            <button type="button" id="night-toggle" class="night-toggle" aria-pressed="false"><span>SCHEDULE</span><strong>OFF</strong></button>
+            <div class="time-window">
+              <label>START<input id="night-start" type="time" /></label>
+              <span>→</span>
+              <label>END<input id="night-end" type="time" /></label>
+            </div>
+            <div class="sliders night-slider">
+              <label data-setting="nightBrightness"><span>RGB ceiling · 0 means blackout</span><output></output><input type="range" min="0" max="80" step="1" /></label>
+              <button type="button" class="section-reset" data-reset-group="automation">&#8634; RESET NIGHT DEFAULTS</button>
+            </div>
+          </div>
+          <div class="health-console">
+            <p class="eyebrow">SYSTEM HEALTH</p>
+            <h3 id="health-headline">WAITING FOR SIGNAL</h3>
+            <dl>
+              <div><dt>FIRMWARE</dt><dd id="health-firmware">—</dd></div>
+              <div><dt>DEVICE UPTIME</dt><dd id="health-device-uptime">—</dd></div>
+              <div><dt>BRIDGE UPTIME</dt><dd id="health-bridge-uptime">—</dd></div>
+              <div><dt>ROUND TRIP</dt><dd id="health-latency">—</dd></div>
+              <div><dt>FREE HEAP</dt><dd id="health-heap">—</dd></div>
+              <div><dt>SPOTIFY SYNC</dt><dd id="health-sync">—</dd></div>
+            </dl>
+            <p id="health-error" class="health-error">No fault reported.</p>
           </div>
         </section>
 

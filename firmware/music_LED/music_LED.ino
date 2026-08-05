@@ -74,6 +74,7 @@ void loop() {
     stopAudioReactive();
     Serial.print("Bridge error: ");
     Serial.println(bridgeError());
+    reportTelemetry(audioVisualState());
     setStatusLed(120, 50, 0);
   }
 }

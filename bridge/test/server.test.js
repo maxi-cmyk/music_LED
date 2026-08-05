@@ -94,3 +94,41 @@ test('accepts authenticated ESP32 telemetry and exposes it locally', async (t) =
   const telemetry = await fetch(`${baseUrl}/api/telemetry`);
   assert.equal((await telemetry.json()).bpm, 120);
 });
+
+test('serves local scenes, RGB tests, calibration, and system health', async (t) => {
+  let config = { beatSensitivity: 1 };
+  const configStore = {
+    get: () => config,
+    update: (values) => (config = { ...config, ...values }),
+  };
+  const scene = { id: 'club', config: { beatSensitivity: 1.5 } };
+  const sceneStore = {
+    list: () => [scene],
+    find: (id) => id === scene.id ? scene : null,
+    save: (name, values) => ({ id: 'custom', name, config: values }),
+    remove: () => true,
+  };
+  const rgbTestStore = {
+    start: (mode) => ({ mode, remainingMs: 10_000 }),
+    stop: () => ({ mode: 'off', remainingMs: 0 }),
+  };
+  const { server, baseUrl } = await startServer({
+    getPlayback: async () => ({}), configStore, sceneStore, rgbTestStore,
+    calibrate: () => ({ beatSensitivity: 1.25 }),
+    getSystemHealth: () => ({ bridgeUptimeMs: 1234 }),
+  });
+  t.after(() => server.close());
+
+  assert.equal((await (await fetch(`${baseUrl}/api/scenes`)).json())[0].id, 'club');
+  const applied = await fetch(`${baseUrl}/api/scenes/club/apply`, { method: 'POST' });
+  assert.equal((await applied.json()).beatSensitivity, 1.5);
+  const tested = await fetch(`${baseUrl}/api/rgb-test`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'blue' }),
+  });
+  assert.equal((await tested.json()).mode, 'blue');
+  const calibrated = await fetch(`${baseUrl}/api/calibrate`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ samples: [] }),
+  });
+  assert.equal((await calibrated.json()).beatSensitivity, 1.25);
+  assert.deepEqual(await (await fetch(`${baseUrl}/api/system`)).json(), { bridgeUptimeMs: 1234 });
+});

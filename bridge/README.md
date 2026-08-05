@@ -59,6 +59,10 @@ Open <http://127.0.0.1:3000/login> once to authorise Spotify, then use <http://1
 
 - `POST /api/telemetry` with the bridge key accepts ESP32 BPM, microphone, spectrum, and Wi-Fi diagnostics.
 - `GET/PUT /api/config`, `GET /api/telemetry`, `/`, `/app.js`, and `/styles.css` accept loopback clients only.
+- `GET/POST /api/scenes` and the scene apply/delete routes manage built-in and private custom scenes.
+- `POST/DELETE /api/rgb-test` starts or stops an automatically expiring hardware test.
+- `POST /api/calibrate` applies recommendations calculated from a ten-second telemetry sample.
+- `GET /api/system` reports bridge uptime, Spotify sync health, night status, and RGB test state.
 
 Bitmap widths preserve long names so the ESP32 can scroll them smoothly. Album art is fetched once per cover, cached in memory, resized, dithered into 128 bytes, and analysed for three dominant colours. Artwork failure does not interrupt playback updates. The ESP32 integration must use the Mac’s LAN IP in `MUSIC_LED_BRIDGE_URL` and send the same bridge key.
 

@@ -4,6 +4,7 @@ const path = require('node:path');
 const DEFAULT_CONFIG = Object.freeze({
   rgbEnabled: true,
   beatSensitivity: 1,
+  noiseGateMultiplier: 1.3,
   tempoCorrection: 0.25,
   tempoHoldMs: 2500,
   flashDecay: 0.65,
@@ -16,10 +17,15 @@ const DEFAULT_CONFIG = Object.freeze({
   dancerSpeed: 1,
   dancerIntensity: 1,
   paletteMode: 'album',
+  nightEnabled: false,
+  nightStart: '23:00',
+  nightEnd: '07:00',
+  nightBrightness: 12,
 });
 
 const limits = {
   beatSensitivity: [0.5, 2],
+  noiseGateMultiplier: [1.1, 2],
   tempoCorrection: [0.05, 0.8],
   tempoHoldMs: [1000, 5000],
   flashDecay: [0.4, 0.85],
@@ -31,11 +37,19 @@ const limits = {
   gamma: [1, 2.8],
   dancerSpeed: [0.5, 2],
   dancerIntensity: [0.5, 2],
+  nightBrightness: [0, 80],
 };
+
+function validTime(value) {
+  return typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
 
 function sanitizeConfig(input = {}, base = DEFAULT_CONFIG) {
   const result = { ...DEFAULT_CONFIG, ...base };
   if (typeof input.rgbEnabled === 'boolean') result.rgbEnabled = input.rgbEnabled;
+  if (typeof input.nightEnabled === 'boolean') result.nightEnabled = input.nightEnabled;
+  if (validTime(input.nightStart)) result.nightStart = input.nightStart;
+  if (validTime(input.nightEnd)) result.nightEnd = input.nightEnd;
   for (const [key, [minimum, maximum]] of Object.entries(limits)) {
     if (input[key] === undefined) continue;
     const numeric = Number(input[key]);
@@ -73,4 +87,4 @@ class ConfigStore {
   }
 }
 
-module.exports = { ConfigStore, DEFAULT_CONFIG, sanitizeConfig };
+module.exports = { ConfigStore, DEFAULT_CONFIG, sanitizeConfig, validTime };

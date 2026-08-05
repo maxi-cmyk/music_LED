@@ -13,6 +13,11 @@ class TelemetryStore {
       mid: Number(values.mid) || 0,
       treble: Number(values.treble) || 0,
       wifiRssi: Number(values.wifiRssi) || 0,
+      uptimeMs: Number(values.uptimeMs) || 0,
+      bridgeLatencyMs: Number(values.bridgeLatencyMs) || 0,
+      freeHeap: Number(values.freeHeap) || 0,
+      firmwareVersion: String(values.firmwareVersion || 'unknown').slice(0, 24),
+      bridgeError: String(values.bridgeError || '').slice(0, 120),
       receivedAt: Date.now(),
     };
     return this.get();

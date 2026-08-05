@@ -3,10 +3,12 @@
 #include <stdint.h>
 
 enum class AudioPaletteMode : uint8_t { Club, Album, Spectrum };
+enum class RgbTestMode : uint8_t { Off, Red, Green, Blue, White, Sweep };
 
 struct AudioReactiveConfig {
   bool rgbEnabled;
   float beatSensitivity;
+  float noiseGateMultiplier;
   float tempoCorrection;
   uint16_t tempoHoldMs;
   float flashDecay;
@@ -19,6 +21,8 @@ struct AudioReactiveConfig {
   float dancerSpeed;
   float dancerIntensity;
   AudioPaletteMode paletteMode;
+  bool nightActive;
+  uint8_t nightBrightness;
 };
 
 struct AudioVisualState {
@@ -42,4 +46,5 @@ void stopAudioReactive();
 const AudioVisualState& audioVisualState();
 const AudioReactiveConfig& audioReactiveConfig();
 void configureAudioReactive(const AudioReactiveConfig& config);
+void configureRgbTest(RgbTestMode mode, uint32_t remainingMs);
 void setAudioTrackPalette(const uint8_t* rgbValues, uint8_t colorCount);

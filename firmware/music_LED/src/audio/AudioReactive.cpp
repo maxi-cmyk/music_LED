@@ -60,9 +60,11 @@ float noiseFloorRms = kInitialNoiseFloor;
 float tempoConfidence = 0.0f;
 RgbColor trackPalette[3];
 uint8_t trackPaletteCount = 0;
+RgbTestMode rgbTestMode = RgbTestMode::Off;
+unsigned long rgbTestUntilMs = 0;
 AudioReactiveConfig reactiveConfig = {
-    true, 1.0f, 0.25f, 2500, 0.65f, 18, 240, 1.0f, 1.0f, 1.0f, 1.6f, 1.0f, 1.0f,
-    AudioPaletteMode::Album};
+    true, 1.0f, 1.3f, 0.25f, 2500, 0.65f, 18, 240, 1.0f, 1.0f, 1.0f, 1.6f, 1.0f,
+    1.0f, AudioPaletteMode::Album, false, 12};
 AudioVisualState visualState{};
 
 uint8_t clampByte(float value) {
@@ -151,9 +153,42 @@ void showRgb(float red, float green, float blue) {
     setStatusLed(0, 0, 0);
     return;
   }
-  setStatusLed(correctedChannel(red, reactiveConfig.redGain),
-               correctedChannel(green, reactiveConfig.greenGain),
-               correctedChannel(blue, reactiveConfig.blueGain));
+  float correctedRed = correctedChannel(red, reactiveConfig.redGain);
+  float correctedGreen = correctedChannel(green, reactiveConfig.greenGain);
+  float correctedBlue = correctedChannel(blue, reactiveConfig.blueGain);
+  if (reactiveConfig.nightActive) {
+    const float peak = max(correctedRed, max(correctedGreen, correctedBlue));
+    const float scale = peak > reactiveConfig.nightBrightness
+                            ? reactiveConfig.nightBrightness / max(peak, 1.0f)
+                            : 1.0f;
+    correctedRed *= scale;
+    correctedGreen *= scale;
+    correctedBlue *= scale;
+  }
+  setStatusLed(clampByte(correctedRed), clampByte(correctedGreen), clampByte(correctedBlue));
+}
+
+bool renderRgbTest(unsigned long now) {
+  if (rgbTestMode == RgbTestMode::Off) return false;
+  if (static_cast<int32_t>(now - rgbTestUntilMs) >= 0) {
+    rgbTestMode = RgbTestMode::Off;
+    return false;
+  }
+  switch (rgbTestMode) {
+    case RgbTestMode::Red: showRgb(255, 0, 0); break;
+    case RgbTestMode::Green: showRgb(0, 255, 0); break;
+    case RgbTestMode::Blue: showRgb(0, 0, 255); break;
+    case RgbTestMode::White: showRgb(255, 255, 255); break;
+    case RgbTestMode::Sweep: {
+      const float phase = static_cast<float>(now % 4000UL) / 4000.0f * 2.0f * kPi;
+      showRgb(127.5f + 127.5f * sinf(phase),
+              127.5f + 127.5f * sinf(phase + 2.0f * kPi / 3.0f),
+              127.5f + 127.5f * sinf(phase + 4.0f * kPi / 3.0f));
+      break;
+    }
+    case RgbTestMode::Off: break;
+  }
+  return true;
 }
 
 void updateVisualState(float bassShare, float midShare, float trebleShare, float level) {
@@ -347,14 +382,15 @@ void stopAudioReactive() {
 }
 
 void updateAudioReactive(bool playbackActive) {
+  const unsigned long now = millis();
+  if (now - lastFrameMs < kFrameIntervalMs) return;
+  lastFrameMs = now;
+  if (renderRgbTest(now)) return;
   if (!playbackActive) {
     if (ledActive) stopAudioReactive();
     return;
   }
 
-  const unsigned long now = millis();
-  if (now - lastFrameMs < kFrameIntervalMs) return;
-  lastFrameMs = now;
   ledActive = true;
   visualState.active = true;
 
@@ -384,7 +420,7 @@ void updateAudioReactive(bool playbackActive) {
     noiseFloorRms = noiseFloorRms * 0.998f + rms * 0.002f;
   }
 
-  const float silenceThreshold = max(6.0f, noiseFloorRms * 1.30f);
+  const float silenceThreshold = max(6.0f, noiseFloorRms * reactiveConfig.noiseGateMultiplier);
   if (rms < silenceThreshold) {
     fadeOutputs(0.35f);
     return;
@@ -423,6 +459,11 @@ void configureAudioReactive(const AudioReactiveConfig& config) {
     blueOutput = 0.0f;
     setStatusLed(0, 0, 0);
   }
+}
+
+void configureRgbTest(RgbTestMode mode, uint32_t remainingMs) {
+  rgbTestMode = mode;
+  rgbTestUntilMs = millis() + remainingMs;
 }
 
 void setAudioTrackPalette(const uint8_t* rgbValues, uint8_t colorCount) {

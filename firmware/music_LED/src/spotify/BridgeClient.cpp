@@ -24,6 +24,8 @@ constexpr uint8_t kAlbumArtHeight = 32;
 uint8_t albumArtBitmap[kAlbumArtWidth * kAlbumArtHeight / 8];
 uint8_t albumPalette[9];
 constexpr unsigned long kWifiTimeoutMs = 15'000;
+constexpr char kFirmwareVersion[] = "1.2.0";
+uint32_t lastBridgeLatencyMs = 0;
 
 int hexValue(char value) {
   if (value >= '0' && value <= '9') return value - '0';
@@ -68,11 +70,21 @@ AudioPaletteMode parsePaletteMode(const char* value) {
   return AudioPaletteMode::Album;
 }
 
+RgbTestMode parseRgbTestMode(const char* value) {
+  if (value != nullptr && strcmp(value, "red") == 0) return RgbTestMode::Red;
+  if (value != nullptr && strcmp(value, "green") == 0) return RgbTestMode::Green;
+  if (value != nullptr && strcmp(value, "blue") == 0) return RgbTestMode::Blue;
+  if (value != nullptr && strcmp(value, "white") == 0) return RgbTestMode::White;
+  if (value != nullptr && strcmp(value, "sweep") == 0) return RgbTestMode::Sweep;
+  return RgbTestMode::Off;
+}
+
 void applyVisualConfig(JsonObjectConst json) {
   if (json.isNull()) return;
   AudioReactiveConfig config = audioReactiveConfig();
   config.rgbEnabled = json["rgbEnabled"] | config.rgbEnabled;
   config.beatSensitivity = json["beatSensitivity"] | config.beatSensitivity;
+  config.noiseGateMultiplier = json["noiseGateMultiplier"] | config.noiseGateMultiplier;
   config.tempoCorrection = json["tempoCorrection"] | config.tempoCorrection;
   config.tempoHoldMs = json["tempoHoldMs"] | config.tempoHoldMs;
   config.flashDecay = json["flashDecay"] | config.flashDecay;
@@ -85,7 +97,11 @@ void applyVisualConfig(JsonObjectConst json) {
   config.dancerSpeed = json["dancerSpeed"] | config.dancerSpeed;
   config.dancerIntensity = json["dancerIntensity"] | config.dancerIntensity;
   config.paletteMode = parsePaletteMode(json["paletteMode"] | "album");
+  config.nightActive = json["nightActive"] | false;
+  config.nightBrightness = json["nightBrightness"] | config.nightBrightness;
   configureAudioReactive(config);
+  JsonObjectConst rgbTest = json["rgbTest"].as<JsonObjectConst>();
+  configureRgbTest(parseRgbTestMode(rgbTest["mode"] | "off"), rgbTest["remainingMs"] | 0UL);
 }
 }  // namespace
 
@@ -100,10 +116,12 @@ bool setupBridgeClient() {
 bool refreshPlayback(PlaybackState* state) {
   if (!kNetworkConfigured || !connectWifi()) return false;
 
+  const unsigned long requestStarted = millis();
   HTTPClient request;
   request.begin(MUSIC_LED_BRIDGE_URL);
   request.addHeader("X-Bridge-Key", MUSIC_LED_BRIDGE_KEY);
   const int status = request.GET();
+  lastBridgeLatencyMs = millis() - requestStarted;
   if (status != HTTP_CODE_OK) {
     lastError = "Bridge HTTP " + String(status);
     request.end();
@@ -182,6 +200,11 @@ bool reportTelemetry(const AudioVisualState& state) {
   document["mid"] = state.mid;
   document["treble"] = state.treble;
   document["wifiRssi"] = WiFi.RSSI();
+  document["uptimeMs"] = millis();
+  document["bridgeLatencyMs"] = lastBridgeLatencyMs;
+  document["freeHeap"] = ESP.getFreeHeap();
+  document["firmwareVersion"] = kFirmwareVersion;
+  document["bridgeError"] = lastError;
   String body;
   serializeJson(document, body);
 

@@ -8,12 +8,20 @@ const { ConfigStore, DEFAULT_CONFIG, sanitizeConfig } = require('../src/config-s
 test('sanitizes visual settings to safe firmware ranges', () => {
   const result = sanitizeConfig({
     rgbEnabled: false,
+    nightEnabled: true,
+    nightStart: '25:99',
+    nightEnd: '06:30',
+    nightBrightness: -5,
     beatSensitivity: 99,
     maxBrightness: -20,
     paletteMode: 'album',
   });
   assert.equal(result.beatSensitivity, 2);
   assert.equal(result.rgbEnabled, false);
+  assert.equal(result.nightEnabled, true);
+  assert.equal(result.nightStart, DEFAULT_CONFIG.nightStart);
+  assert.equal(result.nightEnd, '06:30');
+  assert.equal(result.nightBrightness, 0);
   assert.equal(result.maxBrightness, 80);
   assert.equal(result.paletteMode, 'album');
   assert.equal(result.gamma, DEFAULT_CONFIG.gamma);

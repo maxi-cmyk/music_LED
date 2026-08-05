@@ -31,6 +31,8 @@ Use an analog microphone module such as a MAX4466 or the analog output of a KY-0
 
 While Spotify is playing, the microphone automatically calibrates its room-noise floor and splits the audio into bass (50-250 Hz), mids (300-1000 Hz), and treble (1050-2500 Hz). Bass transients establish tempo, and both detected and predicted beats produce sharp saturated flashes. RGB gains, gamma, sensitivity, decay, brightness, and palette source are adjustable from the local control deck. Album mode extracts three colours from each cover; club and spectrum modes remain available. The mascot sways, dances, or headbangs according to tempo, celebrates track changes, and sleeps when paused. The light turns off when playback pauses. Solid red means OLED setup failed; solid amber means Wi-Fi or the bridge failed.
 
+The local control deck also provides whole-room scene presets, custom scene capture, a timed RGB channel/sweep test, ten-second microphone and beat calibration, scheduled night brightness or blackout, and live firmware/bridge health diagnostics. RGB tests expire automatically, schedules use the Mac's local clock, and all durable settings remain in ignored files under `bridge/data/`.
+
 ## Configure
 
 Follow [`bridge/README.md`](bridge/README.md) for Spotify OAuth setup. Then create the ignored firmware configuration:

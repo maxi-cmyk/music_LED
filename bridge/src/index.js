@@ -10,6 +10,10 @@ const { renderAlbumArtBitmap } = require('./album-art');
 const { loadEnv } = require('./load-env');
 const { ConfigStore } = require('./config-store');
 const { TelemetryStore } = require('./telemetry-store');
+const { SceneStore } = require('./scene-store');
+const { RgbTestStore } = require('./rgb-test-store');
+const { calibrateBeat } = require('./calibration');
+const { isNightActive } = require('./night-schedule');
 
 loadEnv(path.join(__dirname, '..', '.env'));
 
@@ -30,8 +34,12 @@ const config = {
 };
 const tokens = new TokenStore(path.join(__dirname, '..', 'data', 'spotify-tokens.json'));
 const displayConfig = new ConfigStore(path.join(__dirname, '..', 'data', 'display-config.json'));
+const scenes = new SceneStore(path.join(__dirname, '..', 'data', 'scenes.json'));
+const rgbTest = new RgbTestStore();
 const telemetry = new TelemetryStore();
 let expectedState = null;
+let lastSpotifySyncAt = 0;
+let lastSpotifyError = null;
 
 async function accessToken() {
   let current = tokens.load();
@@ -53,11 +61,26 @@ async function accessToken() {
 }
 
 async function getPlayback() {
-  const playback = await fetchCurrentlyPlaying({ accessToken: await accessToken() });
-  const images = playback?.item?.album?.images || [];
-  const artworkUrl = images.at(-1)?.url || images[0]?.url;
-  const albumArt = await renderAlbumArtBitmap(artworkUrl);
-  return { ...normalizePlayback(playback, undefined, albumArt), visualConfig: displayConfig.get() };
+  try {
+    const playback = await fetchCurrentlyPlaying({ accessToken: await accessToken() });
+    const images = playback?.item?.album?.images || [];
+    const artworkUrl = images.at(-1)?.url || images[0]?.url;
+    const albumArt = await renderAlbumArtBitmap(artworkUrl);
+    const storedConfig = displayConfig.get();
+    lastSpotifySyncAt = Date.now();
+    lastSpotifyError = null;
+    return {
+      ...normalizePlayback(playback, undefined, albumArt),
+      visualConfig: {
+        ...storedConfig,
+        nightActive: isNightActive(storedConfig),
+        rgbTest: rgbTest.get(),
+      },
+    };
+  } catch (error) {
+    lastSpotifyError = error.message;
+    throw error;
+  }
 }
 
 const server = createBridgeServer({
@@ -65,6 +88,16 @@ const server = createBridgeServer({
   getPlayback,
   configStore: displayConfig,
   telemetryStore: telemetry,
+  sceneStore: scenes,
+  rgbTestStore: rgbTest,
+  calibrate: calibrateBeat,
+  getSystemHealth: () => ({
+    bridgeUptimeMs: Math.round(process.uptime() * 1000),
+    lastSpotifySyncAt,
+    lastSpotifyError,
+    rgbTest: rgbTest.get(),
+    nightActive: isNightActive(displayConfig.get()),
+  }),
   frontendRoot: path.join(__dirname, '..', 'frontend'),
   onLogin: async () => {
     expectedState = crypto.randomBytes(24).toString('hex');
