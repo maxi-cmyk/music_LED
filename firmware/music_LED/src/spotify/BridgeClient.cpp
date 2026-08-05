@@ -71,6 +71,7 @@ AudioPaletteMode parsePaletteMode(const char* value) {
 void applyVisualConfig(JsonObjectConst json) {
   if (json.isNull()) return;
   AudioReactiveConfig config = audioReactiveConfig();
+  config.rgbEnabled = json["rgbEnabled"] | config.rgbEnabled;
   config.beatSensitivity = json["beatSensitivity"] | config.beatSensitivity;
   config.tempoCorrection = json["tempoCorrection"] | config.tempoCorrection;
   config.tempoHoldMs = json["tempoHoldMs"] | config.tempoHoldMs;

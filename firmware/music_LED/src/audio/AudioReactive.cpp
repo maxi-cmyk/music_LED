@@ -61,7 +61,7 @@ float tempoConfidence = 0.0f;
 RgbColor trackPalette[3];
 uint8_t trackPaletteCount = 0;
 AudioReactiveConfig reactiveConfig = {
-    1.0f, 0.25f, 2500, 0.65f, 18, 240, 1.0f, 1.0f, 1.0f, 1.6f, 1.0f, 1.0f,
+    true, 1.0f, 0.25f, 2500, 0.65f, 18, 240, 1.0f, 1.0f, 1.0f, 1.6f, 1.0f, 1.0f,
     AudioPaletteMode::Album};
 AudioVisualState visualState{};
 
@@ -147,6 +147,10 @@ uint8_t correctedChannel(float value, float gain) {
 }
 
 void showRgb(float red, float green, float blue) {
+  if (!reactiveConfig.rgbEnabled) {
+    setStatusLed(0, 0, 0);
+    return;
+  }
   setStatusLed(correctedChannel(red, reactiveConfig.redGain),
                correctedChannel(green, reactiveConfig.greenGain),
                correctedChannel(blue, reactiveConfig.blueGain));
@@ -411,7 +415,15 @@ const AudioVisualState& audioVisualState() { return visualState; }
 
 const AudioReactiveConfig& audioReactiveConfig() { return reactiveConfig; }
 
-void configureAudioReactive(const AudioReactiveConfig& config) { reactiveConfig = config; }
+void configureAudioReactive(const AudioReactiveConfig& config) {
+  reactiveConfig = config;
+  if (!reactiveConfig.rgbEnabled) {
+    redOutput = 0.0f;
+    greenOutput = 0.0f;
+    blueOutput = 0.0f;
+    setStatusLed(0, 0, 0);
+  }
+}
 
 void setAudioTrackPalette(const uint8_t* rgbValues, uint8_t colorCount) {
   trackPaletteCount = min(colorCount, static_cast<uint8_t>(3));

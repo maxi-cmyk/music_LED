@@ -1,4 +1,5 @@
 const defaults = {
+  rgbEnabled: true,
   beatSensitivity: 1,
   tempoCorrection: 0.25,
   tempoHoldMs: 2500,
@@ -16,12 +17,20 @@ const defaults = {
 
 const resetGroups = {
   pulse: ['beatSensitivity', 'tempoCorrection', 'tempoHoldMs', 'flashDecay'],
-  colour: ['idleBrightness', 'maxBrightness', 'redGain', 'greenGain', 'blueGain', 'gamma', 'paletteMode'],
+  colour: ['rgbEnabled', 'idleBrightness', 'maxBrightness', 'redGain', 'greenGain', 'blueGain', 'gamma', 'paletteMode'],
   mascot: ['dancerSpeed', 'dancerIntensity'],
 };
 
 const form = document.querySelector('#control-form');
 const saveStatus = document.querySelector('#save-status');
+const rgbToggle = document.querySelector('#rgb-toggle');
+
+function updateRgbToggle(enabled) {
+  const isEnabled = enabled !== false;
+  rgbToggle.dataset.enabled = String(isEnabled);
+  rgbToggle.setAttribute('aria-pressed', String(isEnabled));
+  rgbToggle.querySelector('strong').textContent = isEnabled ? 'OUTPUT ON' : 'OUTPUT OFF';
+}
 
 function formatValue(label, value) {
   const suffix = label.dataset.suffix || '';
@@ -29,6 +38,7 @@ function formatValue(label, value) {
 }
 
 function hydrate(config) {
+  updateRgbToggle(config.rgbEnabled);
   document.querySelectorAll('[data-setting]').forEach((label) => {
     const input = label.querySelector('input');
     input.value = config[label.dataset.setting];
@@ -39,7 +49,7 @@ function hydrate(config) {
 }
 
 function values() {
-  const result = {};
+  const result = { rgbEnabled: rgbToggle.dataset.enabled !== 'false' };
   document.querySelectorAll('[data-setting]').forEach((label) => {
     result[label.dataset.setting] = Number(label.querySelector('input').value);
   });
@@ -117,6 +127,25 @@ form.addEventListener('submit', async (event) => {
 
 document.querySelector('#reset-button').addEventListener('click', async () => {
   try { await saveConfig(defaults); } catch (error) { saveStatus.textContent = error.message; }
+});
+
+rgbToggle.addEventListener('click', async () => {
+  const wasEnabled = rgbToggle.dataset.enabled !== 'false';
+  const config = values();
+  config.rgbEnabled = !wasEnabled;
+  updateRgbToggle(config.rgbEnabled);
+  rgbToggle.disabled = true;
+  try {
+    await saveConfig(config);
+    saveStatus.textContent = config.rgbEnabled
+      ? 'RGB output enabled. ESP32 updates on its next poll.'
+      : 'RGB output disabled. ESP32 updates on its next poll.';
+  } catch (error) {
+    updateRgbToggle(wasEnabled);
+    saveStatus.textContent = error.message;
+  } finally {
+    rgbToggle.disabled = false;
+  }
 });
 
 document.querySelectorAll('[data-reset-group]').forEach((button) => {

@@ -5,6 +5,7 @@
 enum class AudioPaletteMode : uint8_t { Club, Album, Spectrum };
 
 struct AudioReactiveConfig {
+  bool rgbEnabled;
   float beatSensitivity;
   float tempoCorrection;
   uint16_t tempoHoldMs;

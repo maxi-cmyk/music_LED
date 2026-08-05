@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const DEFAULT_CONFIG = Object.freeze({
+  rgbEnabled: true,
   beatSensitivity: 1,
   tempoCorrection: 0.25,
   tempoHoldMs: 2500,
@@ -34,6 +35,7 @@ const limits = {
 
 function sanitizeConfig(input = {}, base = DEFAULT_CONFIG) {
   const result = { ...DEFAULT_CONFIG, ...base };
+  if (typeof input.rgbEnabled === 'boolean') result.rgbEnabled = input.rgbEnabled;
   for (const [key, [minimum, maximum]] of Object.entries(limits)) {
     if (input[key] === undefined) continue;
     const numeric = Number(input[key]);
