@@ -89,6 +89,9 @@ input[type="range"]::-webkit-slider-thumb { appearance: none; width: 16px; heigh
 .action-strip { grid-column: span 12; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; margin-top: 8px; border-top: 3px solid var(--ink); padding-top: 18px; }
 .action-strip p { font: 700 11px "SFMono-Regular", monospace; }
 button { border: 1px solid var(--ink); padding: 15px 19px 13px; background: transparent; font: 800 12px "SFMono-Regular", monospace; cursor: pointer; }
+.section-reset { grid-column: 1 / -1; justify-self: end; padding: 9px 11px 7px; color: inherit; border-color: currentColor; font-size: 10px; opacity: .68; transition: opacity 140ms ease, background 140ms ease, color 140ms ease; }
+.section-reset:hover { background: var(--acid); color: var(--ink); border-color: var(--acid); opacity: 1; }
+.section-reset:disabled { cursor: wait; opacity: .35; }
 #save-button { background: var(--acid); box-shadow: 5px 5px 0 var(--ink); min-width: 210px; }
 #save-button:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
 

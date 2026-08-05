@@ -47,6 +47,7 @@
             <label data-setting="tempoCorrection"><span>Tempo correction</span><output></output><input type="range" min="0.05" max="0.8" step="0.05" /></label>
             <label data-setting="tempoHoldMs" data-suffix=" ms"><span>Tempo memory</span><output></output><input type="range" min="1000" max="5000" step="100" /></label>
             <label data-setting="flashDecay"><span>Flash tail</span><output></output><input type="range" min="0.4" max="0.85" step="0.01" /></label>
+            <button type="button" class="section-reset" data-reset-group="pulse">&#8634; RESET PULSE DEFAULTS</button>
           </div>
         </section>
 
@@ -67,6 +68,7 @@
             <label class="green" data-setting="greenGain"><span>Green gain</span><output></output><input type="range" min="0.25" max="2" step="0.05" /></label>
             <label class="blue" data-setting="blueGain"><span>Blue gain</span><output></output><input type="range" min="0.25" max="2" step="0.05" /></label>
             <label data-setting="gamma"><span>Gamma</span><output></output><input type="range" min="1" max="2.8" step="0.1" /></label>
+            <button type="button" class="section-reset" data-reset-group="colour">&#8634; RESET COLOUR DEFAULTS</button>
           </div>
         </section>
 
@@ -78,12 +80,13 @@
           <div class="sliders">
             <label data-setting="dancerSpeed"><span>Movement speed</span><output></output><input type="range" min="0.5" max="2" step="0.05" /></label>
             <label data-setting="dancerIntensity"><span>Jump intensity</span><output></output><input type="range" min="0.5" max="2" step="0.05" /></label>
+            <button type="button" class="section-reset" data-reset-group="mascot">&#8634; RESET MASCOT DEFAULTS</button>
           </div>
         </section>
 
         <footer class="action-strip">
           <p id="save-status">Changes are applied on the ESP32’s next playback poll.</p>
-          <button type="button" id="reset-button">RESET</button>
+          <button type="button" id="reset-button">RESET ALL</button>
           <button type="submit" id="save-button">SEND TO LIGHTS <span>↗</span></button>
         </footer>
       </form>

@@ -14,6 +14,12 @@ const defaults = {
   paletteMode: 'album',
 };
 
+const resetGroups = {
+  pulse: ['beatSensitivity', 'tempoCorrection', 'tempoHoldMs', 'flashDecay'],
+  colour: ['idleBrightness', 'maxBrightness', 'redGain', 'greenGain', 'blueGain', 'gamma', 'paletteMode'],
+  mascot: ['dancerSpeed', 'dancerIntensity'],
+};
+
 const form = document.querySelector('#control-form');
 const saveStatus = document.querySelector('#save-status');
 
@@ -59,6 +65,15 @@ async function saveConfig(config) {
   saveStatus.textContent = `Applied at ${new Date().toLocaleTimeString()}. ESP32 updates on its next poll.`;
 }
 
+async function resetGroup(group) {
+  const keys = resetGroups[group];
+  if (!keys) return;
+
+  const config = values();
+  keys.forEach((key) => { config[key] = defaults[key]; });
+  await saveConfig(config);
+}
+
 function updateMeter(name, value) {
   const safeValue = Math.max(0, Math.min(255, Number(value) || 0));
   document.querySelector(`#${name}-meter`).style.width = `${(safeValue / 255) * 100}%`;
@@ -102,6 +117,20 @@ form.addEventListener('submit', async (event) => {
 
 document.querySelector('#reset-button').addEventListener('click', async () => {
   try { await saveConfig(defaults); } catch (error) { saveStatus.textContent = error.message; }
+});
+
+document.querySelectorAll('[data-reset-group]').forEach((button) => {
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await resetGroup(button.dataset.resetGroup);
+      saveStatus.textContent = `${button.dataset.resetGroup.toUpperCase()} defaults restored. ESP32 updates on its next poll.`;
+    } catch (error) {
+      saveStatus.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
 });
 
 loadConfig().catch((error) => { saveStatus.textContent = error.message; });
