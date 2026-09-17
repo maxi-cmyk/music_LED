@@ -381,15 +381,11 @@ void stopAudioReactive() {
   setStatusLed(0, 0, 0);
 }
 
-void updateAudioReactive(bool playbackActive) {
+void updateAudioReactive() {
   const unsigned long now = millis();
   if (now - lastFrameMs < kFrameIntervalMs) return;
   lastFrameMs = now;
   if (renderRgbTest(now)) return;
-  if (!playbackActive) {
-    if (ledActive) stopAudioReactive();
-    return;
-  }
 
   ledActive = true;
   visualState.active = true;

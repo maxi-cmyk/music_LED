@@ -41,7 +41,7 @@ struct AudioVisualState {
 };
 
 void setupAudioReactive();
-void updateAudioReactive(bool playbackActive);
+void updateAudioReactive();
 void stopAudioReactive();
 const AudioVisualState& audioVisualState();
 const AudioReactiveConfig& audioReactiveConfig();

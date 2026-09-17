@@ -7,8 +7,4 @@ build/
 *.eep
 *.map
 .DS_Store
-firmware/music_LED/src/config/Secrets.h
-bridge/.env
-bridge/data/
-bridge/node_modules/
-bridge/*.log
+nextSteps.md
