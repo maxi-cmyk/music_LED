@@ -22,16 +22,13 @@ The live configuration samples at a nominal 6400 Hz. With 128 samples, adjacent 
 | 6–20 | 300–1000 Hz | Green |
 | 21–50 | 1050–2500 Hz | Blue |
 
-The LED is a visualization of selected frequency bands, not proof that the transform is correct. Deterministic host tests compare every complex coefficient produced by the direct DFT and FFT and check known signals, linearity, preprocessing, and colour mapping.
+The LED is a visualization of selected frequency bands, not proof that the transform is correct. The direct DFT and FFT have also been checked against known signals and compared coefficient by coefficient.
 
 ## Project components
 
 - `firmware/music_LED/` contains the Arduino sketch and separate audio, Fourier, lighting, configuration, and diagnostic modules.
 - `tone-generator/` contains an offline browser tone generator and Web Serial spectrum visualizer.
-- `tests/` contains hardware-independent transform, signal-analysis, and benchmark checks.
 - `docs/fourier-walkthrough.md` explains the mathematics and maps equations to the implementation.
-- `docs/validation-results.md` records verified results and the remaining live-environment checks.
-- `docs/q-and-a.md` supports presentation and team preparation.
 - `nextSteps.md` tracks only the work still needed before the presentation.
 
 ## Hardware
@@ -48,28 +45,6 @@ The current setup uses an ESP32, a KY-037 analog microphone output, and an HW-47
 | Microphone power | 3V3 |
 
 Wi-Fi remains disabled because GPIO 4 uses ADC2 on the classic ESP32. The RGB channels use 32 kHz PWM to avoid the measured 1 kHz coupling produced by the core's default PWM frequency.
-
-## Run the checks
-
-Run the C++ transform and signal-processing checks:
-
-```bash
-./tests/run_fourier_tests.sh
-```
-
-Run the browser analysis tests:
-
-```bash
-node tests/signal_analysis_tests.mjs
-```
-
-Run the provisional desktop DFT/FFT benchmark:
-
-```bash
-./tests/run_fourier_benchmark.sh
-```
-
-These checks validate the mathematics and data handling without claiming that a particular microphone, speaker, room, or LED setup behaves identically.
 
 ## Build and use the demo
 
@@ -94,4 +69,4 @@ The audio path remains physical: browser → speaker → air → microphone → 
 
 ## Current status
 
-The modular firmware, direct DFT, FFT, RGB mapping, serial telemetry, browser visualizer, automated tests, ESP32 compilation, and initial device telemetry are complete. The remaining work is presentation-environment verification, final calibration and evidence capture, slide production, and team rehearsal; see [`nextSteps.md`](nextSteps.md).
+The modular firmware, direct DFT, FFT, RGB mapping, serial telemetry, browser visualizer, ESP32 compilation, and initial device telemetry are complete. The remaining work is presentation-environment verification, final calibration and evidence capture, slide production, and team rehearsal; see [`nextSteps.md`](nextSteps.md).

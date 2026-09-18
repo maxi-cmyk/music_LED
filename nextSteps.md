@@ -18,7 +18,7 @@ The implementation is complete. The direct DFT and FFT agree in automated tests,
 
 - [ ] Save the ESP32 startup benchmark for 32, 64, 128, and 256 samples, including direct DFT time, FFT time, speedup, and maximum complex error.
 - [ ] Replace the provisional host benchmark chart with the ESP32 measurements used in the presentation.
-- [ ] Record representative silence, single-tone, mixed-tone, leakage, and clipping results in `docs/validation-results.md`.
+- [ ] Record representative silence, single-tone, mixed-tone, leakage, and clipping results for the final slides.
 - [ ] Record the final speaker distance, computer volume, noise floor, clipping margin, and RGB gains so the setup can be reproduced.
 - [ ] Capture a clear photograph or short fallback video of the complete physical system.
 
@@ -47,7 +47,7 @@ Target about nine minutes so the presentation remains below the ten-minute limit
 
 - [ ] Assign speaking sections and a backup presenter for each section.
 - [ ] Ask each teammate to trace a 200 Hz input from microphone samples through the FFT, spectrum bands, and red LED output.
-- [ ] Review `docs/fourier-walkthrough.md`, `docs/notation-guide.md`, and `docs/q-and-a.md` together.
+- [ ] Review `docs/fourier-walkthrough.md` and `docs/notation-guide.md` together, then practise the team's Q&A topics.
 - [ ] Randomly direct Q&A questions to every teammate until everyone can answer across the theory, algorithm, experiment, and hardware.
 - [ ] Run at least two timed rehearsals with speaker handoffs and the complete live demo.
 - [ ] Run one failure rehearsal using the recorded fallback without implying that recorded data is live.
