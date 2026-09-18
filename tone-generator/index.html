@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Offline controlled-tone source for the Music LED Fourier demonstration.">
     <title>Fourier Signal Bench</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=analysis-lab-1">
   </head>
   <body>
     <main class="bench">
@@ -24,8 +24,17 @@
           <p id="scope-title">Composite waveform</p>
           <output id="active-readout">200 Hz selected</output>
         </div>
-        <canvas id="scope-canvas" width="1200" height="320" aria-label="Preview of the selected composite waveform"></canvas>
-        <div class="scope-scale" aria-hidden="true"><span>time</span><span>amplitude</span></div>
+        <div class="scope-plot">
+          <canvas id="scope-canvas" width="1200" height="320" aria-label="Preview of the selected composite waveform"></canvas>
+          <div class="scope-scale" aria-hidden="true"><span>time</span><span>amplitude</span></div>
+        </div>
+        <div class="component-scope">
+          <div class="component-readout">
+            <span>Constituent frequencies</span>
+            <output id="component-readout" aria-live="polite"></output>
+          </div>
+          <canvas id="component-canvas" width="1200" height="180" role="img" aria-label="Individual waveform for each selected frequency"></canvas>
+        </div>
       </section>
 
       <section class="controls" aria-label="Tone controls">
@@ -72,6 +81,86 @@
         </div>
       </section>
 
+      <section class="analysis-lab" aria-labelledby="analysis-title">
+        <header class="analysis-header">
+          <div class="analysis-intro">
+            <h2 id="analysis-title">Live ESP32 Spectrum → Colour</h2>
+            <p>Connect over USB to view the microphone FFT and the exact RGB mapping produced by the ESP32.</p>
+          </div>
+
+          <div id="serial-controls" class="serial-controls">
+            <button id="connect-serial" class="serial-connect" type="button">Connect ESP32</button>
+            <button id="disconnect-serial" type="button" disabled>Disconnect</button>
+          </div>
+
+          <p id="analysis-status" class="analysis-status disconnected" role="status" aria-live="polite">
+            Connect the ESP32. Close Arduino Serial Monitor first because only one app can own the port.
+          </p>
+        </header>
+
+        <div class="analysis-flow" aria-label="Analysis stages">
+          <span>128 samples</span><b>→</b><span>Hamming window</span><b>→</b><span>FFT bins</span><b>→</b><span>RGB bands</span>
+        </div>
+
+        <div class="analysis-grid">
+          <section class="spectrum-panel" aria-labelledby="spectrum-title">
+            <div class="analysis-panel-heading">
+              <div>
+                <p>Frequency decomposition</p>
+                <h3 id="spectrum-title">Positive-frequency microphone FFT</h3>
+                <p class="spectrum-axis-note">Y: FFT coefficient magnitude |X[k]| — unnormalized ADC-count sum after mean removal and Hamming window (log scale). X: frequency (Hz).</p>
+              </div>
+              <output id="spectrum-summary">Waiting for ESP32 data</output>
+            </div>
+            <canvas id="spectrum-canvas" width="1200" height="360" role="img" aria-label="Positive-frequency microphone FFT. Horizontal axis is frequency from zero to 3200 hertz. Vertical axis is the unnormalized FFT coefficient magnitude of the mean-removed, Hamming-windowed ADC samples, displayed on a logarithmic scale."></canvas>
+            <div class="spectrum-key" aria-hidden="true">
+              <span class="red-key">50–250 Hz · red</span>
+              <span class="green-key">300–1000 Hz · green</span>
+              <span class="blue-key">1050–2500 Hz · blue</span>
+              <span class="unmapped-key">2550–3200 Hz · unmapped</span>
+            </div>
+          </section>
+
+          <section class="mapping-panel" aria-labelledby="mapping-title">
+            <div class="analysis-panel-heading mapping-heading">
+              <div>
+                <p>Band aggregation</p>
+                <h3 id="mapping-title">Magnitude to RGB PWM</h3>
+              </div>
+            </div>
+
+            <div class="band-meter red-band">
+              <div><strong>Red</strong><span>bins 1–5</span><output id="red-strength">0.0</output></div>
+              <div class="meter-track"><span id="red-meter"></span></div>
+            </div>
+            <div class="band-meter green-band">
+              <div><strong>Green</strong><span>bins 6–20</span><output id="green-strength">0.0</output></div>
+              <div class="meter-track"><span id="green-meter"></span></div>
+            </div>
+            <div class="band-meter blue-band">
+              <div><strong>Blue</strong><span>bins 21–50</span><output id="blue-strength">0.0</output></div>
+              <div class="meter-track"><span id="blue-meter"></span></div>
+            </div>
+
+            <div class="colour-result">
+              <div id="rgb-swatch" class="rgb-swatch" aria-label="Expected RGB colour"></div>
+              <div>
+                <p id="colour-result-label">Measured ESP32 output</p>
+                <output id="rgb-output">R 0 · G 0 · B 0</output>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <dl class="analysis-metrics">
+          <div><dt>Source</dt><dd id="metric-source">Not connected</dd></div>
+          <div><dt>Sample rate</dt><dd id="metric-sample-rate">—</dd></div>
+          <div><dt>Frame RMS</dt><dd id="metric-rms">0.00</dd></div>
+          <div><dt>Noise floor</dt><dd id="metric-noise-floor">—</dd></div>
+          <div><dt>Dominant bin</dt><dd id="metric-dominant-bin">—</dd></div>
+        </dl>
+      </section>
+
       <aside class="procedure">
         <p class="procedure-number">01</p>
         <p>Select one or more tones. Multiple oscillators share fixed headroom to reduce clipping.</p>
@@ -81,6 +170,6 @@
         <p>Compare the selected tone with the ESP32 serial output and RGB channel.</p>
       </aside>
     </main>
-    <script src="app.js"></script>
+    <script type="module" src="app.js?v=analysis-lab-1"></script>
   </body>
 </html>

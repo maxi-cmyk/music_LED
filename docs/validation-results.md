@@ -57,21 +57,35 @@ Result after implementing the full pre-flash pipeline:
 
 | Resource | Used | Available |
 |---|---:|---:|
-| Program storage | 297,623 bytes (22%) | 1,310,720 bytes |
-| Global dynamic memory | 32,744 bytes (9%) | 327,680 bytes |
+| Program storage | 298,707 bytes (22%) | 1,310,720 bytes |
+| Global dynamic memory | 32,752 bytes (9%) | 327,680 bytes |
 
-The firmware now contains a startup RGB channel self-test, an on-device DFT/FFT benchmark for 32, 64, 128, and 256 samples, acquisition diagnostics, and a rate-limited live serial record. Successful compilation does not establish their physical results.
+The firmware now contains a startup RGB channel self-test, an on-device DFT/FFT benchmark for 32, 64, 128, and 256 samples, acquisition diagnostics, a rate-limited live summary, and 5 Hz full-spectrum telemetry.
 
 ## Browser source check
 
-`node --check tone-generator/app.js` passed. A temporary localhost server returned the page, script, and stylesheet successfully. Audio start/stop behavior and the physical speaker path remain user-gesture and hardware checks.
+`node --check` passed for `app.js`, `signal-analysis.mjs`, and `serial-source.mjs`. `node tests/signal_analysis_tests.mjs` passed the generated single- and mixed-frequency cases, non-bin-centred leakage, telemetry parsing, chunked serial buffering, and malformed-frame rejection.
 
-## Evidence still requiring hardware
+## Flashed ESP32 telemetry
 
-- microphone and RGB wiring;
-- quiet-room level and clipping behavior;
-- achieved sample rate, jitter, and missed deadlines;
-- detected bins for acoustic test tones;
-- fixed RGB channel calibration.
+The updated sketch was uploaded to `/dev/cu.usbserial-0001`. Captured `LIVE_FRAME` and `SPECTRUM_FRAME` output established:
 
-These checks begin after the updated sketch is flashed. No hardware result is claimed here.
+| Evidence | Observed result |
+|---|---|
+| Spectrum payload | 65 bins, covering DC through Nyquist |
+| Achieved sample rate | Approximately 6399.92–6400.56 Hz |
+| Maximum sample lateness | 2–4 µs in the captured frames |
+| Missed deadlines | 0 |
+| Silence handling | Zero-valued spectrum and RGB output |
+| Active input | Non-zero spectrum, bands, dominant bin, and RGB output |
+
+The browser-side spectrum parsing and colour-mapping mathematics have automated coverage. Selecting a Web Serial port remains a browser user-permission action, so the final live-page connection should be confirmed interactively on the presentation computer.
+
+## Remaining presentation-environment checks
+
+- reconnect through the page's Web Serial permission prompt;
+- verify the final speaker distance, room acoustics, and clipping margin;
+- rehearse closing the serial monitor before the website connects;
+- confirm the final display layout at the presentation resolution.
+
+These are live-environment checks, not gaps in the transform or telemetry implementation.

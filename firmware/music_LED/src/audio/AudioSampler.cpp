@@ -96,6 +96,17 @@ bool collectAudioSamples(fourier::AudioSamples *rawSamples,
 }
 
 float measureMicrophoneNoiseRms() {
+  // ADC2 can produce a short transient after its pin and attenuation are
+  // configured. Let the microphone/ADC settle and discard initial conversions
+  // so that transient cannot become the fixed noise floor for the whole run.
+  delay(audio_config::kMicrophoneSettleMilliseconds);
+  for (size_t discardedSample = 0;
+       discardedSample < audio_config::kNoiseCalibrationDiscardSamples;
+       ++discardedSample) {
+    analogRead(pins::kMicrophoneAnalog);
+    delayMicroseconds(audio_config::kNoiseCalibrationIntervalMicroseconds);
+  }
+
   float runningMean = 0.0f;
   float sumSquaredDifferences = 0.0f;
   for (size_t sampleNumber = 1;

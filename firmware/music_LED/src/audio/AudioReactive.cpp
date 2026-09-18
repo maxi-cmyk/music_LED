@@ -22,6 +22,8 @@ LiveAudioDiagnostics diagnostics{};
 float fixedNoiseFloorRootMeanSquare = audio_config::kMinimumNoiseFloorRms;
 uint32_t lastFrameStartMilliseconds = 0;
 uint32_t lastSerialReportMilliseconds = 0;
+uint32_t lastSpectrumSerialReportMilliseconds = 0;
+uint32_t spectrumFrameSequence = 0;
 bool liveFrameComparisonPrinted = false;
 
 float clampFloat(float value, float minimum, float maximum) {
@@ -99,6 +101,56 @@ void printSerialDiagnosticsIfDue(uint32_t nowMilliseconds) {
   Serial.println(diagnostics.blueBrightness);
 }
 
+void printSpectrumDiagnosticsIfDue(
+    uint32_t nowMilliseconds,
+    const fourier::SpectrumMagnitudes *magnitudes) {
+  if (nowMilliseconds - lastSpectrumSerialReportMilliseconds <
+      audio_config::kSpectrumSerialReportIntervalMilliseconds) {
+    return;
+  }
+  lastSpectrumSerialReportMilliseconds = nowMilliseconds;
+
+  Serial.print("SPECTRUM_FRAME,sequence=");
+  Serial.print(++spectrumFrameSequence);
+  Serial.print(",sample_rate_hz=");
+  Serial.print(diagnostics.achievedSamplingFrequencyHz, 2);
+  Serial.print(",rms=");
+  Serial.print(diagnostics.centeredRootMeanSquare, 2);
+  Serial.print(",noise_floor=");
+  Serial.print(diagnostics.noiseFloorRootMeanSquare, 2);
+  Serial.print(",silence_threshold=");
+  Serial.print(diagnostics.silenceThresholdRootMeanSquare, 2);
+  Serial.print(",dominant_bin=");
+  Serial.print(diagnostics.dominantFrequencyBinIndex);
+  Serial.print(",dominant_hz=");
+  Serial.print(diagnostics.dominantFrequencyHz, 1);
+  Serial.print(",bass=");
+  Serial.print(diagnostics.bassStrength, 1);
+  Serial.print(",mid=");
+  Serial.print(diagnostics.midrangeStrength, 1);
+  Serial.print(",treble=");
+  Serial.print(diagnostics.trebleStrength, 1);
+  Serial.print(",rgb=");
+  Serial.print(diagnostics.redBrightness);
+  Serial.print('|');
+  Serial.print(diagnostics.greenBrightness);
+  Serial.print('|');
+  Serial.print(diagnostics.blueBrightness);
+  Serial.print(",bins=");
+
+  constexpr size_t kNyquistBin = fourier_config::kNumberOfSamples / 2;
+  for (size_t frequencyBinIndex = 0; frequencyBinIndex <= kNyquistBin;
+       ++frequencyBinIndex) {
+    if (frequencyBinIndex > 0)
+      Serial.print('|');
+    const float magnitude = magnitudes == nullptr
+                                ? 0.0f
+                                : magnitudes->magnitude[frequencyBinIndex];
+    Serial.print(static_cast<uint32_t>(magnitude + 0.5f));
+  }
+  Serial.println();
+}
+
 } // namespace
 
 void setupAudioReactive() {
@@ -154,6 +206,7 @@ void updateAudioReactive() {
   if (!diagnostics.signalAboveSilenceThreshold) {
     clearFrequencyAndColorDiagnostics();
     turnOffRgbLed();
+    printSpectrumDiagnosticsIfDue(millis(), nullptr);
     printSerialDiagnosticsIfDue(millis());
     return;
   }
@@ -191,6 +244,7 @@ void updateAudioReactive() {
   diagnostics.greenBrightness = brightness.green;
   diagnostics.blueBrightness = brightness.blue;
   writeRgbBrightness(brightness);
+  printSpectrumDiagnosticsIfDue(millis(), &frequencyMagnitudes);
   printSerialDiagnosticsIfDue(millis());
 }
 

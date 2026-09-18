@@ -2,12 +2,16 @@
 
 #include <Arduino.h>
 
+#include "../config/LightingConfig.h"
 #include "../config/PinConfig.h"
 
 void setupRgbLedOutput() {
   pinMode(pins::kRgbRed, OUTPUT);
   pinMode(pins::kRgbGreen, OUTPUT);
   pinMode(pins::kRgbBlue, OUTPUT);
+  // Calling this before the first analogWrite changes the shared default used
+  // when each RGB pin is attached to an LEDC channel.
+  analogWriteFrequency(pins::kRgbRed, lighting_config::kRgbPwmFrequencyHz);
   turnOffRgbLed();
 }
 
