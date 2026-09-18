@@ -9,4 +9,4 @@ constexpr uint8_t kRgbGreen = 18;
 constexpr uint8_t kRgbBlue = 5;
 // ADC1 remains usable while ESP32 Wi-Fi is active.
 constexpr uint8_t kMicrophoneAnalog = 34;
-}  // namespace pins
+} // namespace pins

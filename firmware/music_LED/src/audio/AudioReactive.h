@@ -1,50 +1,31 @@
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
-enum class AudioPaletteMode : uint8_t { Club, Album, Spectrum };
-enum class RgbTestMode : uint8_t { Off, Red, Green, Blue, White, Sweep };
-
-struct AudioReactiveConfig {
-  bool rgbEnabled;
-  float beatSensitivity;
-  float noiseGateMultiplier;
-  float tempoCorrection;
-  uint16_t tempoHoldMs;
-  float flashDecay;
-  uint8_t idleBrightness;
-  uint8_t maxBrightness;
-  float redGain;
-  float greenGain;
-  float blueGain;
-  float gamma;
-  float dancerSpeed;
-  float dancerIntensity;
-  AudioPaletteMode paletteMode;
-  bool nightActive;
-  uint8_t nightBrightness;
-};
-
-struct AudioVisualState {
-  uint8_t bass;
-  uint8_t mid;
-  uint8_t treble;
-  uint8_t beatStrength;
-  uint32_t beatCount;
-  uint16_t bpm;
-  uint8_t beatConfidence;
-  uint16_t microphoneLevel;
-  uint16_t noiseFloor;
-  uint16_t dancerFrameMs;
-  uint8_t dancerIntensity;
-  bool active;
+struct LiveAudioDiagnostics {
+  uint32_t sampleSpanMicroseconds = 0;
+  uint32_t expectedSampleSpanMicroseconds = 0;
+  uint32_t maximumLatenessMicroseconds = 0;
+  uint16_t missedSampleDeadlines = 0;
+  uint16_t clippedSamples = 0;
+  float achievedSamplingFrequencyHz = 0.0f;
+  float centeredRootMeanSquare = 0.0f;
+  float noiseFloorRootMeanSquare = 0.0f;
+  float silenceThresholdRootMeanSquare = 0.0f;
+  size_t dominantFrequencyBinIndex = 0;
+  float dominantFrequencyHz = 0.0f;
+  float dominantMagnitude = 0.0f;
+  float bassStrength = 0.0f;
+  float midrangeStrength = 0.0f;
+  float trebleStrength = 0.0f;
+  uint8_t redBrightness = 0;
+  uint8_t greenBrightness = 0;
+  uint8_t blueBrightness = 0;
+  bool signalAboveSilenceThreshold = false;
 };
 
 void setupAudioReactive();
 void updateAudioReactive();
 void stopAudioReactive();
-const AudioVisualState& audioVisualState();
-const AudioReactiveConfig& audioReactiveConfig();
-void configureAudioReactive(const AudioReactiveConfig& config);
-void configureRgbTest(RgbTestMode mode, uint32_t remainingMs);
-void setAudioTrackPalette(const uint8_t* rgbValues, uint8_t colorCount);
+const LiveAudioDiagnostics &liveAudioDiagnostics();

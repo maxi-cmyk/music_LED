@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Offline controlled-tone source for the Music LED Fourier demonstration.">
+    <title>Fourier Signal Bench</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="bench">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">CS103 · Signal source 01</p>
+          <h1>Fourier<br>Signal Bench</h1>
+        </div>
+        <div class="route" aria-label="Physical signal route">
+          <span>Browser</span><b>→</b><span>Speaker</span><b>→</b><span>Air</span><b>→</b><span>Mic</span><b>→</b><span>ESP32</span>
+        </div>
+      </header>
+
+      <section class="scope" aria-labelledby="scope-title">
+        <div class="scope-heading">
+          <p id="scope-title">Composite waveform</p>
+          <output id="active-readout">200 Hz selected</output>
+        </div>
+        <canvas id="scope-canvas" width="1200" height="320" aria-label="Preview of the selected composite waveform"></canvas>
+        <div class="scope-scale" aria-hidden="true"><span>time</span><span>amplitude</span></div>
+      </section>
+
+      <section class="controls" aria-label="Tone controls">
+        <fieldset class="frequency-panel">
+          <legend>Choose frequency components</legend>
+          <label class="frequency red">
+            <input type="checkbox" name="frequency" value="200" checked>
+            <span><strong>200</strong><small>Hz · bin 4 · red</small></span>
+          </label>
+          <label class="frequency green">
+            <input type="checkbox" name="frequency" value="500">
+            <span><strong>500</strong><small>Hz · bin 10 · green</small></span>
+          </label>
+          <label class="frequency green">
+            <input type="checkbox" name="frequency" value="1000">
+            <span><strong>1000</strong><small>Hz · bin 20 · green</small></span>
+          </label>
+          <label class="frequency blue">
+            <input type="checkbox" name="frequency" value="2000">
+            <span><strong>2000</strong><small>Hz · bin 40 · blue</small></span>
+          </label>
+          <label class="frequency leakage">
+            <input type="checkbox" name="frequency" value="225">
+            <span><strong>225</strong><small>Hz · off-bin leakage test</small></span>
+          </label>
+        </fieldset>
+
+        <div class="output-panel">
+          <div class="volume-control">
+            <label for="volume">Speaker volume</label>
+            <output id="volume-readout" for="volume">20%</output>
+            <input id="volume" type="range" min="0" max="100" value="20" step="1">
+          </div>
+
+          <div class="transport">
+            <button id="play" class="play" type="button"><span aria-hidden="true">▶</span> Play selected</button>
+            <button id="stop" type="button" disabled><span aria-hidden="true">■</span> Stop</button>
+          </div>
+
+          <div class="status" role="status" aria-live="polite">
+            <span id="status-light" class="status-light"></span>
+            <span id="status-text">Ready. Start low and raise the speaker volume only if needed.</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="procedure">
+        <p class="procedure-number">01</p>
+        <p>Select one or more tones. Multiple oscillators share fixed headroom to reduce clipping.</p>
+        <p class="procedure-number">02</p>
+        <p>Place the speaker near the microphone. This page does not send samples to the ESP32.</p>
+        <p class="procedure-number">03</p>
+        <p>Compare the selected tone with the ESP32 serial output and RGB channel.</p>
+      </aside>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
