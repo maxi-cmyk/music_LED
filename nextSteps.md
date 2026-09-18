@@ -30,10 +30,10 @@ Target about nine minutes so the presentation remains below the ten-minute limit
 |---:|---|
 | 0:00–0:30 | Introduce the sound → samples → spectrum → colour pipeline. |
 | 0:30–2:00 | Connect the continuous Fourier-transform idea to the finite DFT used by the ESP32. |
-| 2:00–4:30 | Work through `X = F x` with the four-sample example and explain basis vectors, orthogonality, conjugate symmetry, and linearity. |
+| 2:00–4:30 | Work through $\mathbf{X}=F\mathbf{x}$ with the four-sample example and explain basis vectors, orthogonality, conjugate symmetry, and linearity. |
 | 4:30–6:15 | Show how the direct DFT implements the matrix row sums and connect the result to a controlled tone. |
 | 6:15–7:15 | Explain one FFT butterfly and show that the FFT returns the same complex coefficients. |
-| 7:15–8:00 | Present the ESP32 timing comparison and contrast `O(N²)` with `O(N log N)`. |
+| 7:15–8:00 | Present the ESP32 timing comparison and contrast $O(N^2)$ with $O(N\log N)$. |
 | 8:00–9:00 | Demonstrate individual and mixed tones using the browser spectrum and RGB output. |
 | 9:00–9:30 | State limitations and the main conclusion, then transition to Q&A. |
 
@@ -47,7 +47,7 @@ Target about nine minutes so the presentation remains below the ten-minute limit
 
 - [ ] Assign speaking sections and a backup presenter for each section.
 - [ ] Ask each teammate to trace a 200 Hz input from microphone samples through the FFT, spectrum bands, and red LED output.
-- [ ] Review `docs/fourier-walkthrough.md` and `docs/how-the-fourier-matrix-arises.md` together, then practise the team's Q&A topics.
+- [ ] Review [`docs/fourier-walkthrough.md`](docs/fourier-walkthrough.md) and [`docs/how-the-fourier-matrix-arises.md`](docs/how-the-fourier-matrix-arises.md) together, then practise the team's Q&A topics.
 - [ ] Randomly direct Q&A questions to every teammate until everyone can answer across the theory, algorithm, experiment, and hardware.
 - [ ] Run at least two timed rehearsals with speaker handoffs and the complete live demo.
 - [ ] Run one failure rehearsal using the recorded fallback without implying that recorded data is live.

@@ -48,11 +48,12 @@ $$
 Writing the sum term by term makes its structure visible:
 
 $$
-X[k]
-= e^{-2\pi i k(0)/N}x[0]
-+ e^{-2\pi i k(1)/N}x[1]
-+ \cdots
-+ e^{-2\pi i k(N-1)/N}x[N-1].
+\begin{aligned}
+X[k] ={}& e^{-2\pi i k(0)/N}x[0] \\
+&+ e^{-2\pi i k(1)/N}x[1] \\
+&+ \cdots \\
+&+ e^{-2\pi i k(N-1)/N}x[N-1].
+\end{aligned}
 $$
 
 This is a row-by-column multiplication. The weights form a row vector and the samples form the column vector:
@@ -184,9 +185,11 @@ $$
 For example, the second matrix row produces the second output entry:
 
 $$
+\begin{aligned}
 X[1]
-= 1(1) + (-i)(0) + (-1)(-1) + i(0)
-= 2.
+&= 1(1) + (-i)(0) + (-1)(-1) + i(0) \\
+&= 2.
+\end{aligned}
 $$
 
 The code in `DirectDFT.cpp` performs this same calculation one row at a time. It computes each matrix entry when needed instead of storing the full matrix.
@@ -204,10 +207,8 @@ The input and output both contain $N$ entries, but their coordinates describe di
 
 Direct matrix multiplication repeats many related calculations. The fast Fourier transform factors and reuses those calculations through smaller even-indexed and odd-indexed transforms.
 
-The FFT does not create a different output or a different meaning for the vectors. With the same sign and normalization convention, it computes the same equation
+The FFT does not create a different output or a different meaning for the vectors. With the same sign and normalization convention, it computes the same equation more efficiently:
 
 $$
 \mathbf{X} = F\mathbf{x}
 $$
-
-more efficiently.
