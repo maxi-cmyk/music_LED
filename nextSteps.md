@@ -47,7 +47,7 @@ Target about nine minutes so the presentation remains below the ten-minute limit
 
 - [ ] Assign speaking sections and a backup presenter for each section.
 - [ ] Ask each teammate to trace a 200 Hz input from microphone samples through the FFT, spectrum bands, and red LED output.
-- [ ] Review `docs/fourier-walkthrough.md` and `docs/notation-guide.md` together, then practise the team's Q&A topics.
+- [ ] Review `docs/fourier-walkthrough.md` and `docs/how-the-fourier-matrix-arises.md` together, then practise the team's Q&A topics.
 - [ ] Randomly direct Q&A questions to every teammate until everyone can answer across the theory, algorithm, experiment, and hardware.
 - [ ] Run at least two timed rehearsals with speaker handoffs and the complete live demo.
 - [ ] Run one failure rehearsal using the recorded fallback without implying that recorded data is live.

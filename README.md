@@ -29,6 +29,7 @@ The LED is a visualization of selected frequency bands, not proof that the trans
 - `firmware/music_LED/` contains the Arduino sketch and separate audio, Fourier, lighting, configuration, and diagnostic modules.
 - `tone-generator/` contains an offline browser tone generator and Web Serial spectrum visualizer.
 - `docs/fourier-walkthrough.md` explains the mathematics and maps equations to the implementation.
+- `docs/how-the-fourier-matrix-arises.md` derives the sample vector, Fourier matrix, and frequency-domain vector step by step.
 - `nextSteps.md` tracks only the work still needed before the presentation.
 
 ## Hardware
