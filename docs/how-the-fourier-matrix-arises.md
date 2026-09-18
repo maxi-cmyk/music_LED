@@ -123,11 +123,16 @@ $$
 The entire DFT can now be written as one matrix equation:
 
 $$
-\underbrace{\mathbf{X}}_{N\times 1}
-=
-\underbrace{F}_{N\times N}
-\underbrace{\mathbf{x}}_{N\times 1}.
+\mathbf{X} = F\mathbf{x}.
 $$
+
+The objects have these dimensions:
+
+| Object | Dimensions |
+|---|---:|
+| Input vector $\mathbf{x}$ | $N\times 1$ |
+| Fourier matrix $F$ | $N\times N$ |
+| Output vector $\mathbf{X}$ | $N\times 1$ |
 
 The dimensions explain why the multiplication works:
 
@@ -175,10 +180,12 @@ $$
 matrix multiplication produces
 
 $$
-\mathbf{X} = F_4\mathbf{x}
-=
+\mathbf{X} = F_4\mathbf{x} =
 \begin{bmatrix}
-0 \\ 2 \\ 0 \\ 2
+0 \\
+2 \\
+0 \\
+2
 \end{bmatrix}.
 $$
 
