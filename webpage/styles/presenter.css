@@ -1,0 +1,143 @@
+.presenter-page { width: min(1580px, 100%); }
+
+.presenter-intro {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.55fr) minmax(520px, 1.45fr);
+  gap: 48px;
+  align-items: center;
+  padding-bottom: 28px;
+}
+
+.presenter-intro h1 { max-width: none; margin-bottom: 5px; font-size: clamp(2.2rem, 4vw, 3.5rem); }
+.presenter-intro p { margin: 0; font-family: var(--measure); font-size: 0.72rem; }
+.presenter-band-key { display: grid; grid-template-columns: repeat(3, 1fr); }
+.presenter-band-key > span { padding: 15px 18px; color: #0d0f09; }
+.presenter-band-key b { font-size: 1.05rem; }
+
+.lesson-nav {
+  position: sticky;
+  top: 73px;
+  z-index: 10;
+  display: flex;
+  gap: 26px;
+  padding: 14px 0;
+  border-block: 1px solid var(--line);
+  background: rgba(9, 10, 8, 0.96);
+  overflow-x: auto;
+}
+.lesson-nav button { flex: 0 0 auto; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-family: var(--measure); font-size: 0.7rem; text-decoration: none; }
+.lesson-nav button:hover { color: var(--signal); transform: none; }
+
+.lesson-section {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  gap: clamp(42px, 7vw, 110px);
+  align-items: start;
+  padding: 120px 0;
+  border-bottom: 1px solid var(--line-strong);
+  scroll-margin-top: 130px;
+}
+
+.lesson-copy { position: sticky; top: 150px; }
+.lesson-copy p { font-size: 1.03rem; }
+.display-equation, .complexity-callout { margin: 28px 0; padding: 22px; border-block: 1px solid var(--line); background: var(--surface); font-size: clamp(1rem, 2vw, 1.35rem); }
+
+.samples-bridge,
+.matrix-stage,
+.factorization-stage { min-width: 0; }
+
+.samples-bridge { display: grid; justify-items: start; gap: 22px; padding: clamp(28px, 5vw, 60px); border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.samples-bridge .katex-display { margin: 12px 0; }
+.samples-bridge p { max-width: 62ch; margin: 0; }
+.bridge-kicker { color: var(--signal); font-family: var(--measure); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.samples-bridge .primary-button { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 18px; border-radius: 8px; color: var(--signal-ink); text-decoration: none; }
+.bridge-flow { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; width: 100%; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); }
+.bridge-flow b { color: var(--signal); font-weight: 400; }
+.row-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 24px 0 16px; }
+.row-controls button { min-width: 0; padding-inline: 8px; font-family: var(--measure); font-size: 0.7rem; }
+.row-controls button[aria-pressed="true"] { border-color: var(--signal); background: var(--signal); color: var(--signal-ink); }
+.matrix-stage { padding: clamp(26px, 5vw, 60px); border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 28px 72px rgba(0, 0, 0, 0.24); }
+.matrix-construction { margin-bottom: 38px; padding-bottom: 34px; border-bottom: 1px solid var(--line); }
+.matrix-construction > strong { font-size: 1.06rem; }
+.matrix-construction > p { max-width: 70ch; margin: 8px 0 20px; color: var(--muted); font-size: 0.88rem; }
+.matrix-construction > .math { overflow-x: auto; }
+.matrix-row-construction { margin-top: 22px; padding: 18px; background: var(--surface-raised); color: var(--signal); }
+.matrix-row-construction .katex-display { margin: 0; }
+.matrix-equation { font-size: clamp(0.83rem, 1.55vw, 1.18rem); }
+.row-calculation { margin-top: 42px; padding-top: 30px; border-top: 1px solid var(--line); color: var(--signal); font-size: clamp(1rem, 2vw, 1.45rem); }
+.plain-conclusion { margin: 38px 0 0; padding-top: 20px; border-top: 1px solid var(--line); }
+.plain-conclusion strong { color: var(--ink); }
+
+.factorization-stage { border-block: 1px solid var(--line-strong); }
+.fft-lesson .display-equation, .fft-lesson .complexity-callout { font-size: clamp(0.8rem, 1.45vw, 1.08rem); }
+.factorization-stage .katex-display { overflow-x: visible; }
+.fft-example-heading { display: flex; justify-content: space-between; gap: 32px; align-items: center; padding: 30px; background: var(--surface); }
+.fft-example-heading h3 { margin: 0 0 7px; font-size: clamp(1.65rem, 3vw, 2.45rem); }
+.fft-example-heading p { margin: 0; font-size: 0.84rem; }
+.fft-input { flex: 0 0 auto; color: var(--signal); font-size: 1rem; }
+.fft-stage { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 34px; padding: 34px 30px; border-top: 1px solid var(--line); }
+.fft-stage-copy { display: grid; align-content: start; gap: 5px; }
+.fft-stage-copy > span { color: var(--signal); font-family: var(--measure); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.fft-stage-copy > strong { font-size: 1.05rem; }
+.fft-stage-copy p { margin: 3px 0 0; font-size: 0.78rem; }
+.split-equations { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+.split-equations > div { min-width: 0; padding: 18px; background: var(--surface); }
+.split-equations > div > span { color: var(--muted); font-family: var(--measure); font-size: 0.68rem; }
+.split-equations .katex-display, .half-transform-equations .katex-display { margin: 10px 0 0; font-size: 0.88em; }
+.half-transform-equations { display: grid; gap: 14px; min-width: 0; }
+.half-transform-equations > div { padding: 18px; background: var(--surface); }
+.butterfly-stage { grid-template-columns: 1fr; gap: 24px; background: var(--surface-raised); }
+.butterfly-heading { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 34px; }
+.butterfly-heading > p { margin: 0; }
+.butterfly-definition p { margin: 0 0 10px; }
+.butterfly-definition .katex-display { margin: 0; font-size: 0.9em; text-align: left; }
+.butterfly-list { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.butterfly-example { min-width: 0; padding-block: 18px; border-block: 1px solid var(--line); }
+.butterfly-example header { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 16px; color: var(--muted); font-family: var(--measure); font-size: 0.66rem; }
+.butterfly-example header strong { color: var(--signal); font-size: 0.8rem; }
+.butterfly-grid { display: grid; grid-template-columns: minmax(110px, 1fr) 42px 42px minmax(100px, 1fr); gap: 7px; align-items: center; }
+.shared-input, .butterfly-output { min-width: 0; padding: 11px 10px; background: var(--surface); text-align: center; }
+.butterfly-grid .katex { font-size: 0.82em; }
+.shared-input { color: var(--muted); }
+.combine-sign { display: grid; width: 38px; height: 38px; place-items: center; background: var(--signal); color: var(--signal-ink); border-radius: 50%; font-weight: 700; }
+.flow-arrow { color: var(--signal); text-align: center; }
+.butterfly-output { color: var(--ink); font-weight: 700; }
+.fft-result { padding: 22px; background: var(--surface); color: var(--signal); font-size: 0.9rem; }
+.fft-result .katex-display { margin: 0; }
+.complexity-proof { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr); gap: 30px; padding: 34px 30px; border-top: 1px solid var(--line); background: var(--signal); color: var(--signal-ink); }
+.complexity-proof > div:first-child > strong { font-size: 1.15rem; }
+.complexity-proof p { margin: 8px 0 0; color: var(--signal-ink); }
+.complexity-proof .katex-display { margin: 18px 0 0; text-align: left; }
+.work-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0; background: rgba(23, 29, 0, 0.24); }
+.work-comparison > div { display: grid; gap: 7px; padding: 16px; background: rgba(216, 255, 82, 0.78); }
+.work-comparison dt { font-size: 0.72rem; font-weight: 700; }
+.work-comparison dd { margin: 0; font-family: var(--measure); }
+.work-comparison dd:last-child { font-size: 0.78rem; opacity: 0.8; }
+.counting-note { grid-column: 1 / -1; padding-top: 16px; border-top: 1px solid rgba(23, 29, 0, 0.3); font-size: 0.76rem; }
+
+@media (max-width: 980px) {
+  .presenter-intro { grid-template-columns: 1fr; min-height: auto; }
+  .presenter-intro > p { max-width: 60ch; }
+  .lesson-section { grid-template-columns: 1fr; padding: 86px 0; }
+  .lesson-copy { position: static; }
+}
+
+@media (max-width: 680px) {
+  .presenter-band-key { grid-template-columns: 1fr; }
+  .lesson-nav { top: 65px; margin-inline: -16px; padding-inline: 16px; }
+  .lesson-section { padding: 70px 0; }
+  .fft-example-heading { align-items: start; flex-direction: column; padding: 24px 18px; }
+  .fft-stage { grid-template-columns: 1fr; gap: 18px; padding: 28px 18px; }
+  .split-equations, .butterfly-list { grid-template-columns: 1fr; }
+  .butterfly-heading { grid-template-columns: 1fr; gap: 12px; }
+  .complexity-proof { grid-template-columns: 1fr; padding: 28px 18px; }
+  .counting-note { grid-column: auto; }
+  .row-controls { grid-template-columns: repeat(2, 1fr); }
+  .matrix-stage { padding: 22px 12px; }
+
+  .butterfly-example header { align-items: start; flex-direction: column; }
+  .butterfly-grid { grid-template-columns: minmax(96px, 1fr) 38px 30px minmax(96px, 1fr); }
+  .split-equations .katex-display, .half-transform-equations .katex-display { font-size: 0.78em; }
+  .butterfly-definition .katex-display { font-size: 0.8em; }
+  .complexity-proof .katex-display { font-size: 0.82em; }
+}

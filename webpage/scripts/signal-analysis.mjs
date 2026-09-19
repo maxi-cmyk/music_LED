@@ -1,17 +1,4 @@
-export const SIGNAL_CONFIG = Object.freeze({
-  sampleCount: 128,
-  sampleRateHz: 6400,
-  binSpacingHz: 50,
-  nyquistBin: 64,
-  generatedPeakAmplitude: 72,
-  brightnessPerMagnitudeUnit: 0.12,
-  maximumBrightness: 255,
-  bands: Object.freeze({
-    red: Object.freeze({ firstBin: 1, lastBin: 5, gain: 1.0 }),
-    green: Object.freeze({ firstBin: 6, lastBin: 20, gain: 0.82 }),
-    blue: Object.freeze({ firstBin: 21, lastBin: 50, gain: 0.92 }),
-  }),
-});
+import { SIGNAL_CONFIG } from './config.mjs';
 
 function reverseBits(value, bitCount) {
   let reversed = 0;
@@ -48,8 +35,10 @@ export function fastFourierTransform(realSamples) {
         const twiddleImaginary = Math.sin(phase);
         const evenIndex = blockStart + offset;
         const oddIndex = evenIndex + halfBlockSize;
-        const rotatedReal = real[oddIndex] * twiddleReal - imaginary[oddIndex] * twiddleImaginary;
-        const rotatedImaginary = real[oddIndex] * twiddleImaginary + imaginary[oddIndex] * twiddleReal;
+        const rotatedReal = real[oddIndex] * twiddleReal
+          - imaginary[oddIndex] * twiddleImaginary;
+        const rotatedImaginary = real[oddIndex] * twiddleImaginary
+          + imaginary[oddIndex] * twiddleReal;
 
         real[oddIndex] = real[evenIndex] - rotatedReal;
         imaginary[oddIndex] = imaginary[evenIndex] - rotatedImaginary;
@@ -58,7 +47,6 @@ export function fastFourierTransform(realSamples) {
       }
     }
   }
-
   return { real, imaginary };
 }
 
@@ -91,15 +79,15 @@ export function mapBandStrengthsToRgb(bands) {
 
 export function analyseGeneratedFrequencies(frequencies, volumePercent = 20) {
   const samples = new Float64Array(SIGNAL_CONFIG.sampleCount);
-  const componentCount = Math.max(1, frequencies.length);
   const outputLevel = Math.max(0, volumePercent) / 20;
+  const componentAmplitude = SIGNAL_CONFIG.generatedPeakAmplitude
+    * outputLevel / SIGNAL_CONFIG.perToneHeadroomDivisor;
 
   for (let sampleIndex = 0; sampleIndex < SIGNAL_CONFIG.sampleCount; sampleIndex += 1) {
     const sampleTimeSeconds = sampleIndex / SIGNAL_CONFIG.sampleRateHz;
     for (const frequencyHz of frequencies) {
-      samples[sampleIndex] += SIGNAL_CONFIG.generatedPeakAmplitude * outputLevel
-        * Math.sin(2 * Math.PI * frequencyHz * sampleTimeSeconds)
-        / componentCount;
+      samples[sampleIndex] += componentAmplitude
+        * Math.sin(2 * Math.PI * frequencyHz * sampleTimeSeconds);
     }
   }
 
@@ -121,7 +109,6 @@ export function analyseGeneratedFrequencies(frequencies, volumePercent = 20) {
     green: calculateBandStrength(magnitudes, SIGNAL_CONFIG.bands.green.firstBin, SIGNAL_CONFIG.bands.green.lastBin),
     blue: calculateBandStrength(magnitudes, SIGNAL_CONFIG.bands.blue.firstBin, SIGNAL_CONFIG.bands.blue.lastBin),
   };
-  const rgb = mapBandStrengthsToRgb(bands);
 
   let dominantBin = 0;
   for (let binIndex = 1; binIndex < magnitudes.length; binIndex += 1) {
@@ -138,79 +125,50 @@ export function analyseGeneratedFrequencies(frequencies, volumePercent = 20) {
     dominantBin,
     dominantHz: dominantBin * SIGNAL_CONFIG.binSpacingHz,
     bands,
-    rgb,
+    rgb: mapBandStrengthsToRgb(bands),
     magnitudes,
+    preparedSamples: Array.from(preparedSamples),
+    coefficients,
     receivedAt: performance.now(),
   };
 }
 
-function finiteNumber(value, fieldName) {
-  const parsedValue = Number(value);
-  if (!Number.isFinite(parsedValue)) throw new TypeError(`Invalid ${fieldName}`);
-  return parsedValue;
-}
-
-function parseRgb(value) {
-  const channels = value.split('|').map((channel) => finiteNumber(channel, 'RGB channel'));
-  if (channels.length !== 3 || channels.some((channel) => channel < 0 || channel > 255)) {
-    throw new TypeError('Invalid RGB value');
-  }
-  return { red: channels[0], green: channels[1], blue: channels[2] };
-}
-
-export function parseSpectrumFrame(line) {
-  if (!line.startsWith('SPECTRUM_FRAME,')) return null;
-  const fields = {};
-  for (const token of line.split(',').slice(1)) {
-    const separatorIndex = token.indexOf('=');
-    if (separatorIndex <= 0) continue;
-    fields[token.slice(0, separatorIndex)] = token.slice(separatorIndex + 1);
-  }
-
-  const magnitudes = (fields.bins ?? '').split('|').map((magnitude) => finiteNumber(magnitude, 'bin magnitude'));
-  if (magnitudes.length !== SIGNAL_CONFIG.nyquistBin + 1) {
-    throw new TypeError(`Expected ${SIGNAL_CONFIG.nyquistBin + 1} spectrum bins`);
-  }
-
-  return {
-    source: 'esp32',
-    sequence: finiteNumber(fields.sequence, 'sequence'),
-    sampleRateHz: finiteNumber(fields.sample_rate_hz, 'sample rate'),
-    rms: finiteNumber(fields.rms, 'RMS'),
-    noiseFloor: finiteNumber(fields.noise_floor, 'noise floor'),
-    silenceThreshold: finiteNumber(fields.silence_threshold, 'silence threshold'),
-    dominantBin: finiteNumber(fields.dominant_bin, 'dominant bin'),
-    dominantHz: finiteNumber(fields.dominant_hz, 'dominant frequency'),
-    bands: {
-      red: finiteNumber(fields.bass, 'bass strength'),
-      green: finiteNumber(fields.mid, 'midrange strength'),
-      blue: finiteNumber(fields.treble, 'treble strength'),
-    },
-    rgb: parseRgb(fields.rgb ?? ''),
-    magnitudes,
-    receivedAt: performance.now(),
-  };
-}
-
-export class SerialLineBuffer {
-  constructor(onLine) {
-    this.onLine = onLine;
-    this.pendingText = '';
-  }
-
-  push(textChunk) {
-    this.pendingText += textChunk;
-    const lines = this.pendingText.split(/\r?\n/);
-    this.pendingText = lines.pop() ?? '';
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine) this.onLine(trimmedLine);
+export function findExpectedPeaks(magnitudes, frequencies, searchRadiusBins = 1) {
+  return frequencies.map((frequencyHz) => {
+    const expectedBin = frequencyHz / SIGNAL_CONFIG.binSpacingHz;
+    const centerBin = Math.round(expectedBin);
+    let observedBin = centerBin;
+    let observedMagnitude = -Infinity;
+    for (let binIndex = Math.max(1, centerBin - searchRadiusBins);
+      binIndex <= Math.min(SIGNAL_CONFIG.nyquistBin, centerBin + searchRadiusBins);
+      binIndex += 1) {
+      if (magnitudes[binIndex] > observedMagnitude) {
+        observedMagnitude = magnitudes[binIndex];
+        observedBin = binIndex;
+      }
     }
-  }
-
-  flush() {
-    const remainingLine = this.pendingText.trim();
-    this.pendingText = '';
-    if (remainingLine) this.onLine(remainingLine);
-  }
+    const observedHz = observedBin * SIGNAL_CONFIG.binSpacingHz;
+    return {
+      frequencyHz,
+      expectedBin,
+      observedBin,
+      observedHz,
+      errorHz: observedHz - frequencyHz,
+      withinOneBin: Math.abs(observedHz - frequencyHz) <= SIGNAL_CONFIG.binSpacingHz,
+      isLeakageExample: frequencyHz % SIGNAL_CONFIG.binSpacingHz !== 0,
+    };
+  });
 }
+
+export function directFourierCoefficient(samples, frequencyBinIndex) {
+  let real = 0;
+  let imaginary = 0;
+  for (let sampleIndex = 0; sampleIndex < samples.length; sampleIndex += 1) {
+    const phase = -2 * Math.PI * frequencyBinIndex * sampleIndex / samples.length;
+    real += samples[sampleIndex] * Math.cos(phase);
+    imaginary += samples[sampleIndex] * Math.sin(phase);
+  }
+  return { real, imaginary, magnitude: Math.hypot(real, imaginary) };
+}
+
+export { SIGNAL_CONFIG };

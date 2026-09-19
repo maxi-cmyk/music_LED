@@ -1,0 +1,90 @@
+<div class="presenter-page page-frame">
+  <header class="presenter-intro">
+    <div><h1>Fourier walkthrough</h1><p>Sound → column vector → DFT matrix → FFT</p></div>
+    <div class="presenter-band-key" aria-label="Frequency band colour mapping">
+      <span class="bass-band"><b>Bass</b> · <span class="math" data-latex="50\text{--}250\,\mathrm{Hz}"></span></span>
+      <span class="mids-band"><b>Mids</b> · <span class="math" data-latex="300\text{--}1000\,\mathrm{Hz}"></span></span>
+      <span class="treble-band"><b>Treble</b> · <span class="math" data-latex="1050\text{--}2500\,\mathrm{Hz}"></span></span>
+    </div>
+  </header>
+  <nav class="lesson-nav" aria-label="Presenter lesson sections"><button type="button" data-section-link="samples">Sound → vector</button><button type="button" data-section-link="matrix">DFT matrix</button><button type="button" data-section-link="fft">Why FFT is faster</button></nav>
+
+  <section id="samples" class="lesson-section samples-lesson" aria-labelledby="samples-title">
+    <div class="lesson-copy"><h2 id="samples-title">Sound becomes a column vector</h2><p>A microphone voltage changes continuously. The ESP32 measures it at <span class="math" data-latex="N=128"></span> equally spaced moments. Writing those measurements vertically gives the input vector.</p><div class="display-equation math" data-display="true" data-latex="\mathbf{x}=\begin{bmatrix}x[0]\\x[1]\\x[2]\\\vdots\\x[127]\end{bmatrix}\in\mathbb{R}^{128}"></div><p><span class="math" data-latex="x[n]"></span> is the reading taken at time <span class="math" data-latex="t_n=n/f_s"></span>. On the ESP32, a raw reading is a 12-bit ADC count from <span class="math" data-latex="0"></span> to <span class="math" data-latex="4095"></span>, not a calibrated voltage.</p><p>Each row scales one unit vector. Adding all <span class="math" data-latex="128"></span> contributions reconstructs the sampled waveform.</p><div class="display-equation math" data-display="true" data-latex="\mathbf{x}=\sum_{n=0}^{127}x[n]\mathbf{e}_n"></div></div>
+    <div class="samples-bridge">
+      <span class="bridge-kicker">Build this input in Demo mode</span>
+      <div class="math" data-display="true" data-latex="\mathbf{x}=\frac{1}{M}\sum_{m=0}^{M-1}\mathbf{x}_{f_m}"></div>
+      <p>Select discrete frequencies, inspect any one of the 128 rows, and see the component values add into the same column vector used here.</p>
+      <a class="primary-button" href="#demo">Open the interactive sound builder</a>
+      <div class="bridge-flow" aria-label="Signal learning sequence"><span>Selected tones</span><b>→</b><span class="math" data-latex="\mathbf{x}\in\mathbb{R}^{128}"></span><b>→</b><span class="math" data-latex="\mathbf{X}=F_{128}\mathbf{x}"></span></div>
+    </div>
+  </section>
+
+  <section id="matrix" class="lesson-section matrix-lesson" aria-labelledby="matrix-title">
+    <div class="lesson-copy"><h2 id="matrix-title">Each matrix row asks about one frequency</h2><p>A frequency has both cosine alignment and sine alignment. We need both measurements because the same tone can begin at different phases.</p><div class="display-equation math" data-display="true" data-latex="e^{-i\theta}=\cos\theta-i\sin\theta"></div><p>The real part stores the cosine measurement. The imaginary part stores the sine measurement. The sound is still real; <span class="math" data-latex="i"></span> is bookkeeping that keeps amplitude and phase together.</p><p>For a small exact example, use <span class="math" data-latex="N=4"></span> samples. One row of the Fourier matrix multiplies the whole sample column and produces one frequency coefficient.</p><div class="display-equation math" data-display="true" data-latex="\mathbf{X}=F_4\mathbf{x}"></div><div class="row-controls" role="group" aria-label="Choose a Fourier matrix row"><button type="button" data-matrix-row="0">Row 0</button><button type="button" data-matrix-row="1">Row 1</button><button type="button" data-matrix-row="2">Row 2</button><button type="button" data-matrix-row="3">Row 3</button></div><p id="matrix-row-explanation">Row 1 measures the positive-frequency pattern in this example.</p></div>
+    <div class="matrix-stage"><div class="matrix-construction"><strong>Build the selected row</strong><p>Choose frequency row <span class="math" data-latex="k"></span>. At sample column <span class="math" data-latex="n"></span>, calculate its phase and use Euler's formula to turn that phase into the matrix weight.</p><div class="math" data-display="true" data-latex="\theta_{k,n}=\frac{2\pi kn}{N},\qquad F[k,n]=e^{-i\theta_{k,n}}=\cos\theta_{k,n}-i\sin\theta_{k,n}"></div><div id="matrix-row-construction" class="matrix-row-construction math" data-display="true" data-latex=""></div><p><span class="math" data-latex="F"></span> contains only measuring patterns calculated from <span class="math" data-latex="N"></span>, <span class="math" data-latex="k"></span>, and <span class="math" data-latex="n"></span>—not microphone readings. The readings arrive in <span class="math" data-latex="\mathbf{x}"></span>. Their row product gives <span class="math" data-latex="X[k]"></span>, and <span class="math" data-latex="|X[k]|"></span> is the strength drawn in the spectrum.</p></div><div id="matrix-equation" class="matrix-equation math" data-display="true" data-latex=""></div><div id="row-calculation" class="row-calculation math" data-display="true" data-latex=""></div><p class="plain-conclusion"><strong>Plain-language result:</strong> each entry of <span class="math" data-latex="F"></span> is a cosine-and-sine measuring weight. Repeat the row-by-column calculation for every frequency row, then stack the answers into the output vector.</p></div>
+  </section>
+
+  <section id="fft" class="lesson-section fft-lesson" aria-labelledby="fft-title">
+    <div class="lesson-copy">
+      <h2 id="fft-title">The FFT reuses work</h2>
+      <p>Each DFT coefficient <span class="math" data-latex="X[k]"></span> is an inner product between the sample vector and one Fourier basis vector.</p>
+      <div class="display-equation math" data-display="true" data-latex="\begin{aligned}X[k]&=\sum_{n=0}^{N-1}x[n]e^{-i2\pi kn/N}\\0&\le k<N\end{aligned}"></div>
+      <div class="complexity-callout math" data-display="true" data-latex="N\text{ output rows}\times N\text{ input terms}=O(N^2)"></div>
+      <p>The radix-2 FFT partitions the sum into even-indexed and odd-indexed subsequences, evaluates two DFTs of length <span class="math" data-latex="N/2"></span>, and combines their coefficients.</p>
+    </div>
+    <div class="factorization-stage">
+      <header class="fft-example-heading">
+        <div><h3>Worked example:</h3><p>Let <span class="math" data-latex="N=4"></span> with nonzero even and odd subsequences.</p></div>
+        <div class="math fft-input" data-display="true" data-latex="\mathbf{x}=\begin{bmatrix}1&2&3&4\end{bmatrix}^{\mathsf T}"></div>
+      </header>
+
+      <div class="fft-stage fft-split-stage">
+        <div class="fft-stage-copy"><span>Step 1</span><strong>Partition the indices</strong><p>Write <span class="math" data-latex="n=2r"></span> for even indices and <span class="math" data-latex="n=2r+1"></span> for odd indices.</p></div>
+        <div class="split-equations">
+          <div><span>Even indices</span><div class="math" data-display="true" data-latex="\mathbf{x}_{\mathrm{even}}=\begin{bmatrix}x[0]\\x[2]\end{bmatrix}=\begin{bmatrix}1\\3\end{bmatrix}"></div></div>
+          <div><span>Odd indices</span><div class="math" data-display="true" data-latex="\mathbf{x}_{\mathrm{odd}}=\begin{bmatrix}x[1]\\x[3]\end{bmatrix}=\begin{bmatrix}2\\4\end{bmatrix}"></div></div>
+        </div>
+      </div>
+
+      <div class="fft-stage fft-halves-stage">
+        <div class="fft-stage-copy"><span>Step 2</span><strong>Evaluate two length-2 DFTs</strong><p><span class="math" data-latex="E[k]"></span> and <span class="math" data-latex="O[k]"></span> are the Fourier coefficients of the even and odd subsequences.</p></div>
+        <div class="half-transform-equations">
+          <div class="math" data-display="true" data-latex="\begin{aligned}\mathbf{E}&=F_2\mathbf{x}_{\mathrm{even}}\\&=\begin{bmatrix}1&1\\1&-1\end{bmatrix}\begin{bmatrix}1\\3\end{bmatrix}\\&=\begin{bmatrix}4\\-2\end{bmatrix}\end{aligned}"></div>
+          <div class="math" data-display="true" data-latex="\begin{aligned}\mathbf{O}&=F_2\mathbf{x}_{\mathrm{odd}}\\&=\begin{bmatrix}1&1\\1&-1\end{bmatrix}\begin{bmatrix}2\\4\end{bmatrix}\\&=\begin{bmatrix}6\\-2\end{bmatrix}\end{aligned}"></div>
+        </div>
+      </div>
+
+      <div class="fft-stage butterfly-stage">
+        <div class="butterfly-heading"><div class="fft-stage-copy"><span>Step 3</span><strong>Apply the butterfly identities</strong></div><div class="butterfly-definition"><p>The twiddle factor <span class="math" data-latex="W_N^k=e^{-i2\pi k/N}"></span> supplies the phase associated with the odd subsequence.</p><div class="math" data-display="true" data-latex="\begin{aligned}X[k]&=E[k]+W_N^kO[k]\\X[k+N/2]&=E[k]-W_N^kO[k]\end{aligned}"></div></div></div>
+
+        <div class="butterfly-list">
+          <article class="butterfly-example">
+            <header><strong><span class="math" data-latex="k=0"></span></strong><span class="math" data-latex="E[0]=4,\quad W_4^0O[0]=(1)(6)=6"></span></header>
+            <div class="butterfly-grid" aria-label="Butterfly for k equals zero">
+              <span class="shared-input math" data-latex="E[0],\;W_4^0O[0]"></span><span class="combine-sign math" data-latex="+"></span><span class="flow-arrow math" data-latex="\to"></span><span class="butterfly-output math" data-latex="X[0]=10"></span>
+              <span class="shared-input math" data-latex="E[0],\;W_4^0O[0]"></span><span class="combine-sign math" data-latex="-"></span><span class="flow-arrow math" data-latex="\to"></span><span class="butterfly-output math" data-latex="X[2]=-2"></span>
+            </div>
+          </article>
+          <article class="butterfly-example">
+            <header><strong><span class="math" data-latex="k=1"></span></strong><span class="math" data-latex="E[1]=-2,\quad W_4^1O[1]=(-i)(-2)=2i"></span></header>
+            <div class="butterfly-grid" aria-label="Butterfly for k equals one">
+              <span class="shared-input math" data-latex="E[1],\;W_4^1O[1]"></span><span class="combine-sign math" data-latex="+"></span><span class="flow-arrow math" data-latex="\to"></span><span class="butterfly-output math" data-latex="X[1]=-2+2i"></span>
+              <span class="shared-input math" data-latex="E[1],\;W_4^1O[1]"></span><span class="combine-sign math" data-latex="-"></span><span class="flow-arrow math" data-latex="\to"></span><span class="butterfly-output math" data-latex="X[3]=-2-2i"></span>
+            </div>
+          </article>
+        </div>
+        <div class="fft-result math" data-display="true" data-latex="\mathbf{X}=\begin{bmatrix}10&-2+2i&-2&-2-2i\end{bmatrix}^{\mathsf T}"></div>
+      </div>
+
+      <div class="complexity-proof">
+        <div><strong>Recurrence and asymptotic growth</strong><p>At recursion level <span class="math" data-latex="\ell"></span>, there are <span class="math" data-latex="2^\ell"></span> subproblems of size <span class="math" data-latex="N/2^\ell"></span>; therefore the total work per level is proportional to <span class="math" data-latex="N"></span>. The recursion depth is <span class="math" data-latex="\log_2N"></span>.</p><div class="math" data-display="true" data-latex="\begin{aligned}2^\ell\!\left(\frac{N}{2^\ell}\right)&=N\\T(N)&=2T(N/2)+O(N)\\&=O(N\log_2N)\end{aligned}"></div></div>
+        <dl class="work-comparison">
+          <div><dt>Direct DFT growth</dt><dd class="math" data-latex="4^2=16"></dd><dd class="math" data-latex="128^2=16{,}384"></dd></div>
+          <div><dt>FFT growth</dt><dd class="math" data-latex="4\log_2 4=8"></dd><dd class="math" data-latex="128\log_2 128=896"></dd></div>
+        </dl>
+        <p class="counting-note"><span class="math" data-latex="C_{\mathrm{DFT}}(N)\propto N^2"></span> while <span class="math" data-latex="C_{\mathrm{FFT}}(N)\propto N\log_2N"></span>. These values describe asymptotic work, not elapsed time.</p>
+      </div>
+    </div>
+  </section>
+</div>

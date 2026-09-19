@@ -27,7 +27,7 @@ The LED is a visualization of selected frequency bands, not proof that the trans
 ## Project components
 
 - [`firmware/music_LED/`](firmware/music_LED/) contains the Arduino sketch and separate audio, Fourier, lighting, configuration, and diagnostic modules.
-- [`tone-generator/`](tone-generator/) contains an offline browser tone generator and Web Serial spectrum visualizer.
+- [`webpage/`](webpage/) contains separate Demo and Presenter pages for tone generation, Web Serial visualization, and the linear-algebra walkthrough.
 - [`docs/fourier-walkthrough.md`](docs/fourier-walkthrough.md) explains the mathematics and maps equations to the implementation.
 - [`docs/how-the-fourier-matrix-arises.md`](docs/how-the-fourier-matrix-arises.md) derives the sample vector, Fourier matrix, and frequency-domain vector step by step.
 - [`nextSteps.md`](nextSteps.md) tracks only the work still needed before the presentation.
@@ -61,13 +61,13 @@ Compile the firmware with the ESP32 Arduino core:
 After uploading the sketch, serve the browser interface from the repository root:
 
 ```bash
-python3 -m http.server 8080 --directory tone-generator
+python3 -m http.server 8080 --directory webpage
 ```
 
-Open `http://127.0.0.1:8080` in desktop Chrome or Edge. The page can generate controlled tones through the computer speaker and, after the user approves the serial port, display the spectrum and RGB values reported by the ESP32. Close Arduino Serial Monitor first because only one application can own the USB serial port at a time.
+Open `http://127.0.0.1:8080` in desktop Chrome or Edge. Use the navigation rail to switch between the uncluttered live Demo and the Presenter walkthrough. The page can generate controlled tones through the computer speaker and, after the user approves the serial port, display the spectrum, RGB values, captured sample vectors, and DFT-versus-FFT evidence reported by the ESP32. Close Arduino Serial Monitor first because only one application can own the USB serial port at a time.
 
 The audio path remains physical: browser → speaker → air → microphone → ESP32. The browser does not send test samples directly to the firmware.
 
 ## Current status
 
-The modular firmware, direct DFT, FFT, RGB mapping, serial telemetry, browser visualizer, ESP32 compilation, and initial device telemetry are complete. The remaining work is presentation-environment verification, final calibration and evidence capture, slide production, and team rehearsal; see [`nextSteps.md`](nextSteps.md).
+The modular firmware, direct DFT, FFT, RGB mapping, serial telemetry, separated Demo/Presenter interface, ESP32 compilation, and initial device telemetry are complete. The remaining work is presentation-environment verification, final calibration and evidence capture, slide production, and team rehearsal; see [`nextSteps.md`](nextSteps.md).

@@ -1,0 +1,65 @@
+<div class="demo-page page-frame">
+  <header class="demo-intro">
+    <h1>Live demonstration</h1>
+    <div class="physical-route" aria-label="Physical signal route">
+      <span>Browser</span><b>→</b><span>Speaker</span><b>→</b><span>Air</span><b>→</b><span>Microphone</span><b>→</b><span>ESP32</span>
+    </div>
+  </header>
+
+  <section class="band-story" aria-labelledby="band-story-title">
+    <h2 id="band-story-title" class="visually-hidden">Frequency band colour mapping</h2>
+    <div class="band-strip">
+      <article class="band-definition bass-band"><strong>Bass</strong><span>Low frequencies</span><span class="math" data-latex="50\text{--}250\,\mathrm{Hz}"></span></article>
+      <article class="band-definition mids-band"><strong>Mids</strong><span>Middle frequencies</span><span class="math" data-latex="300\text{--}1000\,\mathrm{Hz}"></span></article>
+      <article class="band-definition treble-band"><strong>Treble</strong><span>High frequencies</span><span class="math" data-latex="1050\text{--}2500\,\mathrm{Hz}"></span></article>
+    </div>
+  </section>
+
+  <section class="sound-console" aria-labelledby="sound-console-title">
+    <div class="sound-selection">
+      <div class="section-heading"><h2 id="sound-console-title">Discrete frequencies</h2><p>Build a sound one frequency at a time. Selection never starts or stops playback.</p></div>
+      <div id="frequency-list" class="frequency-list" aria-label="Individual frequency selection"></div>
+      <div class="preset-heading"><strong>Quick combinations</strong><span>Replace the current selection</span></div>
+      <div id="preset-list" class="preset-list" aria-label="Quick frequency combinations"></div>
+    </div>
+    <div class="transport-console">
+      <div class="transport-state"><span>Selected sound</span><output id="selection-summary">Bass · 200 Hz</output></div>
+      <label class="volume-control" for="volume-control"><span>Speaker volume</span><output id="volume-readout" for="volume-control">20%</output><input id="volume-control" type="range" min="0" max="100" step="1" value="20"></label>
+      <div class="transport-buttons"><button id="play-button" class="primary-button" type="button">Play selected sound</button><button id="mute-button" class="secondary-button" type="button" aria-pressed="false" disabled>Mute audio</button><button id="stop-button" class="secondary-button" type="button" disabled>Stop audio</button></div>
+      <p id="audio-message" class="console-message" role="status" aria-live="polite">Ready. Playback starts only when you press Play.</p>
+    </div>
+    <div class="signal-composer" aria-labelledby="composer-title">
+      <header class="composer-heading"><div><h3 id="composer-title">Selected tones become one 128-row column vector</h3><p>Both plots cover the same <span class="math" data-latex="128/6400=20\,\mathrm{ms}"></span> sampling window.</p></div><output id="composer-selection">200 Hz selected</output></header>
+      <div class="composer-plots">
+        <figure><figcaption>Individual component vectors</figcaption><canvas id="component-canvas" width="1100" height="300" role="img" aria-label="Selected frequency component vectors across 128 sample positions"></canvas></figure>
+        <figure><figcaption>Normalized composite vector <span class="math" data-latex="\mathbf{x}"></span></figcaption><canvas id="composite-canvas" width="1100" height="300" role="img" aria-label="Composite column vector across the same 128 sample positions"></canvas></figure>
+      </div>
+      <label class="sample-cursor" for="sample-index"><span>Inspect one row</span><input id="sample-index" type="range" min="0" max="127" value="10"><output id="sample-index-output" class="math" data-latex="n=10" for="sample-index"></output></label>
+      <div class="composer-math">
+        <div><span class="math-label">How this row is formed</span><div id="sample-sum-equation" class="math" data-display="true" data-latex=""></div></div>
+        <div><span class="math-label">Its place in the column</span><div id="vector-window-equation" class="math" data-display="true" data-latex=""></div></div>
+      </div>
+      <p class="composer-bridge">The complete vector is the DFT input: <span class="math" data-latex="\mathbf{X}=F_{128}\mathbf{x}"></span>. Presenter mode explains how each row of <span class="math" data-latex="F_{128}"></span> measures one frequency.</p>
+    </div>
+  </section>
+
+  <section class="measurement-stage" aria-labelledby="measurement-title">
+    <header class="measurement-heading">
+      <div><h2 id="measurement-title">Live ESP32 spectrum</h2><p>Markers show the selected tone. Coloured bars show the microphone measurement.</p></div>
+      <div class="serial-actions"><button id="connect-serial" class="primary-button" type="button">Connect ESP32</button><button id="disconnect-serial" class="secondary-button" type="button" disabled>Disconnect</button></div>
+    </header>
+    <p id="serial-message" class="connection-message" role="status" aria-live="polite">Close Arduino Serial Monitor, then connect the board.</p>
+    <div class="spectrum-toolbar" aria-label="Spectrum display controls">
+      <button id="freeze-button" class="tool-button" type="button">Freeze frame</button>
+      <label><span>Scale</span><select id="scale-mode"><option value="auto">Auto</option><option value="fixed">Fixed</option></select></label>
+      <button id="reset-scale-button" class="tool-button" type="button">Reset scale</button>
+    </div>
+    <div class="spectrum-stage"><canvas id="spectrum-canvas" width="1200" height="430" role="img" aria-label="Live positive-frequency spectrum measured by the ESP32 microphone"></canvas><output id="spectrum-summary" class="spectrum-summary">Waiting for ESP32 data</output></div>
+    <div id="expected-results" class="expected-results" aria-live="polite"></div>
+    <div class="colour-output">
+      <div id="rgb-swatch" class="rgb-swatch" aria-label="Measured RGB output"></div>
+      <div class="colour-readout"><span>Measured LED output</span><output id="rgb-output">R 0 · G 0 · B 0</output></div>
+      <dl class="band-readouts"><div><dt>Red · bass</dt><dd id="red-strength">0.0 · PWM 0</dd></div><div><dt>Green · mids</dt><dd id="green-strength">0.0 · PWM 0</dd></div><div><dt>Blue · treble</dt><dd id="blue-strength">0.0 · PWM 0</dd></div></dl>
+    </div>
+  </section>
+</div>

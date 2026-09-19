@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An offline ESP32 Fourier teaching instrument for turning sound into colour.">
+    <meta name="theme-color" content="#090a08">
+    <title>Fourier Signal Bench</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="vendor/katex/katex.min.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/demo.css">
+    <link rel="stylesheet" href="styles/presenter.css">
+    <script defer src="vendor/katex/katex.min.js"></script>
+  </head>
+  <body>
+    <!--
+      THESIS: One physical signal, two deliberate views: operate it in Demo and unpack it in Presenter. Refuses one long all-purpose dashboard.
+      OWN-WORLD: Charcoal instrument bench, phosphor signal yellow, direct RGB band fields, etched rules, and measurement-first typography.
+      STORY: Choose sound, see bass/mids/treble become colour, then trace the same frame through a column vector, Fourier rows, and FFT reuse.
+      FIRST VIEWPORT: Persistent instrument rail above a decisive page title, explicit colour legend, presets, transport, and live result. Play is the primary action.
+      FORM: Scoped extension of the incumbent signal-bench interface; seed key n/a-scoped-extension.
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
+    <a class="skip-link" href="#page-outlet">Skip to page content</a>
+    <header class="app-rail">
+      <a class="brand" href="#demo" aria-label="Fourier Signal Bench home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span><strong>Fourier</strong><small>Signal Bench</small></span>
+      </a>
+      <nav class="mode-nav" aria-label="Application modes">
+        <a href="#demo" data-route-link="demo">Demo</a>
+        <a href="#presenter" data-route-link="presenter">Presenter</a>
+      </nav>
+      <div class="rail-status">
+        <span id="global-audio-status" class="rail-indicator">Audio stopped</span>
+        <span id="global-serial-status" class="rail-indicator">ESP32 disconnected</span>
+      </div>
+    </header>
+    <main id="page-outlet" tabindex="-1" aria-live="polite"></main>
+    <noscript>This teaching instrument requires JavaScript to generate tones and read ESP32 telemetry.</noscript>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

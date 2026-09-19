@@ -1,6 +1,7 @@
 #include "AudioReactive.h"
 
 #include <Arduino.h>
+#include <string.h>
 
 #include "../config/AudioConfig.h"
 #include "../config/FourierConfig.h"
@@ -24,7 +25,55 @@ uint32_t lastFrameStartMilliseconds = 0;
 uint32_t lastSerialReportMilliseconds = 0;
 uint32_t lastSpectrumSerialReportMilliseconds = 0;
 uint32_t spectrumFrameSequence = 0;
+uint32_t sampleCaptureSequence = 0;
 bool liveFrameComparisonPrinted = false;
+bool sampleCaptureRequested = false;
+char serialCommandBuffer[32]{};
+size_t serialCommandLength = 0;
+
+void readSerialCommands() {
+  while (Serial.available() > 0) {
+    const char receivedCharacter = static_cast<char>(Serial.read());
+    if (receivedCharacter == '\r')
+      continue;
+    if (receivedCharacter == '\n') {
+      serialCommandBuffer[serialCommandLength] = '\0';
+      if (strcmp(serialCommandBuffer, "CAPTURE_FRAME") == 0)
+        sampleCaptureRequested = true;
+      serialCommandLength = 0;
+      continue;
+    }
+    if (serialCommandLength + 1 < sizeof(serialCommandBuffer)) {
+      serialCommandBuffer[serialCommandLength++] = receivedCharacter;
+    } else {
+      serialCommandLength = 0;
+    }
+  }
+}
+
+void printSampleCaptureIfRequested() {
+  if (!sampleCaptureRequested)
+    return;
+  sampleCaptureRequested = false;
+
+  Serial.print("SAMPLE_FRAME,sequence=");
+  Serial.print(++sampleCaptureSequence);
+  Serial.print(",raw=");
+  for (size_t sampleIndex = 0;
+       sampleIndex < fourier_config::kNumberOfSamples; ++sampleIndex) {
+    if (sampleIndex > 0)
+      Serial.print('|');
+    Serial.print(rawAudioSamples.amplitude[sampleIndex], 2);
+  }
+  Serial.print(",prepared=");
+  for (size_t sampleIndex = 0;
+       sampleIndex < fourier_config::kNumberOfSamples; ++sampleIndex) {
+    if (sampleIndex > 0)
+      Serial.print('|');
+    Serial.print(preparedAudioSamples.amplitude[sampleIndex], 2);
+  }
+  Serial.println();
+}
 
 float clampFloat(float value, float minimum, float maximum) {
   if (value < minimum)
@@ -178,6 +227,7 @@ void stopAudioReactive() {
 }
 
 void updateAudioReactive() {
+  readSerialCommands();
   const uint32_t nowMilliseconds = millis();
   if (nowMilliseconds - lastFrameStartMilliseconds <
       audio_config::kMinimumFrameIntervalMilliseconds) {
@@ -202,6 +252,7 @@ void updateAudioReactive() {
   diagnostics.signalAboveSilenceThreshold =
       preprocessingResults.centeredRootMeanSquare >=
       diagnostics.silenceThresholdRootMeanSquare;
+  printSampleCaptureIfRequested();
 
   if (!diagnostics.signalAboveSilenceThreshold) {
     clearFrequencyAndColorDiagnostics();

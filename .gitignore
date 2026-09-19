@@ -12,3 +12,6 @@ docs/validation-results.md
 docs/q-and-a.md
 docs/benchmark-host.csv
 docs/benchmark-host.svg
+.impeccable/review/
+/DESIGN.md
+/PRODUCT.md

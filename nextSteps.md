@@ -6,6 +6,8 @@ The implementation is complete. The direct DFT and FFT agree in automated tests,
 
 - [ ] Use the final laptop, browser, USB cable, speaker, microphone position, and display.
 - [ ] Open the local page in Chrome or Edge, connect through the Web Serial permission prompt, and confirm that the spectrum, band meters, dominant frequency, and RGB values update.
+- [ ] Move between Demo and Presenter modes during playback and confirm that the shared tone and serial connection continue without interruption.
+- [ ] In Presenter mode, capture one frame and verify that the raw and prepared column vectors, selected Fourier row, live coefficient, and timing comparison appear.
 - [ ] Confirm the startup red, green, and blue self-test matches the physical LED channels.
 - [ ] Test silence and check that the LED turns off without a persistent 1000 Hz component.
 - [ ] Test 200 Hz, 500 Hz, 1000 Hz, and 2000 Hz. Confirm the dominant peak is within one 50 Hz bin of the target and that the expected red, green, or blue channel responds.

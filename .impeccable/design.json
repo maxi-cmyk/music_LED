@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-19T15:15:00+08:00",
+  "title": "Design System: Fourier Signal Bench",
+  "extensions": {
+    "colorMeta": {
+      "bench-black": { "role": "neutral", "displayName": "Bench Black", "canonical": "#090a08", "tonalRamp": ["#050604", "#090a08", "#171a14", "#34382d", "#555b4a", "#7f8578", "#adb2a4", "#f1f2ea"] },
+      "signal-yellow": { "role": "primary", "displayName": "Signal Yellow", "canonical": "#d8ff52", "tonalRamp": ["#1b2100", "#354000", "#596d00", "#829d0f", "#acca2e", "#d8ff52", "#e8ff91", "#f7ffd9"] },
+      "bass-red": { "role": "secondary", "displayName": "Bass Red", "canonical": "#ff5b45", "tonalRamp": ["#2b0905", "#53130b", "#842316", "#b63625", "#df4935", "#ff5b45", "#ff9a8d", "#ffe1dc"] },
+      "mids-green": { "role": "secondary", "displayName": "Mids Green", "canonical": "#91e75c", "tonalRamp": ["#102708", "#204815", "#376f25", "#549b38", "#70c549", "#91e75c", "#baf397", "#e7fbd8"] },
+      "treble-blue": { "role": "secondary", "displayName": "Treble Blue", "canonical": "#5cbcff", "tonalRamp": ["#071f32", "#0d3c5e", "#175d8c", "#2682ba", "#3aa3e5", "#5cbcff", "#9bd6ff", "#dff2ff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Compressed Display", "purpose": "Page claims and section headlines." },
+      "body": { "displayName": "Calm Body", "purpose": "Plain-language undergraduate explanation." },
+      "label": { "displayName": "Instrument Label", "purpose": "Controls, measurements, and status." }
+    },
+    "shadows": [
+      { "name": "evidence-panel", "value": "0 28px 72px rgba(0, 0, 0, 0.24)", "purpose": "Separates the Fourier matrix from surrounding teaching copy." },
+      { "name": "measurement-stage", "value": "0 24px 70px rgba(0, 0, 0, 0.28)", "purpose": "Separates the live spectrum from the bench." }
+    ],
+    "motion": [
+      { "name": "control-state", "value": "160ms ease-out", "purpose": "Button and selectable-control state transitions." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "680px" },
+      { "name": "single-column", "value": "980px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single high-emphasis action in a local control group.",
+      "html": "<button class=\"ds-btn-primary\">Play selected sound</button>",
+      "css": ".ds-btn-primary { min-height: 44px; padding: 10px 15px; border: 1px solid #d8ff52; border-radius: 12px; background: #d8ff52; color: #171d00; font: 700 16px sans-serif; transition: transform 160ms ease-out, background-color 160ms ease-out; } .ds-btn-primary:hover { transform: translateY(-1px); background: #e4ff84; } .ds-btn-primary:focus-visible { outline: 3px solid #d8ff52; outline-offset: 3px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A lower-emphasis transport or utility action.",
+      "html": "<button class=\"ds-btn-secondary\">Stop audio</button>",
+      "css": ".ds-btn-secondary { min-height: 44px; padding: 10px 15px; border: 1px solid #555b4a; border-radius: 12px; background: #171a14; color: #f1f2ea; font: 600 16px sans-serif; transition: transform 160ms ease-out, border-color 160ms ease-out; } .ds-btn-secondary:hover { transform: translateY(-1px); border-color: #f1f2ea; } .ds-btn-secondary:focus-visible { outline: 3px solid #d8ff52; outline-offset: 3px; }"
+    },
+    {
+      "name": "Mode Navigation",
+      "kind": "nav",
+      "description": "Persistent segmented switching between operating and teaching modes.",
+      "html": "<nav class=\"ds-mode-nav\"><a class=\"ds-active\" href=\"#\">Demo</a><a href=\"#\">Presenter</a></nav>",
+      "css": ".ds-mode-nav { display: flex; gap: 4px; width: max-content; padding: 4px; border: 1px solid #34382d; border-radius: 14px; background: #10120e; } .ds-mode-nav a { min-width: 108px; padding: 9px 16px; border-radius: 10px; color: #adb2a4; font: 700 16px sans-serif; text-align: center; text-decoration: none; } .ds-mode-nav .ds-active { background: #d8ff52; color: #171d00; } .ds-mode-nav a:focus-visible { outline: 3px solid #d8ff52; outline-offset: 3px; }"
+    },
+    {
+      "name": "Frequency Choice",
+      "kind": "chip",
+      "description": "A compact selectable tone with a measurement-first label.",
+      "html": "<button class=\"ds-frequency-choice\"><strong>200 Hz</strong><small>Bass · Red · low sound</small></button>",
+      "css": ".ds-frequency-choice { display: grid; min-width: 150px; min-height: 88px; align-content: space-between; padding: 13px; border: 1px solid #ff5b45; border-radius: 12px; background: #2c1a16; color: #f1f2ea; text-align: left; } .ds-frequency-choice strong { font: 700 14px monospace; } .ds-frequency-choice small { color: #adb2a4; } .ds-frequency-choice:focus-visible { outline: 3px solid #d8ff52; outline-offset: 3px; }"
+    },
+    {
+      "name": "Band Mapping Strip",
+      "kind": "custom",
+      "description": "The canonical direct mapping from sound range to LED channel.",
+      "html": "<div class=\"ds-band-strip\"><span>Red is bass</span><span>Green is mids</span><span>Blue is treble</span></div>",
+      "css": ".ds-band-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: #090a08; color: #0c0d09; font: 700 22px 'Barlow Condensed', sans-serif; } .ds-band-strip span { padding: 24px; } .ds-band-strip span:nth-child(1) { background: #ff5b45; } .ds-band-strip span:nth-child(2) { background: #91e75c; } .ds-band-strip span:nth-child(3) { background: #5cbcff; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Signal Bench",
+    "overview": "The interface feels like a carefully labelled instrument brought into a lecture: dark enough to keep waveforms and equations dominant, direct enough to operate live, and vivid only where colour carries meaning.",
+    "keyCharacteristics": ["Near-black bench surfaces with thin etched dividers.", "Signal yellow reserved for active state and the main action.", "Red, green, and blue preserve their bass, mids, and treble meanings.", "Oversized condensed headings paired with quiet technical labels.", "Equations rendered with KaTeX."],
+    "rules": [
+      { "name": "Frequency Colour Rule", "body": "Red means bass, green means mids, and blue means treble everywhere; mixed hues are reserved for simultaneous bands.", "section": "colors" },
+      { "name": "Rare Signal Rule", "body": "Signal yellow identifies the current action or mathematical focus, not general decoration.", "section": "colors" },
+      { "name": "Equation Rule", "body": "Mathematical variables, operators, vectors, matrices, and complexity expressions use KaTeX; prose remains prose.", "section": "typography" },
+      { "name": "Flat Bench Rule", "body": "Do not add card shadows to ordinary controls or teaching copy; depth is reserved for the two primary evidence surfaces.", "section": "elevation" }
+    ],
+    "dos": ["State the red/bass, green/mids, and blue/treble mapping beside both operation and teaching content.", "Keep live ESP32 evidence visibly distinct from generated browser analysis.", "Use strong scale contrast between page claims, explanations, and instrument labels.", "Preserve 44px control targets, visible focus, and reduced-motion behavior."],
+    "donts": ["Use signal yellow as ambient decoration or a fourth frequency band.", "Turn every teaching step into a floating card.", "Use gradients, faux hardware textures, or decorative scientific imagery.", "Show mathematical notation as improvised plain-text symbols when KaTeX can express it."]
+  }
+}

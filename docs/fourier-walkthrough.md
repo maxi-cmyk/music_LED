@@ -29,12 +29,41 @@ $$
 
 The continuous equation establishes the idea. The finite sum and its matrix form are the linear algebra demonstrated in the presentation.
 
-## The DFT as matrix multiplication
+Each $x[n]$ is the microphone reading at sample time $t_n=n/f_s$. The ESP32 records a 12-bit ADC count from $0$ to $4095$ rather than a calibrated voltage. Subtracting the mean keeps the values in ADC-count units; multiplying by the unitless Hamming window does not change those units. The browser teaching vector instead uses normalized, unitless amplitudes so that its shape is easy to edit.
 
-Define the Fourier matrix entry
+## Why complex numbers appear
+
+A real sinusoid at one frequency can begin at any phase. Measuring only its cosine alignment would miss a sine-shifted version of the same tone, so the DFT records two perpendicular measurements:
 
 $$
-F[k,n] = e^{-2\pi i kn/N}.
+\text{cosine alignment}
+\qquad\text{and}\qquad
+\text{sine alignment}.
+$$
+
+Euler's formula packages both measurements into one complex number:
+
+$$
+e^{-i\theta}=\cos\theta-i\sin\theta.
+$$
+
+The real part carries the cosine measurement and the imaginary part carries the sine measurement. The microphone signal is still real. The imaginary unit $i$ is a compact way to retain both amplitude and phase instead of discarding the sine component.
+
+## The DFT as matrix multiplication
+
+For frequency row $k$ and sample column $n$, first calculate the phase
+
+$$
+\theta_{k,n}=\frac{2\pi kn}{N}.
+$$
+
+Then turn that phase into a cosine-and-sine measuring weight. This defines each Fourier matrix entry:
+
+$$
+F[k,n]
+=e^{-i\theta_{k,n}}
+=\cos\theta_{k,n}-i\sin\theta_{k,n}
+=e^{-2\pi i kn/N}.
 $$
 
 Then the complete DFT is
@@ -44,6 +73,20 @@ $$
 $$
 
 Row $k$ of $F$ represents one complex sinusoidal frequency pattern. Multiplying that row by $\mathbf{x}$ produces coefficient $X[k]$. The nested loops in `computeDirectDFT` perform exactly these row-by-vector products without storing the whole matrix.
+
+For example, row $k=1$ of $F_4$ uses the four phases
+
+$$
+0,\quad \frac{\pi}{2},\quad \pi,\quad \frac{3\pi}{2}.
+$$
+
+Applying $e^{-i\theta}$ to those phases produces
+
+$$
+1,\quad -i,\quad -1,\quad i,
+$$
+
+which is exactly the second row of the four-sample matrix below.
 
 Equivalently, define the positive-exponent basis vector
 
