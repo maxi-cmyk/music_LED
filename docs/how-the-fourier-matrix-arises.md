@@ -210,12 +210,8 @@ The code in `DirectDFT.cpp` performs this same calculation one row at a time. It
 
 The input and output both contain $N$ entries, but their coordinates describe different things. The input uses time-sample coordinates; the output uses frequency-pattern coordinates.
 
-## 7. Why the FFT gives the same vector
+## 7. Continue to the FFT comparison
 
-Direct matrix multiplication repeats many related calculations. The fast Fourier transform factors and reuses those calculations through smaller even-indexed and odd-indexed transforms.
+The Fourier matrix defines the DFT output. The FFT computes that same output by factoring and reusing related calculations rather than multiplying every matrix row directly.
 
-The FFT does not create a different output or a different meaning for the vectors. With the same sign and normalization convention, it computes the same equation more efficiently:
-
-$$
-\mathbf{X} = F\mathbf{x}
-$$
+Continue with [`comparison.md`](comparison.md) for the even/odd derivation, butterfly identities, four-sample comparison, complexity analysis, and measured numerical agreement.

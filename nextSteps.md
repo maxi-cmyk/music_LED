@@ -5,17 +5,17 @@ The implementation is complete. The direct DFT and FFT agree in automated tests,
 ## 1. Verify the presentation setup
 
 - [ ] Use the final laptop, browser, USB cable, speaker, microphone position, and display.
-- [ ] Open the local page in Chrome or Edge, connect through the Web Serial permission prompt, and confirm that the spectrum, band meters, dominant frequency, and RGB values update.
-- [ ] Move between Demo and Presenter modes during playback and confirm that the shared tone and serial connection continue without interruption.
+- [x] Open the local page in Chrome or Edge, connect through the Web Serial permission prompt, and confirm that the spectrum, band meters, dominant frequency, and RGB values update.
+- [x] Move between Demo and Presenter modes during playback and confirm that the shared tone and serial connection continue without interruption.
 - [x] Dry-run Capture Frame with deterministic simulated samples and verify the measured-input, coefficient, complex-sum, and colour-mapping stages.
-- [ ] In Demo mode, capture one synchronized live ESP32 frame and verify that its raw and prepared vectors, selected Fourier row, complex coefficient, spectrum bands, and RGB result agree.
-- [ ] Confirm the startup red, green, and blue self-test matches the physical LED channels.
-- [ ] Test silence and check that the LED turns off without a persistent 1000 Hz component.
-- [ ] Test 200 Hz, 500 Hz, 1000 Hz, and 2000 Hz. Confirm the dominant peak is within one 50 Hz bin of the target and that the expected red, green, or blue channel responds.
-- [ ] Test two- and three-tone mixtures and confirm that each constituent peak remains visible and the LED produces the expected mixed colour.
-- [ ] Test the 225 Hz off-bin tone and be ready to explain spectral leakage.
-- [ ] Increase the level until clipping is observed, then choose a safe presentation volume with suitable headroom.
-- [ ] Rehearse closing Arduino Serial Monitor before the browser connects to the serial port.
+- [x] In Demo mode, capture one synchronized live ESP32 frame and verify that its raw and prepared vectors, selected Fourier row, complex coefficient, spectrum bands, and RGB result agree.
+- [x] Confirm the startup red, green, and blue self-test matches the physical LED channels.
+- [x] Test silence and check that the LED turns off without a persistent 1000 Hz component.
+- [x] Test 200 Hz, 500 Hz, 1000 Hz, and 2000 Hz. Confirm the dominant peak is within one 50 Hz bin of the target and that the expected red, green, or blue channel responds.
+- [x] Test two- and three-tone mixtures and confirm that each constituent peak remains visible and the LED produces the expected mixed colour.
+- [x] Test the 225 Hz off-bin tone and be ready to explain spectral leakage.
+- [x] Increase the level until clipping is observed, then choose a safe presentation volume with suitable headroom.
+- [x] Rehearse closing Arduino Serial Monitor before the browser connects to the serial port.
 
 ## 2. Capture final evidence
 
@@ -50,7 +50,7 @@ Target about nine minutes so the presentation remains below the ten-minute limit
 
 - [ ] Assign speaking sections and a backup presenter for each section.
 - [ ] Ask each teammate to trace a 200 Hz input from microphone samples through the FFT, spectrum bands, and red LED output.
-- [ ] Review [`docs/fourier-walkthrough.md`](docs/fourier-walkthrough.md) and [`docs/how-the-fourier-matrix-arises.md`](docs/how-the-fourier-matrix-arises.md) together, then practise the team's Q&A topics.
+- [ ] Review [`docs/fourier-walkthrough.md`](docs/fourier-walkthrough.md), [`docs/how-the-fourier-matrix-arises.md`](docs/how-the-fourier-matrix-arises.md), and [`docs/comparison.md`](docs/comparison.md) together, then practise the team's Q&A topics.
 - [ ] Randomly direct Q&A questions to every teammate until everyone can answer across the theory, algorithm, experiment, and hardware.
 - [ ] Run at least two timed rehearsals with speaker handoffs and the complete live demo.
 - [ ] Run one failure rehearsal using the recorded fallback without implying that recorded data is live.

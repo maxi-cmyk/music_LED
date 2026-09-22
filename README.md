@@ -30,6 +30,7 @@ The LED is a visualization of selected frequency bands, not proof that the trans
 - [`webpage/`](webpage/) contains separate Demo and Presenter pages for tone generation, Web Serial visualization, and the linear-algebra walkthrough.
 - [`docs/fourier-walkthrough.md`](docs/fourier-walkthrough.md) explains the mathematics and maps equations to the implementation.
 - [`docs/how-the-fourier-matrix-arises.md`](docs/how-the-fourier-matrix-arises.md) derives the sample vector, Fourier matrix, and frequency-domain vector step by step.
+- [`docs/comparison.md`](docs/comparison.md) derives the radix-2 FFT and compares its coefficients, complexity, and measured results with the direct DFT.
 - [`nextSteps.md`](nextSteps.md) tracks only the work still needed before the presentation.
 
 ## Hardware
