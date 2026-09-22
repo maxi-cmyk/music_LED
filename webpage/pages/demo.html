@@ -70,13 +70,15 @@
       </header>
 
       <div class="capture-stage-tabs" role="tablist" aria-label="Captured frame explanation stages">
-        <button type="button" role="tab" data-capture-stage="0" aria-selected="true">Measured input</button>
-        <button type="button" role="tab" data-capture-stage="1" aria-selected="false">One coefficient</button>
-        <button type="button" role="tab" data-capture-stage="2" aria-selected="false">Complex sum</button>
-        <button type="button" role="tab" data-capture-stage="3" aria-selected="false">Colour mapping</button>
+        <button id="capture-tab-input" type="button" role="tab" data-capture-stage="0" aria-controls="capture-panel-input" aria-selected="true">Measured input</button>
+        <button id="capture-tab-dft" type="button" role="tab" data-capture-stage="1" aria-controls="capture-panel-dft" aria-selected="false">Direct DFT</button>
+        <button id="capture-tab-sum" type="button" role="tab" data-capture-stage="2" aria-controls="capture-panel-sum" aria-selected="false">DFT sum</button>
+        <button id="capture-tab-fft" type="button" role="tab" data-capture-stage="3" aria-controls="capture-panel-fft" aria-selected="false">FFT reuse</button>
+        <button id="capture-tab-comparison" type="button" role="tab" data-capture-stage="4" aria-controls="capture-panel-comparison" aria-selected="false">Compare results</button>
+        <button id="capture-tab-colour" type="button" role="tab" data-capture-stage="5" aria-controls="capture-panel-colour" aria-selected="false">Colour mapping</button>
       </div>
 
-      <div class="capture-panel" data-capture-panel="0" role="tabpanel">
+      <div id="capture-panel-input" class="capture-panel" data-capture-panel="0" role="tabpanel" aria-labelledby="capture-tab-input">
         <div class="capture-stage-copy">
           <h4>Prepare the microphone samples</h4>
           <p>The top graph is the 128 readings exactly as the ESP32 captured them. The bottom graph is the same frame after removing its average level and tapering its ends. That prepared vector is what the FFT receives.</p>
@@ -94,10 +96,10 @@
         </div>
       </div>
 
-      <div class="capture-panel" data-capture-panel="1" role="tabpanel" hidden>
+      <div id="capture-panel-dft" class="capture-panel" data-capture-panel="1" role="tabpanel" aria-labelledby="capture-tab-dft" hidden>
         <div class="capture-stage-copy">
           <h4>One matrix row measures one frequency</h4>
-          <p>A bin is one position <span class="math" data-latex="k"></span> in the FFT output column <span class="math" data-latex="\mathbf{X}"></span>. Bin <span class="math" data-latex="k"></span> represents <span class="math" data-latex="f_k=kf_s/128"></span> hertz, so the spacing depends on this frame’s measured sample rate.</p>
+          <p>A bin is one position <span class="math" data-latex="k"></span> in the DFT output column <span class="math" data-latex="\mathbf{X}"></span>. Bin <span class="math" data-latex="k"></span> represents <span class="math" data-latex="f_k=kf_s/128"></span> hertz, so the spacing depends on this frame’s measured sample rate.</p>
           <div class="capture-bin-control"><span>Inspect one output bin</span><div class="capture-bin-stepper"><button id="capture-bin-previous" class="secondary-button" type="button">Previous bin</button><input id="capture-bin-select" type="range" min="1" max="64" step="1" value="4" aria-label="Fourier coefficient bin"><button id="capture-bin-next" class="secondary-button" type="button">Next bin</button></div><output id="capture-bin-output" for="capture-bin-select">Bin 4 · 200.0 Hz</output></div>
           <div class="capture-bin-ranges" aria-label="FFT bin ranges used by each LED channel">
             <p><strong>Bins sent to the LED</strong></p>
@@ -109,19 +111,77 @@
             </dl>
           </div>
           <aside class="capture-vector-reminder" aria-label="Full Fourier output vector reminder">
-            <span>FFT output column · 128 complex numbers</span>
+            <span>DFT output column · 128 complex numbers</span>
             <div id="capture-output-vector" class="math" data-display="true"></div>
           </aside>
         </div>
         <div class="capture-matrix"><p class="capture-matrix-intro">The highlighted coefficient is the dot product of row <span class="math" data-latex="k"></span> of <span class="math" data-latex="F_{128}"></span> with the prepared sample column <span class="math" data-latex="\mathbf{x}"></span>. The cells below show the row’s rotating complex weights.</p><div id="capture-matrix-row" class="capture-matrix-row" aria-label="Representative entries from the selected Fourier matrix row"></div><div id="capture-coefficient-equation" class="math capture-equation" data-display="true"></div></div>
       </div>
 
-      <div class="capture-panel" data-capture-panel="2" role="tabpanel" hidden>
-        <div class="capture-stage-copy"><h4>The weighted samples accumulate in the complex plane</h4><p>Each sample contributes a small complex vector. The animation adds all 128 vectors head-to-tail; the endpoint is <span class="math" data-latex="X[k]"></span>.</p><div class="complex-actions"><output id="complex-progress" aria-live="polite">128 of 128 measured terms accumulated</output><div class="complex-speed" role="group" aria-label="Complex sum animation speed"><button class="secondary-button" type="button" data-complex-speed="1" aria-pressed="false">Normal</button><button class="secondary-button" type="button" data-complex-speed="3" aria-pressed="true">3× slower</button><button class="secondary-button" type="button" data-complex-speed="5" aria-pressed="false">5× slower</button></div><button id="replay-complex-path" class="secondary-button" type="button">Replay accumulation</button></div><div class="equation-stack"><span>Original complex coefficient</span><div id="capture-complex-equation" class="math capture-equation" data-display="true"></div><span>Magnitude · the endpoint’s distance from zero</span><div id="capture-magnitude-equation" class="math capture-equation" data-display="true"></div></div></div>
-        <figure class="complex-plane"><figcaption>Browser reconstruction from the captured ESP32 samples</figcaption><p id="capture-coefficient-check" class="coefficient-check"></p><canvas id="capture-complex-canvas" width="900" height="520" role="img" aria-label="Complex-plane accumulation path for the selected Fourier coefficient"></canvas></figure>
+      <div id="capture-panel-sum" class="capture-panel" data-capture-panel="2" role="tabpanel" aria-labelledby="capture-tab-sum" hidden>
+        <div class="capture-stage-copy"><h4>The direct DFT adds every weighted sample</h4><p>Each sample contributes a small complex vector. The animation adds all 128 vectors head-to-tail; the endpoint is the direct row-sum result <span class="math" data-latex="X_{\mathrm{DFT}}[k]"></span>.</p><div class="complex-actions"><output id="complex-progress" aria-live="polite">128 of 128 measured terms accumulated</output><div class="complex-speed" role="group" aria-label="Complex sum animation speed"><button class="secondary-button" type="button" data-complex-speed="1" aria-pressed="false">Normal</button><button class="secondary-button" type="button" data-complex-speed="3" aria-pressed="true">3× slower</button><button class="secondary-button" type="button" data-complex-speed="5" aria-pressed="false">5× slower</button></div><button id="replay-complex-path" class="secondary-button" type="button">Replay accumulation</button></div><div class="equation-stack"><span>Direct DFT coefficient</span><div id="capture-complex-equation" class="math capture-equation" data-display="true"></div><span>Magnitude · the endpoint’s distance from zero</span><div id="capture-magnitude-equation" class="math capture-equation" data-display="true"></div></div></div>
+        <figure class="complex-plane"><figcaption>Direct DFT reconstructed in the browser from the captured ESP32 samples</figcaption><p id="capture-coefficient-check" class="coefficient-check"></p><canvas id="capture-complex-canvas" width="900" height="520" role="img" aria-label="Complex-plane accumulation path for the selected direct DFT coefficient"></canvas></figure>
       </div>
 
-      <div class="capture-panel" data-capture-panel="3" role="tabpanel" hidden>
+      <div id="capture-panel-fft" class="capture-panel" data-capture-panel="3" role="tabpanel" aria-labelledby="capture-tab-fft" hidden>
+        <div class="capture-stage-copy">
+          <h4>The FFT reuses partial DFT results</h4>
+          <p>A twiddle factor is a complex rotation that supplies the phase needed when an even-indexed result and an odd-indexed result are combined. One rotated odd value is reused to produce two coefficients.</p>
+          <div class="math capture-equation" data-display="true" data-latex="\begin{aligned}X[k]&=E[k]+W_N^kO[k]\\X[k+N/2]&=E[k]-W_N^kO[k]\end{aligned}"></div>
+          <ol class="capture-fft-stages" aria-label="Seven FFT butterfly stages">
+            <li><span>2</span><small>length-2 blocks</small></li>
+            <li><span>4</span><small>length-4 blocks</small></li>
+            <li><span>8</span><small>length-8 blocks</small></li>
+            <li><span>16</span><small>length-16 blocks</small></li>
+            <li><span>32</span><small>length-32 blocks</small></li>
+            <li><span>64</span><small>length-64 blocks</small></li>
+            <li aria-current="step"><span>128</span><small>final combine</small></li>
+          </ol>
+          <p class="capture-evidence-note">Each stage contains 64 butterflies. Seven stages give 448 butterflies for this 128-sample frame.</p>
+        </div>
+        <div class="capture-fft-evidence">
+          <header><div><strong id="capture-fft-bin-label">Final butterfly for bin 4</strong><span>The values below are traced from this frozen prepared vector.</span></div><div id="capture-fft-twiddle" class="math" data-display="true"></div></header>
+          <div class="capture-butterfly-inputs">
+            <div><span>Even partial result</span><output id="capture-fft-even"></output></div>
+            <div><span>Rotated odd result</span><output id="capture-fft-rotated-odd"></output></div>
+          </div>
+          <div class="capture-butterfly-outputs">
+            <div id="capture-fft-plus-card"><span id="capture-fft-plus-label">Plus branch</span><output id="capture-fft-plus"></output></div>
+            <div id="capture-fft-minus-card"><span id="capture-fft-minus-label">Minus branch</span><output id="capture-fft-minus"></output></div>
+          </div>
+          <p id="capture-fft-conclusion" class="capture-fft-conclusion"></p>
+        </div>
+      </div>
+
+      <div id="capture-panel-comparison" class="capture-panel" data-capture-panel="4" role="tabpanel" aria-labelledby="capture-tab-comparison" hidden>
+        <div class="capture-stage-copy">
+          <h4>Different calculation, same coefficient</h4>
+          <p>The direct DFT is reconstructed from this frame’s prepared samples. The FFT row is the coefficient calculated on the ESP32 and transmitted for the same frozen frame.</p>
+          <dl class="capture-work-counts">
+            <div><dt>Direct DFT work</dt><dd class="math" data-latex="128^2=16{,}384"></dd><dd>128 coefficients × 128 weighted samples</dd></div>
+            <div><dt>Radix-2 FFT work</dt><dd class="math" data-latex="7\times64=448"></dd><dd>7 stages × 64 butterflies per stage</dd></div>
+          </dl>
+          <p class="capture-evidence-note">These numbers count the calculation structure for one 128-sample frame. They are not processor timings or equivalent instruction counts.</p>
+        </div>
+        <div class="capture-comparison-evidence">
+          <header><strong id="capture-comparison-heading">Bin 4 result</strong><span>Real and imaginary parts must both agree—not only the magnitude.</span></header>
+          <p class="comparison-difference-definition"><span class="math" data-latex="|\Delta X[k]|=\sqrt{(\Delta\operatorname{Re})^2+(\Delta\operatorname{Im})^2}"></span> measures the distance between two complex coefficients. Because the prepared samples are ADC counts, this difference is also reported in ADC-count units.</p>
+          <div class="capture-comparison-scroll" tabindex="0" aria-label="Scrollable coefficient comparison">
+            <div class="capture-comparison-table" role="table" aria-label="Direct DFT and FFT coefficient comparison">
+              <div class="comparison-table-row comparison-table-header" role="row"><span role="columnheader">Calculation</span><span role="columnheader">Real</span><span role="columnheader">Imaginary</span><span role="columnheader">Magnitude</span></div>
+              <div class="comparison-table-row" role="row"><strong role="rowheader">Direct DFT reconstruction</strong><output id="comparison-direct-real"></output><output id="comparison-direct-imaginary"></output><output id="comparison-direct-magnitude"></output></div>
+              <div class="comparison-table-row" role="row"><strong role="rowheader">FFT (ESP32)</strong><output id="comparison-esp32-real"></output><output id="comparison-esp32-imaginary"></output><output id="comparison-esp32-magnitude"></output></div>
+            </div>
+            <div class="capture-comparison-verdict">
+              <div><span>Selected-bin coefficient difference</span><output id="comparison-selected-difference"></output></div>
+              <div><span>Largest coefficient difference · bins 0–64</span><output id="comparison-maximum-difference"></output></div>
+              <p id="comparison-verdict" role="status"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="capture-panel-colour" class="capture-panel" data-capture-panel="5" role="tabpanel" aria-labelledby="capture-tab-colour" hidden>
         <div class="capture-stage-copy"><h4>Three band strengths become RGB</h4><p class="nonlinear-marker">First, the magnitudes inside each fixed bin range are combined into the three-entry band vector <span class="math" data-latex="\mathbf{b}"></span>.</p><div class="capture-band-results"><div><strong>Red · bass</strong><output id="capture-red-band"></output></div><div><strong>Green · mids</strong><output id="capture-green-band"></output></div><div><strong>Blue · treble</strong><output id="capture-blue-band"></output></div></div><ol class="mapping-steps"><li><strong>Apply fixed colour gains.</strong> The input and output each contain three values—red, green and blue—so their mapping matrix <span class="math" data-latex="G"></span> is 3 × 3. It is a chosen LED-calibration matrix, not part of the Fourier matrix.</li><li><strong>Remove weak leakage.</strong> Find the strongest value in <span class="math" data-latex="\mathbf{u}"></span>, then subtract 15% of it from all three channels. Negative results become zero. Dividing by 0.85 keeps the strongest channel unchanged; <span class="math" data-latex="\mathbf{v}"></span> is the cleaned colour-strength vector.</li><li><strong>Set LED brightness.</strong> Multiply <span class="math" data-latex="\mathbf{v}"></span> by 0.12, then apply the ceiling function so any fraction rises to the next integer. Finally, limit each PWM value to 0–255.</li></ol></div>
         <div class="capture-colour-result"><div class="mapping-equation-heading"><strong>Band vector → gains → leakage suppression → PWM</strong><span>The DFT and <span class="math" data-latex="\mathbf{u}=G\mathbf{b}"></span> are linear. Magnitude, band aggregation, leakage suppression, ceiling and clipping are not.</span></div><div id="capture-rgb-equation" class="math capture-equation" data-display="true"></div><div class="capture-final-colour"><div id="capture-rgb-swatch" class="capture-rgb-swatch"></div><output id="capture-rgb-output"></output></div></div>
       </div>

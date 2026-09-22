@@ -159,14 +159,15 @@
 
 .capture-stage-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
   border-bottom: 1px solid var(--line);
+  background: var(--line);
 }
 
 .capture-stage-tabs button {
   min-height: 58px;
   border: 0;
-  border-right: 1px solid var(--line);
   border-radius: 0;
   background: var(--background);
   color: var(--muted);
@@ -175,7 +176,6 @@
   text-align: left;
 }
 
-.capture-stage-tabs button:last-child { border-right: 0; }
 .capture-stage-tabs button[aria-selected="true"] { background: var(--signal); color: var(--signal-ink); font-weight: 700; }
 
 .capture-panel {
@@ -240,6 +240,70 @@
 .complex-plane canvas { display: block; width: 100%; height: 450px; border: 1px solid var(--line); border-radius: 12px; }
 .coefficient-check { margin: 0 0 12px; color: var(--signal); font-family: var(--measure); font-size: 0.66rem; overflow-wrap: anywhere; }
 
+.capture-fft-stages {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  margin: 28px 0 0;
+  padding: 0;
+  background: var(--line);
+  list-style: none;
+}
+.capture-fft-stages li { display: grid; gap: 4px; min-width: 0; padding: 12px 8px; background: var(--surface-raised); }
+.capture-fft-stages li[aria-current="step"] { background: var(--signal); color: var(--signal-ink); }
+.capture-fft-stages span { font-family: var(--measure); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+.capture-fft-stages small { color: var(--muted); font-family: var(--measure); font-size: 0.54rem; line-height: 1.35; }
+.capture-fft-stages li[aria-current="step"] small { color: var(--signal-ink); }
+.capture-evidence-note { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.72rem; }
+
+.capture-fft-evidence,
+.capture-comparison-evidence { display: grid; align-content: center; gap: 26px; min-width: 0; padding: clamp(28px, 5vw, 64px); background: #080906; }
+.capture-fft-evidence > header,
+.capture-comparison-evidence > header { display: flex; justify-content: space-between; gap: 24px; align-items: start; }
+.capture-fft-evidence > header > div:first-child,
+.capture-comparison-evidence > header { color: var(--muted); }
+.capture-fft-evidence header strong,
+.capture-comparison-evidence header strong { display: block; margin-bottom: 5px; color: var(--ink); font-size: 1rem; }
+.capture-fft-evidence header span,
+.capture-comparison-evidence header span { font-size: 0.7rem; }
+.capture-fft-evidence header .katex-display { margin: 0; color: var(--signal); font-size: 0.8em; }
+
+.capture-butterfly-inputs,
+.capture-butterfly-outputs { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+.capture-butterfly-inputs > div,
+.capture-butterfly-outputs > div { display: grid; gap: 9px; min-width: 0; padding: 20px; background: var(--surface-raised); }
+.capture-butterfly-inputs span,
+.capture-butterfly-outputs span { color: var(--muted); font-family: var(--measure); font-size: 0.62rem; }
+.capture-butterfly-inputs output,
+.capture-butterfly-outputs output { overflow-wrap: anywhere; font-family: var(--measure); font-size: clamp(0.72rem, 1.4vw, 0.94rem); font-variant-numeric: tabular-nums; }
+.capture-butterfly-outputs > div[data-selected="true"] { background: var(--signal); color: var(--signal-ink); }
+.capture-butterfly-outputs > div[data-selected="true"] span { color: var(--signal-ink); }
+.capture-fft-conclusion { margin: 0; padding-top: 20px; border-top: 1px solid var(--line); color: var(--signal); font-family: var(--measure); font-size: 0.68rem; }
+
+.capture-work-counts { display: grid; gap: 1px; margin: 28px 0 0; background: var(--line); }
+.capture-work-counts > div { display: grid; grid-template-columns: minmax(130px, 1fr) auto; gap: 7px 18px; align-items: baseline; padding: 14px 16px; background: var(--surface-raised); }
+.capture-work-counts dt { font-size: 0.78rem; font-weight: 700; }
+.capture-work-counts dd { margin: 0; }
+.capture-work-counts dd.math { grid-row: 1 / 3; grid-column: 2; color: var(--signal); }
+.capture-work-counts dd:last-child { color: var(--muted); font-size: 0.66rem; }
+
+.capture-comparison-table { min-width: 620px; border-block: 1px solid var(--line); font-family: var(--measure); font-size: 0.68rem; font-variant-numeric: tabular-nums; }
+.comparison-difference-definition { max-width: 72ch; margin: 0; color: var(--muted); font-size: 0.72rem; }
+.comparison-difference-definition .math { color: var(--ink); }
+.capture-comparison-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
+.comparison-table-row { display: grid; grid-template-columns: minmax(170px, 1.4fr) repeat(3, minmax(100px, 1fr)); gap: 1px; background: var(--line); }
+.comparison-table-row > * { min-width: 0; padding: 13px 14px; background: var(--surface-raised); }
+.comparison-table-row strong { color: var(--ink); font-size: 0.68rem; }
+.comparison-table-row output { text-align: right; }
+.comparison-table-header > span { background: var(--background); color: var(--muted); text-align: right; }
+.comparison-table-header > span:first-child { text-align: left; }
+.capture-comparison-verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; width: 100%; min-width: 620px; background: var(--line); }
+.capture-comparison-verdict > div { display: grid; gap: 7px; padding: 16px; background: var(--surface-raised); }
+.capture-comparison-verdict span { color: var(--muted); font-family: var(--measure); font-size: 0.6rem; }
+.capture-comparison-verdict output { font-family: var(--measure); font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+.capture-comparison-verdict p { grid-column: 1 / -1; justify-self: stretch; box-sizing: border-box; width: 100%; max-width: none; margin: 0; padding: 17px 18px; background: var(--signal); color: var(--signal-ink); font-weight: 700; }
+.capture-comparison-verdict p[data-status="check"] { background: var(--red); color: var(--background); }
+
 .nonlinear-marker { padding-top: 18px; border-top: 1px solid var(--signal); color: var(--ink); }
 .capture-band-results { display: grid; gap: 1px; margin-top: 28px; background: var(--line); }
 .capture-band-results div { display: grid; gap: 5px; padding: 14px 16px; background: var(--surface-raised); }
@@ -281,6 +345,7 @@
   .band-readouts { grid-column: 1 / -1; }
   .capture-panel { grid-template-columns: 1fr; }
   .capture-stage-copy { border-right: 0; border-bottom: 1px solid var(--line); }
+  .capture-stage-tabs { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 680px) {
@@ -306,8 +371,6 @@
   .capture-heading-actions { justify-items: stretch; }
   .capture-heading-actions output { text-align: left; }
   .capture-stage-tabs { grid-template-columns: 1fr 1fr; }
-  .capture-stage-tabs button:nth-child(2) { border-right: 0; }
-  .capture-stage-tabs button:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
   .capture-vector-plots canvas { height: 170px; }
   .capture-vector-plots figcaption { align-items: flex-start; flex-direction: column; gap: 4px; }
   .capture-vector-plots figcaption > span { text-align: left; }
@@ -316,5 +379,14 @@
   .complex-plane canvas { height: 330px; }
   .complex-speed { width: 100%; }
   .complex-speed button { flex: 1 1 0; }
+  .capture-fft-stages { grid-template-columns: repeat(4, 1fr); }
+  .capture-fft-evidence > header { align-items: start; flex-direction: column; }
+  .capture-butterfly-inputs,
+  .capture-butterfly-outputs { grid-template-columns: 1fr; }
+  .capture-comparison-table,
+  .capture-comparison-verdict { min-width: 0; }
+  .comparison-table-row { grid-template-columns: minmax(128px, 1.35fr) repeat(3, minmax(68px, 1fr)); font-size: 0.58rem; }
+  .comparison-table-row > * { padding: 11px 8px; }
+  .comparison-table-row strong { font-size: 0.58rem; }
   .capture-stage-controls { grid-template-columns: 1fr 1fr; }
 }

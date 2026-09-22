@@ -20,7 +20,7 @@ $$
 X[k] = \sum_{n=0}^{N-1} x[n]e^{-2\pi i kn/N}.
 $$
 
-Define the twiddle factor
+A **twiddle factor** is a complex rotation used to give a sample or partial DFT result the phase required for a particular frequency bin. The base twiddle factor for an $N$-sample transform is
 
 $$
 W_N=e^{-2\pi i/N}.

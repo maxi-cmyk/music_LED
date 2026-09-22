@@ -3,11 +3,20 @@ import {
   capturedCoefficient,
   reconstructCoefficient,
 } from './capture-analysis.mjs?release=20260922-capture-3';
+import { mountCaptureComparison } from './capture-comparison.mjs?release=20260923-comparison-1';
 import { updateMath } from './math-renderer.mjs?release=20260922-capture-3';
 import { allFourierContributions } from './vector-workbench.mjs?release=20260922-capture-3';
 import { drawFourierContributionPath, drawSampleVector } from './visualizations.mjs?release=20260922-capture-3';
 
-const STAGE_COUNT = 4;
+const STAGE_COUNT = 6;
+const NEXT_STAGE_LABELS = Object.freeze([
+  'Show direct DFT',
+  'Show DFT sum',
+  'Show FFT reuse',
+  'Compare results',
+  'Show colour mapping',
+  'Exit capture',
+]);
 
 function signedImaginary(value) {
   return value < 0 ? `-${Math.abs(value).toFixed(2)}i` : `+${value.toFixed(2)}i`;
@@ -73,6 +82,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
   const captureRgbEquation = root.querySelector('#capture-rgb-equation');
   const captureRgbSwatch = root.querySelector('#capture-rgb-swatch');
   const captureRgbOutput = root.querySelector('#capture-rgb-output');
+  const captureComparison = mountCaptureComparison(root);
   let complexAnimationFrame = null;
   let animationSpeedMultiplier = 3;
   let previousStage = null;
@@ -211,6 +221,19 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
   binNextButton.addEventListener('click', () => selectBin(store.get().selectedCaptureBin + 1));
   for (const button of stageButtons) {
     button.addEventListener('click', () => showStage(Number(button.dataset.captureStage)));
+    button.addEventListener('keydown', (event) => {
+      const currentIndex = Number(button.dataset.captureStage);
+      const requestedIndex = event.key === 'ArrowRight'
+        ? (currentIndex + 1) % STAGE_COUNT
+        : event.key === 'ArrowLeft'
+          ? (currentIndex - 1 + STAGE_COUNT) % STAGE_COUNT
+          : event.key === 'Home' ? 0
+            : event.key === 'End' ? STAGE_COUNT - 1 : null;
+      if (requestedIndex === null) return;
+      event.preventDefault();
+      showStage(requestedIndex);
+      requestAnimationFrame(() => stageButtons[requestedIndex].focus());
+    });
   }
 
   function render(state) {
@@ -244,13 +267,12 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     stageButtons.forEach((button, index) => {
       const selected = index === stageIndex;
       button.setAttribute('aria-selected', String(selected));
+      button.tabIndex = selected ? 0 : -1;
     });
     stagePanels.forEach((panel, index) => { panel.hidden = index !== stageIndex; });
     previousButton.disabled = stageIndex === 0;
     nextButton.disabled = false;
-    nextButton.textContent = stageIndex === STAGE_COUNT - 1
-      ? 'Exit capture'
-      : stageIndex === STAGE_COUNT - 2 ? 'Show colour mapping' : 'Next';
+    nextButton.textContent = NEXT_STAGE_LABELS[stageIndex];
 
     drawSampleVector(rawCanvas, capture.raw);
     drawSampleVector(preparedCanvas, capture.prepared);
@@ -261,6 +283,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     );
 
     renderMatrixRow(matrixRow, frequencyBinIndex);
+    const reconstructed = reconstructCoefficient(capture.prepared, frequencyBinIndex);
     updateMath(
       outputVector,
       String.raw`\mathbf{X}=F_{128}\mathbf{x}=\begin{bmatrix}X[0]\\X[1]\\\vdots\\\color{#d8ff52}{X[${frequencyBinIndex}]}\\\vdots\\X[127]\end{bmatrix}\in\mathbb{C}^{128}`,
@@ -268,22 +291,21 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     );
     updateMath(
       coefficientEquation,
-      String.raw`X[${frequencyBinIndex}]=\sum_{n=0}^{127}x[n]e^{-i2\pi(${frequencyBinIndex})n/128}=${coefficient.real.toFixed(2)}${signedImaginary(coefficient.imaginary)}`,
+      String.raw`X_{\mathrm{DFT}}[${frequencyBinIndex}]=\sum_{n=0}^{127}x[n]e^{-i2\pi(${frequencyBinIndex})n/128}=${reconstructed.real.toFixed(2)}${signedImaginary(reconstructed.imaginary)}`,
       true,
     );
     updateMath(
       complexEquation,
-      String.raw`\begin{aligned}X[${frequencyBinIndex}]&=\sum_{n=0}^{127}x[n]e^{-i2\pi(${frequencyBinIndex})n/128}\\&=\sum_{n=0}^{127}x[n]\!\left(\cos\!\frac{2\pi(${frequencyBinIndex})n}{128}-i\sin\!\frac{2\pi(${frequencyBinIndex})n}{128}\right)\\&=${coefficient.real.toFixed(2)}${signedImaginary(coefficient.imaginary)}\end{aligned}`,
+      String.raw`\begin{aligned}X_{\mathrm{DFT}}[${frequencyBinIndex}]&=\sum_{n=0}^{127}x[n]e^{-i2\pi(${frequencyBinIndex})n/128}\\&=\sum_{n=0}^{127}x[n]\!\left(\cos\!\frac{2\pi(${frequencyBinIndex})n}{128}-i\sin\!\frac{2\pi(${frequencyBinIndex})n}{128}\right)\\&=${reconstructed.real.toFixed(2)}${signedImaginary(reconstructed.imaginary)}\end{aligned}`,
       true,
     );
     updateMath(
       magnitudeEquation,
-      String.raw`|X[${frequencyBinIndex}]|=\sqrt{(${coefficient.real.toFixed(2)})^2+(${coefficient.imaginary.toFixed(2)})^2}=${coefficient.magnitude.toFixed(2)}`,
+      String.raw`|X_{\mathrm{DFT}}[${frequencyBinIndex}]|=\sqrt{(${reconstructed.real.toFixed(2)})^2+(${reconstructed.imaginary.toFixed(2)})^2}=${Math.hypot(reconstructed.real, reconstructed.imaginary).toFixed(2)}`,
       true,
     );
 
     const contributions = allFourierContributions(capture.prepared, frequencyBinIndex);
-    const reconstructed = reconstructCoefficient(capture.prepared, frequencyBinIndex);
     const complexDifference = Math.hypot(
       reconstructed.real - coefficient.real,
       reconstructed.imaginary - coefficient.imaginary,
@@ -291,6 +313,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     coefficientCheck.textContent = `Browser row sum ${reconstructed.real.toFixed(2)} ${signedImaginary(reconstructed.imaginary)} · ESP32 FFT difference ${complexDifference.toFixed(3)}`;
     drawFourierContributionPath(complexCanvas, contributions, contributions.length - 1);
     complexProgress.textContent = `128 of 128 measured terms accumulated · ${speedLabel()}`;
+    captureComparison.render(capture, frequencyBinIndex, frequencyHz);
 
     for (const [channelName, output] of Object.entries(captureBandOutputs)) {
       const band = SIGNAL_CONFIG.bands[channelName];

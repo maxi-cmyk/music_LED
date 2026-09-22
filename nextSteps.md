@@ -7,7 +7,7 @@ The implementation is complete. The direct DFT and FFT agree in automated tests,
 - [ ] Use the final laptop, browser, USB cable, speaker, microphone position, and display.
 - [x] Open the local page in Chrome or Edge, connect through the Web Serial permission prompt, and confirm that the spectrum, band meters, dominant frequency, and RGB values update.
 - [x] Move between Demo and Presenter modes during playback and confirm that the shared tone and serial connection continue without interruption.
-- [x] Dry-run Capture Frame with deterministic simulated samples and verify the measured-input, coefficient, complex-sum, and colour-mapping stages.
+- [x] Dry-run Capture Frame with deterministic simulated samples and verify the measured-input, direct-DFT, complex-sum, FFT-reuse, coefficient-comparison, and colour-mapping stages.
 - [x] In Demo mode, capture one synchronized live ESP32 frame and verify that its raw and prepared vectors, selected Fourier row, complex coefficient, spectrum bands, and RGB result agree.
 - [x] Confirm the startup red, green, and blue self-test matches the physical LED channels.
 - [x] Test silence and check that the LED turns off without a persistent 1000 Hz component.
