@@ -50,7 +50,8 @@
     </header>
     <p id="serial-message" class="connection-message" role="status" aria-live="polite">Close Arduino Serial Monitor, then connect the board.</p>
     <div class="spectrum-toolbar" aria-label="Spectrum display controls">
-      <button id="freeze-button" class="tool-button" type="button">Freeze frame</button>
+      <span id="capture-status" class="capture-status" role="status" aria-live="polite">Connect ESP32 to capture a measured frame.</span>
+      <button id="capture-button" class="tool-button" type="button" aria-pressed="false" disabled>Capture frame</button>
       <label><span>Scale</span><select id="scale-mode"><option value="auto">Auto</option><option value="fixed">Fixed</option></select></label>
       <button id="reset-scale-button" class="tool-button" type="button">Reset scale</button>
     </div>
@@ -61,5 +62,71 @@
       <div class="colour-readout"><span>Measured LED output</span><output id="rgb-output">R 0 · G 0 · B 0</output></div>
       <dl class="band-readouts"><div><dt>Red · bass</dt><dd id="red-strength">0.0 · PWM 0</dd></div><div><dt>Green · mids</dt><dd id="green-strength">0.0 · PWM 0</dd></div><div><dt>Blue · treble</dt><dd id="blue-strength">0.0 · PWM 0</dd></div></dl>
     </div>
+
+    <section id="capture-workbench" class="capture-workbench" aria-labelledby="capture-workbench-title" hidden>
+      <header class="capture-workbench-heading">
+        <div><h3 id="capture-workbench-title">Explain this captured frame</h3><p id="capture-source" class="capture-source"></p></div>
+        <div class="capture-heading-actions"><output id="capture-meta"></output><button id="resume-live" class="secondary-button" type="button">Resume live view</button></div>
+      </header>
+
+      <div class="capture-stage-tabs" role="tablist" aria-label="Captured frame explanation stages">
+        <button type="button" role="tab" data-capture-stage="0" aria-selected="true">Measured input</button>
+        <button type="button" role="tab" data-capture-stage="1" aria-selected="false">One coefficient</button>
+        <button type="button" role="tab" data-capture-stage="2" aria-selected="false">Complex sum</button>
+        <button type="button" role="tab" data-capture-stage="3" aria-selected="false">Colour mapping</button>
+      </div>
+
+      <div class="capture-panel" data-capture-panel="0" role="tabpanel">
+        <div class="capture-stage-copy">
+          <h4>Prepare the microphone samples</h4>
+          <p>The top graph is the 128 readings exactly as the ESP32 captured them. The bottom graph is the same frame after removing its average level and tapering its ends. That prepared vector is what the FFT receives.</p>
+          <dl class="capture-symbols">
+            <div><dt><span class="math" data-latex="a[n]"></span></dt><dd>Raw 12-bit ADC reading, from 0 to 4095 ADC counts. These values are not calibrated volts.</dd></div>
+            <div><dt><span class="math" data-latex="\mu"></span></dt><dd>The average of all 128 readings. Subtracting it centres the signal around zero.</dd></div>
+            <div><dt><span class="math" data-latex="w_H[n]"></span></dt><dd>A unitless Hamming weight. It fades both frame edges to reduce spectral leakage.</dd></div>
+            <div><dt><span class="math" data-latex="x[n]"></span></dt><dd>The prepared FFT input, still measured in ADC counts.</dd></div>
+          </dl>
+          <div id="capture-preparation-equation" class="math capture-equation" data-display="true"></div>
+        </div>
+        <div class="capture-vector-plots">
+          <figure><figcaption><strong>Before preparation · <span class="math" data-latex="a[n]"></span></strong><span>vertical: ADC count · horizontal: sample number <span class="math" data-latex="n"></span></span></figcaption><canvas id="capture-raw-canvas" width="900" height="300" role="img" aria-label="Captured raw ESP32 microphone readings in ADC counts by sample number"></canvas></figure>
+          <figure><figcaption><strong>After preparation · <span class="math" data-latex="x[n]"></span></strong><span>vertical: windowed ADC count · horizontal: sample number <span class="math" data-latex="n"></span></span></figcaption><canvas id="capture-prepared-canvas" width="900" height="300" role="img" aria-label="Mean-centred and Hamming-windowed ESP32 samples in ADC counts by sample number"></canvas></figure>
+        </div>
+      </div>
+
+      <div class="capture-panel" data-capture-panel="1" role="tabpanel" hidden>
+        <div class="capture-stage-copy">
+          <h4>One matrix row measures one frequency</h4>
+          <p>A bin is one position <span class="math" data-latex="k"></span> in the FFT output column <span class="math" data-latex="\mathbf{X}"></span>. Bin <span class="math" data-latex="k"></span> represents <span class="math" data-latex="f_k=kf_s/128"></span> hertz, so the spacing depends on this frame’s measured sample rate.</p>
+          <div class="capture-bin-control"><span>Inspect one output bin</span><div class="capture-bin-stepper"><button id="capture-bin-previous" class="secondary-button" type="button">Previous bin</button><input id="capture-bin-select" type="range" min="1" max="64" step="1" value="4" aria-label="Fourier coefficient bin"><button id="capture-bin-next" class="secondary-button" type="button">Next bin</button></div><output id="capture-bin-output" for="capture-bin-select">Bin 4 · 200.0 Hz</output></div>
+          <div class="capture-bin-ranges" aria-label="FFT bin ranges used by each LED channel">
+            <p><strong>Bins sent to the LED</strong></p>
+            <dl>
+              <div><dt>1–5</dt><dd>red · bass</dd></div>
+              <div><dt>6–20</dt><dd>green · mids</dd></div>
+              <div><dt>21–50</dt><dd>blue · treble</dd></div>
+              <div><dt>51–64</dt><dd>measured, but not mapped to a colour</dd></div>
+            </dl>
+          </div>
+          <aside class="capture-vector-reminder" aria-label="Full Fourier output vector reminder">
+            <span>FFT output column · 128 complex numbers</span>
+            <div id="capture-output-vector" class="math" data-display="true"></div>
+          </aside>
+        </div>
+        <div class="capture-matrix"><p class="capture-matrix-intro">The highlighted coefficient is the dot product of row <span class="math" data-latex="k"></span> of <span class="math" data-latex="F_{128}"></span> with the prepared sample column <span class="math" data-latex="\mathbf{x}"></span>. The cells below show the row’s rotating complex weights.</p><div id="capture-matrix-row" class="capture-matrix-row" aria-label="Representative entries from the selected Fourier matrix row"></div><div id="capture-coefficient-equation" class="math capture-equation" data-display="true"></div></div>
+      </div>
+
+      <div class="capture-panel" data-capture-panel="2" role="tabpanel" hidden>
+        <div class="capture-stage-copy"><h4>The weighted samples accumulate in the complex plane</h4><p>Each sample contributes a small complex vector. The animation adds all 128 vectors head-to-tail; the endpoint is <span class="math" data-latex="X[k]"></span>.</p><div class="complex-actions"><output id="complex-progress" aria-live="polite">128 of 128 measured terms accumulated</output><div class="complex-speed" role="group" aria-label="Complex sum animation speed"><button class="secondary-button" type="button" data-complex-speed="1" aria-pressed="false">Normal</button><button class="secondary-button" type="button" data-complex-speed="3" aria-pressed="true">3× slower</button><button class="secondary-button" type="button" data-complex-speed="5" aria-pressed="false">5× slower</button></div><button id="replay-complex-path" class="secondary-button" type="button">Replay accumulation</button></div><div class="equation-stack"><span>Original complex coefficient</span><div id="capture-complex-equation" class="math capture-equation" data-display="true"></div><span>Magnitude · the endpoint’s distance from zero</span><div id="capture-magnitude-equation" class="math capture-equation" data-display="true"></div></div></div>
+        <figure class="complex-plane"><figcaption>Browser reconstruction from the captured ESP32 samples</figcaption><p id="capture-coefficient-check" class="coefficient-check"></p><canvas id="capture-complex-canvas" width="900" height="520" role="img" aria-label="Complex-plane accumulation path for the selected Fourier coefficient"></canvas></figure>
+      </div>
+
+      <div class="capture-panel" data-capture-panel="3" role="tabpanel" hidden>
+        <div class="capture-stage-copy"><h4>Three band strengths become RGB</h4><p class="nonlinear-marker">First, the magnitudes inside each fixed bin range are combined into the three-entry band vector <span class="math" data-latex="\mathbf{b}"></span>.</p><div class="capture-band-results"><div><strong>Red · bass</strong><output id="capture-red-band"></output></div><div><strong>Green · mids</strong><output id="capture-green-band"></output></div><div><strong>Blue · treble</strong><output id="capture-blue-band"></output></div></div><ol class="mapping-steps"><li><strong>Apply fixed colour gains.</strong> The input and output each contain three values—red, green and blue—so their mapping matrix <span class="math" data-latex="G"></span> is 3 × 3. It is a chosen LED-calibration matrix, not part of the Fourier matrix.</li><li><strong>Remove weak leakage.</strong> Find the strongest value in <span class="math" data-latex="\mathbf{u}"></span>, then subtract 15% of it from all three channels. Negative results become zero. Dividing by 0.85 keeps the strongest channel unchanged; <span class="math" data-latex="\mathbf{v}"></span> is the cleaned colour-strength vector.</li><li><strong>Set LED brightness.</strong> Multiply <span class="math" data-latex="\mathbf{v}"></span> by 0.12, then apply the ceiling function so any fraction rises to the next integer. Finally, limit each PWM value to 0–255.</li></ol></div>
+        <div class="capture-colour-result"><div class="mapping-equation-heading"><strong>Band vector → gains → leakage suppression → PWM</strong><span>The DFT and <span class="math" data-latex="\mathbf{u}=G\mathbf{b}"></span> are linear. Magnitude, band aggregation, leakage suppression, ceiling and clipping are not.</span></div><div id="capture-rgb-equation" class="math capture-equation" data-display="true"></div><div class="capture-final-colour"><div id="capture-rgb-swatch" class="capture-rgb-swatch"></div><output id="capture-rgb-output"></output></div></div>
+      </div>
+
+      <footer class="capture-stage-controls"><button id="capture-previous" class="secondary-button" type="button">Back</button><button id="capture-next" class="primary-button" type="button">Next</button></footer>
+    </section>
   </section>
 </div>

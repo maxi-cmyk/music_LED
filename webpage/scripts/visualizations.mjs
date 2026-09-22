@@ -1,4 +1,4 @@
-import { FREQUENCIES, SIGNAL_CONFIG } from './config.mjs';
+import { FREQUENCIES, SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
 
 function resizeCanvas(canvas) {
   const pixelRatio = window.devicePixelRatio || 1;
@@ -235,9 +235,15 @@ export function drawSampleVector(canvas, samples, selectedSampleIndex = null) {
   drawGrid(context, width, height);
   if (!samples?.length) return;
 
-  const largestMagnitude = Math.max(1e-9, ...samples.map((sample) => Math.abs(sample)));
+  const minimumSample = Math.min(...samples);
+  const maximumSample = Math.max(...samples);
+  const plotCentre = (minimumSample + maximumSample) / 2;
+  const largestDeviation = Math.max(
+    1e-9,
+    ...samples.map((sample) => Math.abs(sample - plotCentre)),
+  );
   const middleY = height / 2;
-  const verticalScale = (height / 2 - 18 * pixelRatio) / largestMagnitude;
+  const verticalScale = (height / 2 - 18 * pixelRatio) / largestDeviation;
   const selectedX = selectedSampleIndex === null
     ? null
     : selectedSampleIndex / (samples.length - 1) * width;
@@ -263,7 +269,7 @@ export function drawSampleVector(canvas, samples, selectedSampleIndex = null) {
   context.beginPath();
   samples.forEach((sample, index) => {
     const x = index / (samples.length - 1) * width;
-    const y = middleY - sample * verticalScale;
+    const y = middleY - (sample - plotCentre) * verticalScale;
     if (index === 0) context.moveTo(x, y);
     else context.lineTo(x, y);
   });
@@ -271,7 +277,7 @@ export function drawSampleVector(canvas, samples, selectedSampleIndex = null) {
 
   samples.forEach((sample, index) => {
     const x = index / (samples.length - 1) * width;
-    const y = middleY - sample * verticalScale;
+    const y = middleY - (sample - plotCentre) * verticalScale;
     context.fillStyle = index === selectedSampleIndex ? '#f1f2ea' : '#d8ff52';
     context.beginPath();
     context.arc(x, y, (index === selectedSampleIndex ? 4 : 1.45) * pixelRatio, 0, Math.PI * 2);
@@ -327,8 +333,9 @@ export function drawFourierContributionPath(canvas, contributions, selectedSampl
   });
   context.stroke();
 
-  const selectedStart = mapPoint(cumulativePoints[selectedSampleIndex]);
-  const selectedEnd = mapPoint(cumulativePoints[selectedSampleIndex + 1]);
+  const safeSelectedIndex = Math.max(0, Math.min(selectedSampleIndex, contributions.length - 1));
+  const selectedStart = mapPoint(cumulativePoints[safeSelectedIndex]);
+  const selectedEnd = mapPoint(cumulativePoints[safeSelectedIndex + 1]);
   context.strokeStyle = '#d8ff52';
   context.lineWidth = 4 * pixelRatio;
   context.beginPath();

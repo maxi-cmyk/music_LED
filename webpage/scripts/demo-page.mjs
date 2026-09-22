@@ -1,7 +1,8 @@
-import { FREQUENCIES, PRESETS, SIGNAL_CONFIG } from './config.mjs';
-import { updateMath } from './math-renderer.mjs';
-import { findExpectedPeaks } from './signal-analysis.mjs';
-import { drawSpectrum, drawWaveComposition } from './visualizations.mjs';
+import { FREQUENCIES, PRESETS, SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
+import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20260922-capture-3';
+import { updateMath } from './math-renderer.mjs?release=20260922-capture-3';
+import { findExpectedPeaks } from './signal-analysis.mjs?release=20260922-capture-3';
+import { drawSpectrum, drawWaveComposition } from './visualizations.mjs?release=20260922-capture-3';
 
 function selectionLabel(frequencies) {
   if (!frequencies.length) return 'Silence';
@@ -108,9 +109,10 @@ function renderExpectedResults(container, frame, frequencies) {
     const item = document.createElement('article');
     item.className = `peak-result ${result.isLeakageExample ? 'leakage-result' : result.withinOneBin ? 'pass-result' : 'check-result'}`;
     const title = document.createElement('strong');
+    const resultNoun = frame.source === 'simulation' ? 'simulated' : 'measured';
     title.textContent = result.isLeakageExample
       ? `${result.frequencyHz} Hz spreads between measured frequencies`
-      : `${result.frequencyHz} Hz → measured ${result.observedHz} Hz`;
+      : `${result.frequencyHz} Hz → ${resultNoun} ${result.observedHz} Hz`;
     const detail = document.createElement('span');
     detail.textContent = result.isLeakageExample
       ? 'Expected leakage: energy should occupy neighbouring bars.'
@@ -142,7 +144,6 @@ export function mount(root, { store, audioController, serialSource }) {
   const connectButton = root.querySelector('#connect-serial');
   const disconnectButton = root.querySelector('#disconnect-serial');
   const serialMessage = root.querySelector('#serial-message');
-  const freezeButton = root.querySelector('#freeze-button');
   const scaleMode = root.querySelector('#scale-mode');
   const resetScaleButton = root.querySelector('#reset-scale-button');
   const spectrumCanvas = root.querySelector('#spectrum-canvas');
@@ -156,6 +157,7 @@ export function mount(root, { store, audioController, serialSource }) {
     blue: root.querySelector('#blue-strength'),
   };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const captureWorkbench = mountCaptureWorkbench(root, { store, serialSource, reducedMotion });
   let animationFrameId = null;
   let previousAnimationTime = 0;
   let targetFrame = null;
@@ -196,11 +198,6 @@ export function mount(root, { store, audioController, serialSource }) {
     }
   });
   disconnectButton.addEventListener('click', () => serialSource.disconnect());
-  freezeButton.addEventListener('click', () => {
-    const state = store.get();
-    if (state.isFrozen) store.patch({ isFrozen: false, frozenFrame: null });
-    else if (state.analysisFrame) store.patch({ isFrozen: true, frozenFrame: state.analysisFrame });
-  });
   scaleMode.addEventListener('change', () => {
     if (scaleMode.value === 'fixed') fixedScaleMaximum = animatedScaleMaximum;
     store.patch({ scaleMode: scaleMode.value });
@@ -281,6 +278,9 @@ export function mount(root, { store, audioController, serialSource }) {
 
   const render = (state) => {
     const frame = state.isFrozen ? state.frozenFrame : state.analysisFrame;
+    const evidenceFrequencies = state.isFrozen && state.capturedEvidence
+      ? state.capturedEvidence.frequencies
+      : state.selectedFrequencies;
     selectionSummary.textContent = selectionLabel(state.selectedFrequencies);
     volumeControl.value = state.volumePercent;
     volumeReadout.textContent = `${state.volumePercent}%`;
@@ -294,8 +294,6 @@ export function mount(root, { store, audioController, serialSource }) {
     disconnectButton.disabled = !serialSource.connected;
     serialMessage.textContent = state.serialMessage;
     serialMessage.dataset.status = state.serialStatus;
-    freezeButton.disabled = !state.analysisFrame;
-    freezeButton.textContent = state.isFrozen ? 'Resume live frames' : 'Freeze frame';
     scaleMode.value = state.scaleMode;
 
     presetList.querySelectorAll('button').forEach((button) => {
@@ -322,16 +320,20 @@ export function mount(root, { store, audioController, serialSource }) {
     updateMath(sampleSumEquation, sampleSumLatex(state.selectedFrequencies, selectedSampleIndex), true);
     updateMath(vectorWindowEquation, vectorWindowLatex(state.selectedFrequencies, selectedSampleIndex), true);
 
-    updateSpectrum(state, frame);
+    updateSpectrum({ ...state, selectedFrequencies: evidenceFrequencies }, frame);
 
+    const frameStateLabel = state.isFrozen
+      ? frame?.source === 'simulation' ? 'Simulated capture' : 'Captured'
+      : 'Live';
     spectrumSummary.textContent = frame
-      ? `${state.isFrozen ? 'Frozen' : 'Live'} · dominant ${frame.dominantHz.toFixed(0)} Hz · sample rate ${frame.sampleRateHz.toFixed(1)} Hz`
+      ? `${frameStateLabel} · dominant ${frame.dominantHz.toFixed(0)} Hz · sample rate ${frame.sampleRateHz.toFixed(1)} Hz`
       : 'Waiting for ESP32 data';
-    renderExpectedResults(expectedResults, frame, state.selectedFrequencies);
+    renderExpectedResults(expectedResults, frame, evidenceFrequencies);
 
     const rgb = frame?.rgb ?? { red: 0, green: 0, blue: 0 };
     rgbSwatch.style.backgroundColor = `rgb(${rgb.red}, ${rgb.green}, ${rgb.blue})`;
-    rgbSwatch.setAttribute('aria-label', `Measured colour: red ${rgb.red}, green ${rgb.green}, blue ${rgb.blue}`);
+    const evidenceLabel = frame?.source === 'simulation' ? 'Simulated colour' : 'Measured colour';
+    rgbSwatch.setAttribute('aria-label', `${evidenceLabel}: red ${rgb.red}, green ${rgb.green}, blue ${rgb.blue}`);
     rgbOutput.textContent = `R ${rgb.red} · G ${rgb.green} · B ${rgb.blue}`;
     for (const channel of ['red', 'green', 'blue']) {
       bandOutputs[channel].textContent = `${(frame?.bands[channel] ?? 0).toFixed(1)} · PWM ${rgb[channel]}`;
@@ -343,6 +345,7 @@ export function mount(root, { store, audioController, serialSource }) {
   window.addEventListener('resize', onResize);
   return () => {
     if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
+    captureWorkbench.cleanup();
     unsubscribe();
     window.removeEventListener('resize', onResize);
   };

@@ -16,7 +16,8 @@ void setupRgbLedOutput() {
 }
 
 void runRgbLedSelfTest() {
-  constexpr uint8_t kSelfTestBrightness = 80;
+  constexpr uint8_t kSelfTestBrightness =
+      lighting_config::kMaximumChannelBrightness;
   constexpr uint32_t kChannelDisplayTimeMilliseconds = 300;
 
   Serial.println("RGB_SELF_TEST,red");

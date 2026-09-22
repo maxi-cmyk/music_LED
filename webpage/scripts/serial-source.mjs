@@ -1,4 +1,4 @@
-import { SIGNAL_CONFIG } from './config.mjs';
+import { SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
 
 function finiteNumber(value, fieldName) {
   const parsedValue = Number(value);
@@ -66,6 +66,167 @@ export function parseSampleFrame(line) {
   };
 }
 
+function parseCaptureChunk(line, prefix) {
+  if (!line.startsWith(`${prefix},`)) return null;
+  const fields = fieldsFromLine(line);
+  return {
+    id: finiteNumber(fields.id, 'capture ID'),
+    start: finiteNumber(fields.start, 'capture chunk start'),
+    values: parseNumberList(fields.values, `${prefix} value`, Number(fields.count)),
+  };
+}
+
+function writeCaptureChunk(target, receivedIndices, chunk, expectedLength, fieldName) {
+  if (!Number.isInteger(chunk.start) || chunk.start < 0
+      || chunk.start + chunk.values.length > expectedLength) {
+    throw new TypeError(`Invalid ${fieldName} chunk range`);
+  }
+  chunk.values.forEach((value, offset) => {
+    const index = chunk.start + offset;
+    if (receivedIndices.has(index)) throw new TypeError(`Duplicate ${fieldName} value ${index}`);
+    target[index] = value;
+    receivedIndices.add(index);
+  });
+}
+
+export class CaptureTransactionAssembler {
+  constructor(onCapture) {
+    this.onCapture = onCapture;
+    this.transaction = null;
+  }
+
+  reset() {
+    this.transaction = null;
+  }
+
+  handleLine(line) {
+    if (line.startsWith('CAPTURE_BEGIN,')) {
+      const fields = fieldsFromLine(line);
+      const id = finiteNumber(fields.id, 'capture ID');
+      const sampleCount = finiteNumber(fields.n, 'sample count');
+      if (!Number.isInteger(sampleCount) || sampleCount !== SIGNAL_CONFIG.sampleCount) {
+        throw new TypeError(`Unsupported capture sample count ${sampleCount}`);
+      }
+      const binCount = SIGNAL_CONFIG.nyquistBin + 1;
+      this.transaction = {
+        id,
+        sampleCount,
+        sampleRateHz: finiteNumber(fields.sample_rate_hz, 'sample rate'),
+        sampleSpanMicroseconds: finiteNumber(fields.sample_span_us, 'sample span'),
+        mean: finiteNumber(fields.mean, 'frame mean'),
+        rms: finiteNumber(fields.rms, 'RMS'),
+        noiseFloor: finiteNumber(fields.noise_floor, 'noise floor'),
+        silenceThreshold: finiteNumber(fields.silence_threshold, 'silence threshold'),
+        aboveSilenceThreshold: finiteNumber(fields.above_silence, 'silence state') === 1,
+        raw: new Array(sampleCount),
+        prepared: new Array(sampleCount),
+        real: new Array(binCount),
+        imaginary: new Array(binCount),
+        magnitudes: new Array(binCount),
+        received: {
+          raw: new Set(), prepared: new Set(), real: new Set(), imaginary: new Set(), magnitudes: new Set(),
+        },
+        output: null,
+      };
+      return true;
+    }
+
+    const prefixes = {
+      CAPTURE_RAW: ['raw', SIGNAL_CONFIG.sampleCount],
+      CAPTURE_PREPARED: ['prepared', SIGNAL_CONFIG.sampleCount],
+      CAPTURE_REAL: ['real', SIGNAL_CONFIG.nyquistBin + 1],
+      CAPTURE_IMAGINARY: ['imaginary', SIGNAL_CONFIG.nyquistBin + 1],
+      CAPTURE_MAGNITUDES: ['magnitudes', SIGNAL_CONFIG.nyquistBin + 1],
+    };
+    for (const [prefix, [fieldName, expectedLength]] of Object.entries(prefixes)) {
+      const chunk = parseCaptureChunk(line, prefix);
+      if (!chunk) continue;
+      if (!this.transaction || chunk.id !== this.transaction.id) {
+        throw new TypeError(`Unexpected capture ID ${chunk.id}`);
+      }
+      writeCaptureChunk(
+        this.transaction[fieldName],
+        this.transaction.received[fieldName],
+        chunk,
+        expectedLength,
+        fieldName,
+      );
+      return true;
+    }
+
+    if (line.startsWith('CAPTURE_OUTPUT,')) {
+      const fields = fieldsFromLine(line);
+      const id = finiteNumber(fields.id, 'capture ID');
+      if (!this.transaction || id !== this.transaction.id) throw new TypeError(`Unexpected capture ID ${id}`);
+      this.transaction.output = {
+        dominantBin: finiteNumber(fields.dominant_bin, 'dominant bin'),
+        dominantHz: finiteNumber(fields.dominant_hz, 'dominant frequency'),
+        bands: {
+          red: finiteNumber(fields.bass, 'bass strength'),
+          green: finiteNumber(fields.mid, 'midrange strength'),
+          blue: finiteNumber(fields.treble, 'treble strength'),
+        },
+        rgb: parseRgb(fields.rgb ?? ''),
+      };
+      return true;
+    }
+
+    if (!line.startsWith('CAPTURE_END,')) return false;
+    const fields = fieldsFromLine(line);
+    const id = finiteNumber(fields.id, 'capture ID');
+    if (!this.transaction || id !== this.transaction.id) throw new TypeError(`Unexpected capture ID ${id}`);
+    const transaction = this.transaction;
+    const incompleteField = Object.entries(transaction.received)
+      .find(([fieldName, indices]) => indices.size !== transaction[fieldName].length);
+    if (incompleteField || !transaction.output) {
+      this.reset();
+      throw new TypeError(`Incomplete capture${incompleteField ? ` ${incompleteField[0]}` : ' output'}`);
+    }
+    for (let binIndex = 0; binIndex < transaction.magnitudes.length; binIndex += 1) {
+      const coefficientMagnitude = Math.hypot(
+        transaction.real[binIndex],
+        transaction.imaginary[binIndex],
+      );
+      const allowedDifference = Math.max(0.02, transaction.magnitudes[binIndex] * 0.001);
+      if (Math.abs(coefficientMagnitude - transaction.magnitudes[binIndex]) > allowedDifference) {
+        this.reset();
+        throw new TypeError(`Capture coefficient and magnitude disagree at bin ${binIndex}`);
+      }
+    }
+
+    const frame = {
+      source: 'esp32',
+      sequence: transaction.id,
+      sampleRateHz: transaction.sampleRateHz,
+      rms: transaction.rms,
+      noiseFloor: transaction.noiseFloor,
+      silenceThreshold: transaction.silenceThreshold,
+      dominantBin: transaction.output.dominantBin,
+      dominantHz: transaction.output.dominantHz,
+      bands: transaction.output.bands,
+      rgb: transaction.output.rgb,
+      magnitudes: transaction.magnitudes,
+      receivedAt: performance.now(),
+    };
+    const capture = {
+      id: `ESP32-${String(transaction.id).padStart(3, '0')}`,
+      captureId: transaction.id,
+      source: 'esp32',
+      sourceLabel: 'Captured from one synchronized ESP32 sampling window',
+      raw: transaction.raw,
+      prepared: transaction.prepared,
+      mean: transaction.mean,
+      coefficients: { real: transaction.real, imaginary: transaction.imaginary },
+      frame,
+      sampleSpanMicroseconds: transaction.sampleSpanMicroseconds,
+      aboveSilenceThreshold: transaction.aboveSilenceThreshold,
+    };
+    this.reset();
+    this.onCapture(capture);
+    return true;
+  }
+}
+
 export function parseLiveComparison(line) {
   if (!line.startsWith('LIVE_TRANSFORM_COMPARISON,')) return null;
   const fields = fieldsFromLine(line);
@@ -116,14 +277,23 @@ export class SerialLineBuffer {
 }
 
 export class Esp32SerialSource {
-  constructor({ onFrame, onSampleFrame, onBenchmark, onLiveComparison, onStatus }) {
-    this.callbacks = { onFrame, onSampleFrame, onBenchmark, onLiveComparison, onStatus };
+  constructor({ onFrame, onSampleFrame, onCapture, onBenchmark, onLiveComparison, onStatus }) {
+    this.callbacks = { onFrame, onSampleFrame, onCapture, onBenchmark, onLiveComparison, onStatus };
     this.port = null;
     this.reader = null;
     this.readLoopPromise = null;
     this.disconnectRequested = false;
     this.collectingBenchmark = false;
     this.benchmarkRows = [];
+    this.pendingCapture = null;
+    this.captureAssembler = new CaptureTransactionAssembler((capture) => {
+      this.callbacks.onCapture?.(capture);
+      if (this.pendingCapture) {
+        clearTimeout(this.pendingCapture.timeoutId);
+        this.pendingCapture.resolve(capture);
+        this.pendingCapture = null;
+      }
+    });
   }
 
   get supported() {
@@ -148,6 +318,7 @@ export class Esp32SerialSource {
   }
 
   handleLine(line) {
+    if (this.captureAssembler.handleLine(line)) return;
     if (line === 'FOURIER_BENCHMARK_BEGIN') {
       this.collectingBenchmark = true;
       this.benchmarkRows = [];
@@ -178,6 +349,12 @@ export class Esp32SerialSource {
       try {
         this.handleLine(line);
       } catch (error) {
+        if (line.startsWith('CAPTURE_') && this.pendingCapture) {
+          clearTimeout(this.pendingCapture.timeoutId);
+          this.pendingCapture.reject(new Error(`Invalid capture telemetry: ${error.message}`));
+          this.pendingCapture = null;
+          this.captureAssembler.reset();
+        }
         this.callbacks.onStatus('warning', `Skipped malformed telemetry: ${error.message}`);
       }
     });
@@ -203,23 +380,61 @@ export class Esp32SerialSource {
         this.callbacks.onStatus('error', `Serial connection lost: ${error.message}`);
       }
     } finally {
-      if (!this.disconnectRequested) this.port = null;
+      if (!this.disconnectRequested) {
+        this.port = null;
+        if (this.pendingCapture) {
+          clearTimeout(this.pendingCapture.timeoutId);
+          this.pendingCapture.reject(new Error('The serial connection ended before the capture completed.'));
+          this.pendingCapture = null;
+          this.captureAssembler.reset();
+        }
+      }
     }
   }
 
   async requestSampleCapture() {
+    return this.requestCapture();
+  }
+
+  async requestCapture() {
     if (!this.connected || !this.port.writable) throw new Error('Connect the ESP32 first.');
+    if (this.pendingCapture) throw new Error('A frame capture is already in progress.');
+    this.captureAssembler.reset();
+    let resolveCapture;
+    let rejectCapture;
+    const capturePromise = new Promise((resolve, reject) => {
+      resolveCapture = resolve;
+      rejectCapture = reject;
+    });
+    const timeoutId = setTimeout(() => {
+      if (!this.pendingCapture) return;
+      this.captureAssembler.reset();
+      this.pendingCapture = null;
+      rejectCapture(new Error('The ESP32 capture timed out. Try again.'));
+    }, 8000);
+    this.pendingCapture = { resolve: resolveCapture, reject: rejectCapture, timeoutId };
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode('CAPTURE_FRAME\n'));
+    } catch (error) {
+      clearTimeout(timeoutId);
+      this.pendingCapture = null;
+      throw error;
     } finally {
       writer.releaseLock();
     }
+    return capturePromise;
   }
 
   async disconnect() {
     if (!this.port) return;
     this.disconnectRequested = true;
+    if (this.pendingCapture) {
+      clearTimeout(this.pendingCapture.timeoutId);
+      this.pendingCapture.reject(new Error('The ESP32 disconnected before the capture completed.'));
+      this.pendingCapture = null;
+      this.captureAssembler.reset();
+    }
     await this.reader?.cancel().catch(() => {});
     await this.readLoopPromise?.catch(() => {});
     await this.port.close().catch(() => {});

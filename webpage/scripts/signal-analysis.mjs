@@ -1,4 +1,4 @@
-import { SIGNAL_CONFIG } from './config.mjs';
+import { SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
 
 function reverseBits(value, bitCount) {
   let reversed = 0;
@@ -62,18 +62,26 @@ function calculateBandStrength(magnitudes, firstBin, lastBin) {
   return Math.sqrt(sumSquaredMagnitudes);
 }
 
-function scaleChannel(bandStrength, gain) {
-  return Math.min(
-    SIGNAL_CONFIG.maximumBrightness,
-    Math.max(0, Math.round(bandStrength * SIGNAL_CONFIG.brightnessPerMagnitudeUnit * gain)),
-  );
-}
-
 export function mapBandStrengthsToRgb(bands) {
+  const weighted = {
+    red: Math.max(0, bands.red * SIGNAL_CONFIG.bands.red.gain),
+    green: Math.max(0, bands.green * SIGNAL_CONFIG.bands.green.gain),
+    blue: Math.max(0, bands.blue * SIGNAL_CONFIG.bands.blue.gain),
+  };
+  const strongest = Math.max(...Object.values(weighted));
+  const leakageFloor = SIGNAL_CONFIG.crossBandLeakageRatio * strongest;
+  const remainingRange = 1 - SIGNAL_CONFIG.crossBandLeakageRatio;
+  const suppressLeakage = (weightedStrength) => (
+    strongest === 0 ? 0 : Math.max(0, (weightedStrength - leakageFloor) / remainingRange)
+  );
+  const scaleChannel = (cleanedStrength) => Math.min(
+    SIGNAL_CONFIG.maximumBrightness,
+    Math.max(0, Math.ceil(cleanedStrength * SIGNAL_CONFIG.brightnessPerMagnitudeUnit)),
+  );
   return {
-    red: scaleChannel(bands.red, SIGNAL_CONFIG.bands.red.gain),
-    green: scaleChannel(bands.green, SIGNAL_CONFIG.bands.green.gain),
-    blue: scaleChannel(bands.blue, SIGNAL_CONFIG.bands.blue.gain),
+    red: scaleChannel(suppressLeakage(weighted.red)),
+    green: scaleChannel(suppressLeakage(weighted.green)),
+    blue: scaleChannel(suppressLeakage(weighted.blue)),
   };
 }
 

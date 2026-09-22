@@ -1,13 +1,14 @@
 # Music LED: next steps
 
-The implementation is complete. The direct DFT and FFT agree in automated tests, the ESP32 firmware compiles and has been flashed, live timing is close to the 6400 Hz target with no missed deadlines in captured frames, and the browser can parse and visualize the emitted spectrum. The remaining work is to prepare and verify the final live presentation.
+The implementation is complete. The direct DFT and FFT agree in automated tests, the synchronized live-capture protocol compiles, its browser transaction parser passes simulated serial tests, and the calibrated RGB build with a maximum-brightness startup self-test is flashed to the ESP32. The remaining work is physical microphone, LED, and presentation-setup verification.
 
 ## 1. Verify the presentation setup
 
 - [ ] Use the final laptop, browser, USB cable, speaker, microphone position, and display.
 - [ ] Open the local page in Chrome or Edge, connect through the Web Serial permission prompt, and confirm that the spectrum, band meters, dominant frequency, and RGB values update.
 - [ ] Move between Demo and Presenter modes during playback and confirm that the shared tone and serial connection continue without interruption.
-- [ ] In Presenter mode, capture one frame and verify that the raw and prepared column vectors, selected Fourier row, live coefficient, and timing comparison appear.
+- [x] Dry-run Capture Frame with deterministic simulated samples and verify the measured-input, coefficient, complex-sum, and colour-mapping stages.
+- [ ] In Demo mode, capture one synchronized live ESP32 frame and verify that its raw and prepared vectors, selected Fourier row, complex coefficient, spectrum bands, and RGB result agree.
 - [ ] Confirm the startup red, green, and blue self-test matches the physical LED channels.
 - [ ] Test silence and check that the LED turns off without a persistent 1000 Hz component.
 - [ ] Test 200 Hz, 500 Hz, 1000 Hz, and 2000 Hz. Confirm the dominant peak is within one 50 Hz bin of the target and that the expected red, green, or blue channel responds.
@@ -41,7 +42,7 @@ Target about nine minutes so the presentation remains below the ten-minute limit
 
 - [ ] Create original slides with a signal-path diagram, four-point Fourier matrix, time/frequency plots, one FFT butterfly, the ESP32 benchmark chart, and a hardware image.
 - [ ] Audit every equation against the CS103 glossary and LA4CS conventions, including square-bracket matrices and vectors.
-- [ ] Keep the distinction explicit: the DFT is the linear transformation; the FFT is a faster algorithm for computing it; magnitude and colour mapping make the full pipeline nonlinear.
+- [x] Keep the distinction explicit: the DFT is the linear transformation; the FFT is a faster algorithm for computing it; magnitude and colour mapping make the full pipeline nonlinear.
 - [ ] Label host, synthetic, recorded, and live evidence accurately.
 - [ ] Keep the saved benchmark and hardware video available as a clearly labelled fallback.
 

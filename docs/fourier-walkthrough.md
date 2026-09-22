@@ -169,7 +169,7 @@ $$
 
 The DFT of a mixture is the same mixture of the individual DFTs. This explains why a $200\,\mathrm{Hz}$ tone and a $1000\,\mathrm{Hz}$ tone can both appear in the output coefficients. The automated tests verify this property numerically before magnitudes are calculated.
 
-Taking magnitudes, applying a silence threshold, clipping brightness, and mapping bands to RGB are generally nonlinear operations. The complete sound-to-colour pipeline should not be described as one linear transformation.
+Taking magnitudes, applying a silence threshold, normalizing the strongest colour channel to full brightness, and mapping bands to RGB are nonlinear operations. The complete sound-to-colour pipeline should not be described as one linear transformation.
 
 ## DFT and FFT
 

@@ -25,7 +25,7 @@ uint32_t lastFrameStartMilliseconds = 0;
 uint32_t lastSerialReportMilliseconds = 0;
 uint32_t lastSpectrumSerialReportMilliseconds = 0;
 uint32_t spectrumFrameSequence = 0;
-uint32_t sampleCaptureSequence = 0;
+uint32_t captureSequence = 0;
 bool liveFrameComparisonPrinted = false;
 bool sampleCaptureRequested = false;
 char serialCommandBuffer[32]{};
@@ -51,28 +51,93 @@ void readSerialCommands() {
   }
 }
 
-void printSampleCaptureIfRequested() {
-  if (!sampleCaptureRequested)
-    return;
-  sampleCaptureRequested = false;
+constexpr size_t kCaptureValuesPerChunk = 16;
 
-  Serial.print("SAMPLE_FRAME,sequence=");
-  Serial.print(++sampleCaptureSequence);
-  Serial.print(",raw=");
-  for (size_t sampleIndex = 0;
-       sampleIndex < fourier_config::kNumberOfSamples; ++sampleIndex) {
-    if (sampleIndex > 0)
-      Serial.print('|');
-    Serial.print(rawAudioSamples.amplitude[sampleIndex], 2);
+void printCaptureValues(const char *messageType, uint32_t captureId,
+                        const float *values, size_t valueCount) {
+  for (size_t startIndex = 0; startIndex < valueCount;
+       startIndex += kCaptureValuesPerChunk) {
+    const size_t remainingValueCount = valueCount - startIndex;
+    const size_t chunkCount = remainingValueCount < kCaptureValuesPerChunk
+                                  ? remainingValueCount
+                                  : kCaptureValuesPerChunk;
+    Serial.print(messageType);
+    Serial.print(",id=");
+    Serial.print(captureId);
+    Serial.print(",start=");
+    Serial.print(startIndex);
+    Serial.print(",count=");
+    Serial.print(chunkCount);
+    Serial.print(",values=");
+    for (size_t offset = 0; offset < chunkCount; ++offset) {
+      if (offset > 0)
+        Serial.print('|');
+      Serial.print(values[startIndex + offset], 3);
+    }
+    Serial.println();
   }
-  Serial.print(",prepared=");
-  for (size_t sampleIndex = 0;
-       sampleIndex < fourier_config::kNumberOfSamples; ++sampleIndex) {
-    if (sampleIndex > 0)
-      Serial.print('|');
-    Serial.print(preparedAudioSamples.amplitude[sampleIndex], 2);
-  }
-  Serial.println();
+}
+
+void printSynchronizedCapture(
+    uint32_t captureId, const SamplePreprocessingResults &preprocessingResults,
+    const fourier::DominantFrequency &dominantFrequency,
+    const FrequencyBandStrengths &bandStrengths,
+    const RgbBrightness &brightness) {
+  constexpr size_t kNonnegativeBinCount =
+      fourier_config::kNumberOfSamples / 2 + 1;
+  Serial.print("CAPTURE_BEGIN,id=");
+  Serial.print(captureId);
+  Serial.print(",n=");
+  Serial.print(fourier_config::kNumberOfSamples);
+  Serial.print(",sample_rate_hz=");
+  Serial.print(diagnostics.achievedSamplingFrequencyHz, 2);
+  Serial.print(",sample_span_us=");
+  Serial.print(diagnostics.sampleSpanMicroseconds);
+  Serial.print(",mean=");
+  Serial.print(preprocessingResults.frameMean, 3);
+  Serial.print(",rms=");
+  Serial.print(diagnostics.centeredRootMeanSquare, 3);
+  Serial.print(",noise_floor=");
+  Serial.print(diagnostics.noiseFloorRootMeanSquare, 3);
+  Serial.print(",silence_threshold=");
+  Serial.print(diagnostics.silenceThresholdRootMeanSquare, 3);
+  Serial.print(",above_silence=");
+  Serial.println(diagnostics.signalAboveSilenceThreshold ? 1 : 0);
+
+  printCaptureValues("CAPTURE_RAW", captureId, rawAudioSamples.amplitude,
+                     fourier_config::kNumberOfSamples);
+  printCaptureValues("CAPTURE_PREPARED", captureId,
+                     preparedAudioSamples.amplitude,
+                     fourier_config::kNumberOfSamples);
+  printCaptureValues("CAPTURE_REAL", captureId,
+                     frequencyDomainCoefficients.real,
+                     kNonnegativeBinCount);
+  printCaptureValues("CAPTURE_IMAGINARY", captureId,
+                     frequencyDomainCoefficients.imaginary,
+                     kNonnegativeBinCount);
+  printCaptureValues("CAPTURE_MAGNITUDES", captureId,
+                     frequencyMagnitudes.magnitude, kNonnegativeBinCount);
+
+  Serial.print("CAPTURE_OUTPUT,id=");
+  Serial.print(captureId);
+  Serial.print(",dominant_bin=");
+  Serial.print(dominantFrequency.frequencyBinIndex);
+  Serial.print(",dominant_hz=");
+  Serial.print(dominantFrequency.frequencyHz, 2);
+  Serial.print(",bass=");
+  Serial.print(bandStrengths.bass, 3);
+  Serial.print(",mid=");
+  Serial.print(bandStrengths.midrange, 3);
+  Serial.print(",treble=");
+  Serial.print(bandStrengths.treble, 3);
+  Serial.print(",rgb=");
+  Serial.print(brightness.red);
+  Serial.print('|');
+  Serial.print(brightness.green);
+  Serial.print('|');
+  Serial.println(brightness.blue);
+  Serial.print("CAPTURE_END,id=");
+  Serial.println(captureId);
 }
 
 float clampFloat(float value, float minimum, float maximum) {
@@ -252,9 +317,11 @@ void updateAudioReactive() {
   diagnostics.signalAboveSilenceThreshold =
       preprocessingResults.centeredRootMeanSquare >=
       diagnostics.silenceThresholdRootMeanSquare;
-  printSampleCaptureIfRequested();
 
-  if (!diagnostics.signalAboveSilenceThreshold) {
+  const bool captureThisFrame = sampleCaptureRequested;
+  sampleCaptureRequested = false;
+
+  if (!diagnostics.signalAboveSilenceThreshold && !captureThisFrame) {
     clearFrequencyAndColorDiagnostics();
     turnOffRgbLed();
     printSpectrumDiagnosticsIfDue(millis(), nullptr);
@@ -262,7 +329,7 @@ void updateAudioReactive() {
     return;
   }
 
-  if (!liveFrameComparisonPrinted) {
+  if (diagnostics.signalAboveSilenceThreshold && !liveFrameComparisonPrinted) {
     printLiveFrameTransformComparison(preparedAudioSamples);
     liveFrameComparisonPrinted = true;
   }
@@ -280,22 +347,33 @@ void updateAudioReactive() {
       frequencyMagnitudes,
       static_cast<float>(fourier_config::kSamplingFrequencyHz),
       &dominantFrequency);
-  diagnostics.dominantFrequencyBinIndex = dominantFrequency.frequencyBinIndex;
-  diagnostics.dominantFrequencyHz = dominantFrequency.frequencyHz;
-  diagnostics.dominantMagnitude = dominantFrequency.magnitude;
-
   const FrequencyBandStrengths bandStrengths =
       calculateFrequencyBandStrengths(frequencyMagnitudes);
-  diagnostics.bassStrength = bandStrengths.bass;
-  diagnostics.midrangeStrength = bandStrengths.midrange;
-  diagnostics.trebleStrength = bandStrengths.treble;
+  RgbBrightness brightness{};
+  if (diagnostics.signalAboveSilenceThreshold) {
+    diagnostics.dominantFrequencyBinIndex = dominantFrequency.frequencyBinIndex;
+    diagnostics.dominantFrequencyHz = dominantFrequency.frequencyHz;
+    diagnostics.dominantMagnitude = dominantFrequency.magnitude;
+    diagnostics.bassStrength = bandStrengths.bass;
+    diagnostics.midrangeStrength = bandStrengths.midrange;
+    diagnostics.trebleStrength = bandStrengths.treble;
+    brightness = mapFrequencyBandsToRgb(bandStrengths);
+    diagnostics.redBrightness = brightness.red;
+    diagnostics.greenBrightness = brightness.green;
+    diagnostics.blueBrightness = brightness.blue;
+    writeRgbBrightness(brightness);
+  } else {
+    clearFrequencyAndColorDiagnostics();
+    turnOffRgbLed();
+  }
 
-  const RgbBrightness brightness = mapFrequencyBandsToRgb(bandStrengths);
-  diagnostics.redBrightness = brightness.red;
-  diagnostics.greenBrightness = brightness.green;
-  diagnostics.blueBrightness = brightness.blue;
-  writeRgbBrightness(brightness);
-  printSpectrumDiagnosticsIfDue(millis(), &frequencyMagnitudes);
+  if (captureThisFrame) {
+    printSynchronizedCapture(++captureSequence, preprocessingResults,
+                             dominantFrequency, bandStrengths, brightness);
+  }
+  printSpectrumDiagnosticsIfDue(
+      millis(), diagnostics.signalAboveSilenceThreshold ? &frequencyMagnitudes
+                                                        : nullptr);
   printSerialDiagnosticsIfDue(millis());
 }
 

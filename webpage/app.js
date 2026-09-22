@@ -1,8 +1,8 @@
-import { AudioController } from './scripts/audio-controller.mjs';
-import { renderMath } from './scripts/math-renderer.mjs';
-import { createRouter } from './scripts/router.mjs';
-import { Esp32SerialSource } from './scripts/serial-source.mjs';
-import { createStore, initialState } from './scripts/shared-state.mjs';
+import { AudioController } from './scripts/audio-controller.mjs?release=20260922-capture-3';
+import { renderMath } from './scripts/math-renderer.mjs?release=20260922-capture-3';
+import { createRouter } from './scripts/router.mjs?release=20260922-capture-3';
+import { Esp32SerialSource } from './scripts/serial-source.mjs?release=20260922-capture-3';
+import { createStore, initialState } from './scripts/shared-state.mjs?release=20260922-capture-3';
 
 const store = createStore(initialState);
 const audioController = new AudioController(store);
@@ -15,7 +15,18 @@ const serialSource = new Esp32SerialSource({
   onSampleFrame: (capturedSamples) => store.patch({ capturedSamples }),
   onBenchmark: (benchmarks) => store.patch({ benchmarks }),
   onLiveComparison: (liveComparison) => store.patch({ liveComparison }),
-  onStatus: (serialStatus, serialMessage) => store.patch({ serialStatus, serialMessage }),
+  onStatus: (serialStatus, serialMessage) => store.patch({
+    serialStatus,
+    serialMessage,
+    captureStatus: ['waiting', 'live', 'warning'].includes(serialStatus)
+      ? store.get().captureStatus === 'capturing' ? 'capturing' : 'ready'
+      : store.get().captureStatus === 'captured' ? 'captured' : 'disconnected',
+    captureMessage: ['waiting', 'live', 'warning'].includes(serialStatus)
+      ? 'Ready to capture one measured ESP32 frame.'
+      : store.get().captureStatus === 'captured'
+        ? store.get().captureMessage
+        : 'Connect ESP32 to capture a measured frame.',
+  }),
 });
 
 const outlet = document.querySelector('#page-outlet');

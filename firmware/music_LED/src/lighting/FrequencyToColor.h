@@ -19,8 +19,7 @@ struct RgbBrightness {
 FrequencyBandStrengths
 calculateFrequencyBandStrengths(const fourier::SpectrumMagnitudes &magnitudes);
 
-// Applies one fixed common scale and fixed per-channel gains. Each frequency
-// band controls only its assigned RGB channel; bands are never independently
-// normalized to full brightness.
+// Applies fixed gains, suppresses weak cross-band leakage relative to the
+// strongest channel, then applies the calibrated absolute PWM scale.
 RgbBrightness
 mapFrequencyBandsToRgb(const FrequencyBandStrengths &bandStrengths);

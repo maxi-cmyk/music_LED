@@ -61,13 +61,16 @@ Compile the firmware with the ESP32 Arduino core:
 After uploading the sketch, serve the browser interface from the repository root:
 
 ```bash
-python3 -m http.server 8080 --directory webpage
+python3 -B webpage/serve.py
 ```
 
-Open `http://127.0.0.1:8080` in desktop Chrome or Edge. Use the navigation rail to switch between the uncluttered live Demo and the Presenter walkthrough. The page can generate controlled tones through the computer speaker and, after the user approves the serial port, display the spectrum, RGB values, captured sample vectors, and DFT-versus-FFT evidence reported by the ESP32. Close Arduino Serial Monitor first because only one application can own the USB serial port at a time.
+The local server disables browser caching so every page load uses one coherent
+version of the JavaScript modules during development and live demonstrations.
+
+Open `http://127.0.0.1:8080` in desktop Chrome or Edge. Use the navigation rail to switch between the uncluttered live Demo and the Presenter walkthrough. The page can generate controlled tones through the computer speaker and, after the user approves the serial port, display the spectrum and RGB values reported by the ESP32. **Capture frame** asks the ESP32 for its next complete sampling window and freezes the raw samples, prepared samples, Fourier coefficients, magnitudes, band strengths, and RGB result that share that capture ID. Close Arduino Serial Monitor first because only one application can own the USB serial port at a time.
 
 The audio path remains physical: browser → speaker → air → microphone → ESP32. The browser does not send test samples directly to the firmware.
 
 ## Current status
 
-The modular firmware, direct DFT, FFT, RGB mapping, serial telemetry, separated Demo/Presenter interface, ESP32 compilation, and initial device telemetry are complete. The remaining work is presentation-environment verification, final calibration and evidence capture, slide production, and team rehearsal; see [`nextSteps.md`](nextSteps.md).
+The modular firmware, direct DFT, FFT, calibrated RGB mapping, maximum-brightness RGB self-test, serial telemetry, synchronized capture path, separated Demo/Presenter interface, ESP32 compilation, and firmware upload are complete. The physical microphone, LED response, and presentation setup still need final verification. The remaining work is presentation-environment verification, final calibration and evidence capture, slide production, and team rehearsal; see [`nextSteps.md`](nextSteps.md).

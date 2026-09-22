@@ -6,6 +6,7 @@ export const SIGNAL_CONFIG = Object.freeze({
   generatedPeakAmplitude: 72,
   perToneHeadroomDivisor: 3,
   brightnessPerMagnitudeUnit: 0.12,
+  crossBandLeakageRatio: 0.15,
   maximumBrightness: 255,
   bands: Object.freeze({
     red: Object.freeze({ name: 'Bass', firstBin: 1, lastBin: 5, gain: 1.0, colour: '#ff5b45' }),

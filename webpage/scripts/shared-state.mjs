@@ -36,4 +36,9 @@ export const initialState = Object.freeze({
   benchmarks: [],
   liveComparison: null,
   capturedSamples: null,
+  capturedEvidence: null,
+  captureStatus: 'disconnected',
+  captureMessage: 'Connect ESP32 to capture a measured frame.',
+  captureStage: 0,
+  selectedCaptureBin: 4,
 });
