@@ -1,5 +1,5 @@
 import { FREQUENCIES, PRESETS, SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
-import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20260923-comparison-1';
+import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20260923-matrix-rows-2';
 import { updateMath } from './math-renderer.mjs?release=20260922-capture-3';
 import { findExpectedPeaks } from './signal-analysis.mjs?release=20260922-capture-3';
 import { drawSpectrum, drawWaveComposition } from './visualizations.mjs?release=20260922-capture-3';

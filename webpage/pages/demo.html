@@ -98,12 +98,17 @@
 
       <div id="capture-panel-dft" class="capture-panel" data-capture-panel="1" role="tabpanel" aria-labelledby="capture-tab-dft" hidden>
         <div class="capture-stage-copy">
-          <h4>One matrix row measures one frequency</h4>
-          <p>A bin is one position <span class="math" data-latex="k"></span> in the DFT output column <span class="math" data-latex="\mathbf{X}"></span>. Bin <span class="math" data-latex="k"></span> represents <span class="math" data-latex="f_k=kf_s/128"></span> hertz, so the spacing depends on this frame’s measured sample rate.</p>
-          <div class="capture-bin-control"><span>Inspect one output bin</span><div class="capture-bin-stepper"><button id="capture-bin-previous" class="secondary-button" type="button">Previous bin</button><input id="capture-bin-select" type="range" min="1" max="64" step="1" value="4" aria-label="Fourier coefficient bin"><button id="capture-bin-next" class="secondary-button" type="button">Next bin</button></div><output id="capture-bin-output" for="capture-bin-select">Bin 4 · 200.0 Hz</output></div>
+          <h4>128 samples produce 128 DFT rows</h4>
+          <p>Each row <span class="math" data-latex="k"></span> multiplies all 128 samples and produces one coefficient <span class="math" data-latex="X[k]"></span>. The row number and bin number are the same index.</p>
+          <div class="capture-spectrum-explanation">
+            <strong>Why does the selectable spectrum stop at bin 64?</strong>
+            <p>The microphone samples are real numbers, so rows 65–127 mirror rows 63–1 with the same magnitudes. Nothing is missing: rows 0–64 are the 65 unique results. Row 0 is DC, rows 1–63 are positive frequencies, and row 64 is the Nyquist limit.</p>
+          </div>
+          <div class="capture-bin-control"><span>Choose one unique bin to trace through the next steps · 0–64</span><div class="capture-bin-stepper"><button id="capture-bin-previous" class="secondary-button" type="button">Previous bin</button><input id="capture-bin-select" type="range" min="0" max="64" step="1" value="4" aria-label="Unique Fourier coefficient bin, from 0 to 64"><button id="capture-bin-next" class="secondary-button" type="button">Next bin</button></div><output id="capture-bin-output" for="capture-bin-select">Bin 4 of 0–64 · 200.0 Hz</output></div>
           <div class="capture-bin-ranges" aria-label="FFT bin ranges used by each LED channel">
             <p><strong>Bins sent to the LED</strong></p>
             <dl>
+              <div><dt>0</dt><dd>DC level · not mapped to a colour</dd></div>
               <div><dt>1–5</dt><dd>red · bass</dd></div>
               <div><dt>6–20</dt><dd>green · mids</dd></div>
               <div><dt>21–50</dt><dd>blue · treble</dd></div>
@@ -115,7 +120,7 @@
             <div id="capture-output-vector" class="math" data-display="true"></div>
           </aside>
         </div>
-        <div class="capture-matrix"><p class="capture-matrix-intro">The highlighted coefficient is the dot product of row <span class="math" data-latex="k"></span> of <span class="math" data-latex="F_{128}"></span> with the prepared sample column <span class="math" data-latex="\mathbf{x}"></span>. The cells below show the row’s rotating complex weights.</p><div id="capture-matrix-row" class="capture-matrix-row" aria-label="Representative entries from the selected Fourier matrix row"></div><div id="capture-coefficient-equation" class="math capture-equation" data-display="true"></div></div>
+        <div class="capture-matrix"><p class="capture-matrix-intro">Here are the first three and last three rows of <span class="math" data-latex="F_{128}"></span>. Each strip shows representative complex weights across the row, followed by that row’s complete 128-term dot product with the prepared sample column <span class="math" data-latex="\mathbf{x}"></span>.</p><div id="capture-matrix-rows" class="capture-matrix-rows" aria-label="Calculations for Fourier matrix rows 0, 1, 2, 125, 126, and 127"></div></div>
       </div>
 
       <div id="capture-panel-sum" class="capture-panel" data-capture-panel="2" role="tabpanel" aria-labelledby="capture-tab-sum" hidden>

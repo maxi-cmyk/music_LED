@@ -210,6 +210,9 @@
 .capture-bin-stepper input { width: 100%; min-width: 0; }
 .capture-bin-stepper button { min-height: 44px; padding-inline: 12px; white-space: nowrap; }
 .capture-bin-control output { color: var(--ink); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+.capture-spectrum-explanation { margin-top: 22px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #080906; }
+.capture-spectrum-explanation strong { color: var(--ink); font-size: 0.78rem; }
+.capture-spectrum-explanation p { margin: 7px 0 0; color: var(--muted); font-size: 0.72rem; line-height: 1.55; }
 
 .capture-bin-ranges { margin-top: 22px; }
 .capture-bin-ranges > p { margin: 0 0 8px; color: var(--ink); font-family: var(--measure); font-size: 0.68rem; }
@@ -221,13 +224,21 @@
 .capture-vector-reminder > span { color: var(--muted); font-family: var(--measure); font-size: 0.62rem; }
 .capture-vector-reminder .katex-display { margin-bottom: 0; text-align: left; }
 
-.capture-matrix { display: grid; align-content: center; gap: 26px; min-width: 0; padding: clamp(28px, 5vw, 64px); background: #080906; }
+.capture-matrix { display: grid; align-content: start; gap: 26px; min-width: 0; padding: clamp(28px, 5vw, 64px); background: #080906; }
 .capture-matrix-intro { max-width: 74ch; margin: 0; color: var(--muted); }
+.capture-matrix-rows { display: grid; gap: 34px; min-width: 0; }
+.capture-matrix-row-example { display: grid; gap: 12px; min-width: 0; padding-top: 28px; border-top: 1px solid var(--line); }
+.capture-matrix-row-example:first-child { padding-top: 0; border-top: 0; }
+.capture-matrix-row-example header { display: flex; justify-content: space-between; gap: 18px; align-items: baseline; }
+.capture-matrix-row-example header strong { color: var(--ink); }
+.capture-matrix-row-example header span { color: var(--muted); font-family: var(--measure); font-size: 0.62rem; text-align: right; }
 .capture-matrix-row { display: grid; grid-template-columns: repeat(9, minmax(72px, 1fr)); gap: 1px; overflow-x: auto; background: var(--line); }
 .capture-matrix-row span { display: grid; min-height: 112px; align-content: space-between; gap: 8px; padding: 12px; background: var(--surface-raised); }
 .capture-matrix-row small { color: var(--muted); font-family: var(--measure); font-size: 0.58rem; }
 .capture-matrix-row b { color: var(--signal); font-family: var(--measure); font-size: 0.62rem; font-weight: 500; }
 .capture-matrix-row i { display: grid; min-width: 48px; place-items: center; background: var(--surface-raised); color: var(--muted); font-size: 1.4rem; font-style: normal; }
+.capture-row-equation { min-width: 0; overflow-x: auto; color: var(--ink); font-size: clamp(0.82rem, 1.25vw, 1rem); }
+.capture-row-equation .katex-display { margin: 4px 0 0; text-align: left; }
 
 .complex-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 28px; }
 .complex-actions output { flex: 1 1 180px; color: var(--signal); font-family: var(--measure); font-size: 0.68rem; }
@@ -376,6 +387,8 @@
   .capture-vector-plots figcaption > span { text-align: left; }
   .capture-bin-stepper { grid-template-columns: 1fr 1fr; }
   .capture-bin-stepper input { grid-column: 1 / -1; grid-row: 1; }
+  .capture-matrix-row-example header { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .capture-matrix-row-example header span { text-align: left; }
   .complex-plane canvas { height: 330px; }
   .complex-speed { width: 100%; }
   .complex-speed button { flex: 1 1 0; }

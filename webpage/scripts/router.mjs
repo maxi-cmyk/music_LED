@@ -1,5 +1,5 @@
 const ROUTES = Object.freeze({
-  demo: Object.freeze({ partial: 'pages/demo.html?release=20260923-comparison-1', module: './demo-page.mjs?release=20260923-comparison-1' }),
+  demo: Object.freeze({ partial: 'pages/demo.html?release=20260923-matrix-rows-2', module: './demo-page.mjs?release=20260923-matrix-rows-2' }),
   presenter: Object.freeze({ partial: 'pages/presenter.html?release=20260922-capture-3', module: './presenter-page.mjs?release=20260922-capture-3' }),
 });
 export function createRouter({ outlet, context, onRouteChange }) {

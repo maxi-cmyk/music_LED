@@ -22,13 +22,24 @@ function signedImaginary(value) {
   return value < 0 ? `-${Math.abs(value).toFixed(2)}i` : `+${value.toFixed(2)}i`;
 }
 
-function matrixRowIndices() {
+const REPRESENTATIVE_MATRIX_ROWS = Object.freeze([0, 1, 2, 125, 126, 127]);
+
+function matrixColumnIndices() {
   return [0, 1, 2, 3, 124, 125, 126, 127];
 }
 
-function renderMatrixRow(container, frequencyBinIndex) {
+function matrixRowDescription(frequencyBinIndex) {
+  if (frequencyBinIndex === 0) return 'DC · constant pattern';
+  if (frequencyBinIndex < SIGNAL_CONFIG.sampleCount / 2) {
+    return `positive frequency · ${frequencyBinIndex} cycles per frame`;
+  }
+  const positivePartner = SIGNAL_CONFIG.sampleCount - frequencyBinIndex;
+  return `negative-frequency mirror of row ${positivePartner}`;
+}
+
+function renderMatrixWeights(container, frequencyBinIndex) {
   container.replaceChildren();
-  for (const sampleIndex of matrixRowIndices()) {
+  for (const sampleIndex of matrixColumnIndices()) {
     const cell = document.createElement('span');
     const phaseTurns = frequencyBinIndex * sampleIndex / SIGNAL_CONFIG.sampleCount;
     const phaseRadians = -2 * Math.PI * phaseTurns;
@@ -43,6 +54,38 @@ function renderMatrixRow(container, frequencyBinIndex) {
       ellipsis.setAttribute('aria-label', 'remaining matrix entries');
       container.append(ellipsis);
     }
+  }
+}
+
+function renderRepresentativeMatrixRows(container, preparedSamples) {
+  container.replaceChildren();
+  for (const frequencyBinIndex of REPRESENTATIVE_MATRIX_ROWS) {
+    const row = document.createElement('article');
+    row.className = 'capture-matrix-row-example';
+
+    const heading = document.createElement('header');
+    const title = document.createElement('strong');
+    title.textContent = `Row ${frequencyBinIndex} → X[${frequencyBinIndex}]`;
+    const description = document.createElement('span');
+    description.textContent = matrixRowDescription(frequencyBinIndex);
+    heading.append(title, description);
+
+    const weights = document.createElement('div');
+    weights.className = 'capture-matrix-row';
+    weights.setAttribute('aria-label', `Representative weights from Fourier matrix row ${frequencyBinIndex}`);
+    renderMatrixWeights(weights, frequencyBinIndex);
+
+    const coefficient = reconstructCoefficient(preparedSamples, frequencyBinIndex);
+    const equation = document.createElement('div');
+    equation.className = 'math capture-row-equation';
+
+    row.append(heading, weights, equation);
+    container.append(row);
+    updateMath(
+      equation,
+      String.raw`X_{\mathrm{DFT}}[${frequencyBinIndex}]=\sum_{n=0}^{127}x[n]e^{-i2\pi(${frequencyBinIndex})n/128}=${coefficient.real.toFixed(2)}${signedImaginary(coefficient.imaginary)}`,
+      true,
+    );
   }
 }
 
@@ -66,10 +109,9 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
   const rawCanvas = root.querySelector('#capture-raw-canvas');
   const preparedCanvas = root.querySelector('#capture-prepared-canvas');
   const complexCanvas = root.querySelector('#capture-complex-canvas');
-  const matrixRow = root.querySelector('#capture-matrix-row');
+  const matrixRows = root.querySelector('#capture-matrix-rows');
   const preparationEquation = root.querySelector('#capture-preparation-equation');
   const outputVector = root.querySelector('#capture-output-vector');
-  const coefficientEquation = root.querySelector('#capture-coefficient-equation');
   const complexEquation = root.querySelector('#capture-complex-equation');
   const magnitudeEquation = root.querySelector('#capture-magnitude-equation');
   const complexProgress = root.querySelector('#complex-progress');
@@ -186,7 +228,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
   }
 
   function selectBin(frequencyBinIndex) {
-    const boundedBin = Math.max(1, Math.min(SIGNAL_CONFIG.nyquistBin, frequencyBinIndex));
+    const boundedBin = Math.max(0, Math.min(SIGNAL_CONFIG.nyquistBin, frequencyBinIndex));
     store.patch({ selectedCaptureBin: boundedBin });
   }
 
@@ -260,8 +302,8 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
       : `${capture.sourceLabel} · below the LED silence gate`;
     captureMeta.textContent = `${capture.id} · 128 samples · ${(capture.sampleSpanMicroseconds / 1000).toFixed(1)} ms · ${capture.frame.sampleRateHz.toFixed(0)} Hz sample rate`;
     binSelect.value = String(frequencyBinIndex);
-    binOutput.textContent = `Bin ${frequencyBinIndex} · ${frequencyHz.toFixed(1)} Hz`;
-    binPreviousButton.disabled = frequencyBinIndex <= 1;
+    binOutput.textContent = `Bin ${frequencyBinIndex} of 0–64 · ${frequencyHz.toFixed(1)} Hz`;
+    binPreviousButton.disabled = frequencyBinIndex <= 0;
     binNextButton.disabled = frequencyBinIndex >= SIGNAL_CONFIG.nyquistBin;
 
     stageButtons.forEach((button, index) => {
@@ -282,16 +324,11 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
       true,
     );
 
-    renderMatrixRow(matrixRow, frequencyBinIndex);
+    renderRepresentativeMatrixRows(matrixRows, capture.prepared);
     const reconstructed = reconstructCoefficient(capture.prepared, frequencyBinIndex);
     updateMath(
       outputVector,
       String.raw`\mathbf{X}=F_{128}\mathbf{x}=\begin{bmatrix}X[0]\\X[1]\\\vdots\\\color{#d8ff52}{X[${frequencyBinIndex}]}\\\vdots\\X[127]\end{bmatrix}\in\mathbb{C}^{128}`,
-      true,
-    );
-    updateMath(
-      coefficientEquation,
-      String.raw`X_{\mathrm{DFT}}[${frequencyBinIndex}]=\sum_{n=0}^{127}x[n]e^{-i2\pi(${frequencyBinIndex})n/128}=${reconstructed.real.toFixed(2)}${signedImaginary(reconstructed.imaginary)}`,
       true,
     );
     updateMath(
