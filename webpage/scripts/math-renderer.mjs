@@ -22,7 +22,15 @@ export function renderMath(root = document) {
 }
 
 export function updateMath(element, expression, displayMode = false) {
+  const nextDisplayMode = String(displayMode);
+  const alreadyRendered = element.querySelector('.katex');
+  if (
+    alreadyRendered
+    && element.dataset.latex === expression
+    && element.dataset.display === nextDisplayMode
+  ) return;
+
   element.dataset.latex = expression;
-  element.dataset.display = String(displayMode);
+  element.dataset.display = nextDisplayMode;
   renderMath(element.parentElement ?? document);
 }

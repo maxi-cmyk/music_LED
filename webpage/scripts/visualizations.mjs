@@ -1,4 +1,4 @@
-import { FREQUENCIES, SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
+import { FREQUENCIES, SIGNAL_CONFIG } from './config.mjs?release=20260924-distill-23';
 
 function resizeCanvas(canvas) {
   const pixelRatio = window.devicePixelRatio || 1;
@@ -24,6 +24,24 @@ function binColour(binIndex) {
   return '#666b61';
 }
 
+// Screen colour for an LED: the channel ratios at full brightness, since a PWM
+// value of ~90 looks bright on the LED but muddy when painted literally on screen.
+export function ledDisplayColour(rgb) {
+  const strongest = Math.max(rgb.red, rgb.green, rgb.blue);
+  if (strongest === 0) return { css: 'rgb(0, 0, 0)', brightnessPercent: 0 };
+  const scale = 255 / strongest;
+  const channel = (value) => Math.round(value * scale);
+  return {
+    css: `rgb(${channel(rgb.red)}, ${channel(rgb.green)}, ${channel(rgb.blue)})`,
+    brightnessPercent: Math.round(strongest / 255 * 100),
+  };
+}
+
+function hexWithAlpha(hexColour, alpha) {
+  const value = Number.parseInt(hexColour.slice(1), 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
+
 export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleMaximum = 1) {
   const context = canvas.getContext('2d');
   const { width, height, pixelRatio } = resizeCanvas(canvas);
@@ -31,7 +49,7 @@ export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleM
   const plot = {
     left: 58 * pixelRatio,
     right: width - 12 * pixelRatio,
-    top: 20 * pixelRatio,
+    top: 34 * pixelRatio,
     bottom: height - 38 * pixelRatio,
   };
   const plotWidth = plot.right - plot.left;
@@ -44,6 +62,21 @@ export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleM
   context.fillRect(0, 0, width, height);
   context.font = `${10 * pixelRatio}px "SFMono-Regular", monospace`;
   context.lineWidth = 1;
+
+  const slotWidth = plotWidth / magnitudes.length;
+  for (const band of Object.values(SIGNAL_CONFIG.bands)) {
+    const bandLeft = plot.left + band.firstBin * slotWidth;
+    const bandWidth = (band.lastBin - band.firstBin + 1) * slotWidth;
+    context.fillStyle = hexWithAlpha(band.colour, 0.07);
+    context.fillRect(bandLeft, plot.top, bandWidth, plotHeight);
+    context.fillStyle = band.colour;
+    context.textAlign = 'center';
+    context.fillText(band.name.toLowerCase(), bandLeft + bandWidth / 2, plot.top - 12 * pixelRatio);
+  }
+  context.fillStyle = '#666b61';
+  context.textAlign = 'center';
+  const unusedLeft = plot.left + (SIGNAL_CONFIG.bands.blue.lastBin + 1) * slotWidth;
+  context.fillText('not mapped', (unusedLeft + plot.right) / 2, plot.top - 12 * pixelRatio);
 
   for (let row = 0; row <= 4; row += 1) {
     const y = plot.top + (row / 4) * plotHeight;
@@ -68,10 +101,9 @@ export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleM
     context.stroke();
     context.fillStyle = '#94998c';
     context.textAlign = frequencyHz === 0 ? 'left' : 'center';
-    context.fillText(`${frequencyHz}`, x, height - 12 * pixelRatio);
+    context.fillText(frequencyHz === 3000 ? '3000 Hz' : `${frequencyHz}`, x, height - 12 * pixelRatio);
   }
 
-  const slotWidth = plotWidth / magnitudes.length;
   magnitudes.forEach((magnitude, binIndex) => {
     const normalized = Math.log1p(magnitude) / Math.log1p(scaleMaximum);
     const barHeight = normalized * plotHeight;
@@ -130,9 +162,9 @@ function drawGrid(context, width, height) {
   }
 }
 
-export function drawWaveComposition(componentCanvas, compositeCanvas, frequencies, selectedSampleIndex = 16) {
-  drawComponents(componentCanvas, frequencies, selectedSampleIndex);
-  drawComposite(compositeCanvas, frequencies, selectedSampleIndex);
+// separation 0 draws the composite alone; 1 draws every constituent tone at its own curve.
+export function drawWaveComposition(compositeCanvas, frequencies, selectedSampleIndex = 16, separation = 1) {
+  drawComposite(compositeCanvas, frequencies, selectedSampleIndex, separation);
 }
 
 function sampleForFrequency(frequencyHz, sampleIndex) {
@@ -157,56 +189,48 @@ function drawSampleCursor(context, width, height, pixelRatio, selectedSampleInde
   context.setLineDash([]);
 }
 
-function drawComponents(canvas, frequencies, selectedSampleIndex) {
-  const context = canvas.getContext('2d');
-  const { width, height, pixelRatio } = resizeCanvas(canvas);
-  context.fillStyle = '#080906';
-  context.fillRect(0, 0, width, height);
-  drawGrid(context, width, height);
-  const active = frequencies.length ? frequencies : [0];
-  const laneHeight = height / active.length;
-  active.forEach((frequencyHz, laneIndex) => {
-    const middle = laneIndex * laneHeight + laneHeight / 2;
-    context.strokeStyle = frequencyColour(frequencyHz);
-    context.lineWidth = Math.max(1.5 * pixelRatio, 2);
-    context.beginPath();
-    for (let sampleIndex = 0; sampleIndex < SIGNAL_CONFIG.sampleCount; sampleIndex += 1) {
-      const x = sampleX(sampleIndex, width);
-      const amplitude = frequencyHz ? sampleForFrequency(frequencyHz, sampleIndex) : 0;
-      const y = middle - amplitude * laneHeight * 0.3;
-      if (sampleIndex === 0) context.moveTo(x, y);
-      else context.lineTo(x, y);
-    }
-    context.stroke();
-    context.fillStyle = frequencyColour(frequencyHz);
-    context.font = `${11 * pixelRatio}px "SFMono-Regular", monospace`;
-    context.fillText(frequencyHz ? `${frequencyHz} Hz` : 'No component selected', 12 * pixelRatio, middle - 8 * pixelRatio);
-    if (frequencyHz) {
-      const selectedX = sampleX(selectedSampleIndex, width);
-      const selectedY = middle - sampleForFrequency(frequencyHz, selectedSampleIndex) * laneHeight * 0.3;
-      context.fillStyle = frequencyColour(frequencyHz);
-      context.beginPath();
-      context.arc(selectedX, selectedY, 3.5 * pixelRatio, 0, Math.PI * 2);
-      context.fill();
-    }
-  });
-  drawSampleCursor(context, width, height, pixelRatio, selectedSampleIndex);
+function compositeAmplitude(frequencies, sampleIndex) {
+  return frequencies.length
+    ? frequencies.reduce((sum, frequencyHz) => sum + sampleForFrequency(frequencyHz, sampleIndex), 0) / frequencies.length
+    : 0;
 }
 
-function drawComposite(canvas, frequencies, selectedSampleIndex) {
+function drawComposite(canvas, frequencies, selectedSampleIndex, separation) {
   const context = canvas.getContext('2d');
   const { width, height, pixelRatio } = resizeCanvas(canvas);
   context.fillStyle = '#080906';
   context.fillRect(0, 0, width, height);
   drawGrid(context, width, height);
+  if (frequencies.length > 1 && separation > 0) {
+    context.globalAlpha = Math.min(1, separation * 1.4);
+    context.lineWidth = Math.max(1.5 * pixelRatio, 1.5);
+    context.setLineDash([6 * pixelRatio, 4 * pixelRatio]);
+    for (const frequencyHz of frequencies) {
+      context.strokeStyle = frequencyColour(frequencyHz);
+      context.beginPath();
+      for (let sampleIndex = 0; sampleIndex < SIGNAL_CONFIG.sampleCount; sampleIndex += 1) {
+        const x = sampleX(sampleIndex, width);
+        const componentAmplitude = sampleForFrequency(frequencyHz, sampleIndex) / frequencies.length;
+        const mixedAmplitude = compositeAmplitude(frequencies, sampleIndex);
+        const amplitude = mixedAmplitude + (componentAmplitude - mixedAmplitude) * separation;
+        const y = height / 2 - amplitude * height * 0.32;
+        if (sampleIndex === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+      context.stroke();
+    }
+    context.globalAlpha = 1;
+    context.setLineDash([]);
+  }
+  // The composite fades out as its tones separate, and back in as they merge.
+  const compositeOpacity = frequencies.length > 1 ? 1 - separation : 1;
+  context.globalAlpha = compositeOpacity;
   context.strokeStyle = '#d8ff52';
   context.lineWidth = Math.max(2 * pixelRatio, 2);
   context.beginPath();
   for (let sampleIndex = 0; sampleIndex < SIGNAL_CONFIG.sampleCount; sampleIndex += 1) {
     const x = sampleX(sampleIndex, width);
-    const amplitude = frequencies.length
-      ? frequencies.reduce((sum, frequencyHz) => sum + sampleForFrequency(frequencyHz, sampleIndex), 0) / frequencies.length
-      : 0;
+    const amplitude = compositeAmplitude(frequencies, sampleIndex);
     const y = height / 2 - amplitude * height * 0.32;
     if (sampleIndex === 0) context.moveTo(x, y);
     else context.lineTo(x, y);
@@ -216,14 +240,13 @@ function drawComposite(canvas, frequencies, selectedSampleIndex) {
   context.fillStyle = '#f0f2e9';
   for (let sampleIndex = 0; sampleIndex < SIGNAL_CONFIG.sampleCount; sampleIndex += 1) {
     const x = sampleX(sampleIndex, width);
-    const amplitude = frequencies.length
-      ? frequencies.reduce((sum, frequencyHz) => sum + sampleForFrequency(frequencyHz, sampleIndex), 0) / frequencies.length
-      : 0;
+    const amplitude = compositeAmplitude(frequencies, sampleIndex);
     const y = height / 2 - amplitude * height * 0.32;
     context.beginPath();
     context.arc(x, y, 2.5 * pixelRatio, 0, Math.PI * 2);
     context.fill();
   }
+  context.globalAlpha = 1;
   drawSampleCursor(context, width, height, pixelRatio, selectedSampleIndex);
 }
 

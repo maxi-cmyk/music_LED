@@ -21,7 +21,7 @@ export function createStore(initialState) {
 export const initialState = Object.freeze({
   route: 'demo',
   selectedFrequencies: [200],
-  activePreset: 'bass',
+  activePreset: null,
   volumePercent: 20,
   isPlaying: false,
   isMuted: false,

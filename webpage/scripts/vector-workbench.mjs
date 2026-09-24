@@ -1,4 +1,4 @@
-import { SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
+import { SIGNAL_CONFIG } from './config.mjs?release=20260924-distill-23';
 
 export function createCompositeSampleVector(frequencies) {
   const samples = new Float64Array(SIGNAL_CONFIG.sampleCount);

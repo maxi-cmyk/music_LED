@@ -1,4 +1,4 @@
-import { SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
+import { SIGNAL_CONFIG } from './config.mjs?release=20260924-distill-23';
 
 function reverseBits(value, bitCount) {
   let reversed = 0;

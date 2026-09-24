@@ -9,9 +9,9 @@ build/
 .DS_Store
 tests/
 docs/validation-results.md
-docs/q-and-a.md
 docs/benchmark-host.csv
 docs/benchmark-host.svg
-.impeccable/review/
+.impeccable
 /DESIGN.md
 /PRODUCT.md
+.claude

@@ -1,4 +1,4 @@
-import { updateMath } from './math-renderer.mjs?release=20260922-capture-3';
+import { updateMath } from './math-renderer.mjs?release=20260924-distill-23';
 
 const FOUR_POINT_ROWS = Object.freeze([
   Object.freeze(['1', '1', '1', '1']),

@@ -1,0 +1,116 @@
+<div class="live-page page-frame">
+  <header class="demo-intro">
+    <h1>Live ESP32 spectrum</h1>
+    <div class="physical-route" aria-label="Physical signal route">
+      <span>Music</span><b>→</b><span>Speaker</span><b>→</b><span>Air</span><b>→</b><span>Microphone</span><b>→</b><span>ESP32</span>
+    </div>
+  </header>
+
+  <section class="measurement-stage" aria-label="Live ESP32 measurement">
+    <header class="measurement-heading">
+      <p>Play music near the microphone. Coloured bars show the measured spectrum; the LED shows its colour.</p>
+      <div class="serial-actions"><button id="connect-serial" class="primary-button" type="button">Connect ESP32</button><button id="disconnect-serial" class="secondary-button" type="button" disabled>Disconnect</button></div>
+    </header>
+    <p id="serial-message" class="connection-message" role="status" aria-live="polite">Close Arduino Serial Monitor, then connect the board.</p>
+    <div class="spectrum-toolbar" aria-label="Spectrum display controls">
+      <span id="capture-status" class="capture-status" role="status" aria-live="polite">Connect ESP32 to capture a measured frame.</span>
+      <button id="capture-button" class="tool-button" type="button" aria-pressed="false" disabled>Capture frame</button>
+    </div>
+    <figure class="spectrum-stage"><canvas id="spectrum-canvas" width="1200" height="430" role="img" aria-label="Live positive-frequency spectrum measured by the ESP32 microphone, shaded by LED band"></canvas><figcaption id="spectrum-summary" class="spectrum-summary">Waiting for ESP32 data</figcaption></figure>
+    <div class="colour-output">
+      <div id="rgb-swatch" class="rgb-swatch" aria-label="Measured RGB output"></div>
+      <div class="colour-readout"><span>LED colour</span><output id="rgb-output">R 0 · G 0 · B 0</output><small id="rgb-brightness">Off</small></div>
+      <dl class="band-readouts"><div><dt>Red · bass <span id="red-band-range"></span></dt><dd id="red-strength">0.0 · PWM 0</dd></div><div><dt>Green · mids <span id="green-band-range"></span></dt><dd id="green-strength">0.0 · PWM 0</dd></div><div><dt>Blue · treble <span id="blue-band-range"></span></dt><dd id="blue-strength">0.0 · PWM 0</dd></div></dl>
+    </div>
+
+    <section id="capture-workbench" class="capture-workbench" aria-labelledby="capture-workbench-title" hidden>
+      <header class="capture-workbench-heading">
+        <div><h3 id="capture-workbench-title">Explain this captured frame</h3><p id="capture-source" class="capture-source"></p></div>
+        <div class="capture-heading-actions"><output id="capture-meta"></output><button id="resume-live" class="secondary-button" type="button">Resume live view</button></div>
+      </header>
+
+      <div class="capture-stage-tabs" role="tablist" aria-label="Captured frame explanation stages">
+        <button id="capture-tab-input" type="button" role="tab" data-capture-stage="0" aria-controls="capture-panel-input" aria-selected="true">Measured input</button>
+        <button id="capture-tab-dft" type="button" role="tab" data-capture-stage="1" aria-controls="capture-panel-dft" aria-selected="false">Direct DFT</button>
+        <button id="capture-tab-colour" type="button" role="tab" data-capture-stage="2" aria-controls="capture-panel-colour" aria-selected="false">Colour mapping</button>
+        <button id="capture-tab-fft" type="button" role="tab" data-capture-stage="3" aria-controls="capture-panel-fft" aria-selected="false">FFT</button>
+      </div>
+
+      <div id="capture-panel-input" class="capture-panel" data-capture-panel="0" role="tabpanel" aria-labelledby="capture-tab-input">
+        <div class="capture-stage-copy">
+          <h4>Prepare the microphone samples</h4>
+          <div id="capture-preparation-equation" class="math capture-equation" data-display="true"></div>
+          <dl class="capture-symbols">
+            <div><dt><span class="math" data-latex="a[n]"></span></dt><dd>Raw 12-bit ADC reading, 0–4095</dd></div>
+            <div><dt><span class="math" data-latex="\mu"></span></dt><dd>Mean of the 128 readings</dd></div>
+            <div><dt><span class="math" data-latex="w_H[n]"></span></dt><dd>Hamming weight that fades the frame edges</dd></div>
+            <div><dt><span class="math" data-latex="x[n]"></span></dt><dd>Prepared input to the transform</dd></div>
+          </dl>
+        </div>
+        <div class="capture-vector-plots">
+          <figure><figcaption><strong>Before preparation · <span class="math" data-latex="a[n]"></span></strong><span>vertical: ADC count · horizontal: sample number <span class="math" data-latex="n"></span></span></figcaption><canvas id="capture-raw-canvas" width="900" height="300" role="img" aria-label="Captured raw ESP32 microphone readings in ADC counts by sample number"></canvas></figure>
+          <figure><figcaption><strong>After preparation · <span class="math" data-latex="x[n]"></span></strong><span>vertical: windowed ADC count · horizontal: sample number <span class="math" data-latex="n"></span></span></figcaption><canvas id="capture-prepared-canvas" width="900" height="300" role="img" aria-label="Mean-centred and Hamming-windowed ESP32 samples in ADC counts by sample number"></canvas></figure>
+        </div>
+      </div>
+
+      <div id="capture-panel-dft" class="capture-panel" data-capture-panel="1" role="tabpanel" aria-labelledby="capture-tab-dft" hidden>
+        <div class="capture-stage-copy">
+          <h4>Direct DFT for one bin</h4>
+          <div class="capture-bin-control"><span>Bin to trace · 0–64 (rows 65–127 mirror 63–1)</span><div class="capture-bin-stepper"><button id="capture-bin-previous" class="secondary-button" type="button">Previous bin</button><input id="capture-bin-select" type="range" min="0" max="64" step="1" value="4" aria-label="Unique Fourier coefficient bin, from 0 to 64"><button id="capture-bin-next" class="secondary-button" type="button">Next bin</button></div><output id="capture-bin-output" for="capture-bin-select">Bin 4 · 200.0 Hz</output></div>
+          <div id="capture-complex-equation" class="math capture-equation" data-display="true"></div>
+          <p>Each sample adds one small complex vector; the plot adds all 128 head-to-tail. Its endpoint is <span class="math" data-latex="X[k]"></span>.</p>
+          <div class="complex-actions"><output id="complex-progress" aria-live="polite">128 of 128 terms</output><button id="replay-complex-path" class="secondary-button" type="button">Replay</button></div>
+        </div>
+        <figure class="complex-plane"><canvas id="capture-complex-canvas" width="900" height="520" role="img" aria-label="Complex-plane accumulation path for the selected direct DFT coefficient"></canvas></figure>
+      </div>
+
+      <div id="capture-panel-colour" class="capture-panel" data-capture-panel="2" role="tabpanel" aria-labelledby="capture-tab-colour" hidden>
+        <div class="capture-stage-copy"><h4>Three band strengths become RGB</h4><div class="capture-final-colour"><div id="capture-rgb-swatch" class="capture-rgb-swatch"></div><output id="capture-rgb-output"></output></div></div>
+        <div class="capture-colour-result"><ol id="colour-steps" class="step-list">
+          <li><span class="step-label">Band strengths from the spectrum</span><div id="colour-step-bands" class="math" data-display="true"></div></li>
+          <li><span class="step-label">Apply fixed colour gains</span><div id="colour-step-gains" class="math" data-display="true"></div></li>
+          <li><span class="step-label">Remove leakage below 15% of the strongest channel</span><div id="colour-step-leakage" class="math" data-display="true"></div></li>
+          <li><span class="step-label">Scale to LED brightness</span><div class="step-row"><div id="colour-step-pwm" class="math" data-display="true"></div><p><span id="colour-step-constant" class="math"></span>: the tuned brightness per unit of band strength.</p></div></li>
+        </ol>
+        <div id="capture-rgb-equation" class="math capture-equation" data-display="true" hidden></div></div>
+      </div>
+
+      <div id="capture-panel-fft" class="capture-panel" data-capture-panel="3" role="tabpanel" aria-labelledby="capture-tab-fft" hidden>
+        <div class="capture-stage-copy">
+          <h4>How the FFT reaches the same X faster</h4>
+          <ol class="step-list fft-steps">
+            <li><span class="step-label">Split the samples into even and odd</span><div class="math" data-display="true" data-latex="\begin{aligned}X[k]&amp;=\underbrace{\sum_{m=0}^{63}x[2m]\,e^{-i2\pi mk/64}}_{E[k]}\\&amp;\quad+\;W_{128}^{k}\underbrace{\sum_{m=0}^{63}x[2m+1]\,e^{-i2\pi mk/64}}_{O[k]}\end{aligned}"></div><p><span class="math" data-latex="E[k]"></span> is a DFT of the 64 even samples, <span class="math" data-latex="O[k]"></span> a DFT of the 64 odd samples. Each is half the size of the original problem.</p></li>
+            <li><span class="step-label">Twiddle factor</span><div class="math" data-display="true" data-latex="W_{128}^{k}=e^{-i2\pi k/128}=\cos\tfrac{2\pi k}{128}-i\sin\tfrac{2\pi k}{128}"></div></li>
+            <li><span class="step-label">Butterfly: one rotation, two outputs</span><div class="math" data-display="true" data-latex="\begin{aligned}X[k]&amp;=E[k]+W_{128}^{k}O[k]\\X[k+64]&amp;=E[k]-W_{128}^{k}O[k]\end{aligned}"></div></li>
+            <li><span class="step-label">Split again until one sample is left</span>
+              <ol class="fft-split-ladder" aria-label="Repeated halving from one 128-sample DFT to 128 one-sample DFTs">
+                <li><b>1</b> DFT of <b>128</b></li><li><b>2</b> of <b>64</b></li><li><b>4</b> of <b>32</b></li><li><b>8</b> of <b>16</b></li><li><b>16</b> of <b>8</b></li><li><b>32</b> of <b>4</b></li><li><b>64</b> of <b>2</b></li><li><b>128</b> of <b>1</b></li>
+              </ol>
+              <p>A DFT of one sample is the sample itself. The FFT starts there and runs the butterflies back up: 7 levels (<span class="math" data-latex="\log_2 128"></span>) of 64 butterflies each, 448 in total, instead of <span class="math" data-latex="128^2=16{,}384"></span> weighted samples for the direct DFT.</p></li>
+          </ol>
+        </div>
+        <div class="capture-fft-evidence">
+          <header><strong id="capture-fft-bin-label">The last butterfly for bin 4</strong><span>Every value below is traced from this frozen frame.</span></header>
+          <div class="butterfly" role="group" aria-label="Butterfly diagram for the selected bin">
+            <div class="butterfly-inputs">
+              <div class="butterfly-node"><span id="capture-fft-even-label" class="math"></span><small>DFT of the even samples</small><output id="capture-fft-even" class="math"></output></div>
+              <div class="butterfly-node"><span id="capture-fft-odd-label" class="math"></span><small>DFT of the odd samples</small><output id="capture-fft-odd" class="math"></output><div class="butterfly-twiddle"><span id="capture-fft-twiddle" class="math"></span><output id="capture-fft-rotated-odd" class="math"></output></div></div>
+            </div>
+            <svg class="butterfly-wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" y1="25" x2="100" y2="25"></line><line x1="0" y1="25" x2="100" y2="75"></line><line x1="0" y1="75" x2="100" y2="25"></line><line x1="0" y1="75" x2="100" y2="75"></line>
+            </svg>
+            <div class="butterfly-outputs">
+              <div id="capture-fft-plus-card" class="butterfly-node"><span id="capture-fft-plus-label" class="math"></span><small>even <b>plus</b> rotated odd</small><output id="capture-fft-plus-value" class="math"></output></div>
+              <div id="capture-fft-minus-card" class="butterfly-node"><span id="capture-fft-minus-label" class="math"></span><small>even <b>minus</b> rotated odd</small><output id="capture-fft-minus-value" class="math"></output></div>
+            </div>
+          </div>
+          <output id="capture-fft-working" class="math butterfly-working" data-display="true" aria-label="Butterfly arithmetic"></output>
+          <p id="capture-fft-conclusion" class="capture-fft-conclusion"></p>
+          <p id="comparison-verdict" class="capture-fft-verdict" role="status"></p>
+        </div>
+      </div>
+
+      <footer class="capture-stage-controls"><button id="capture-previous" class="secondary-button" type="button">Back</button><button id="capture-next" class="primary-button" type="button">Next</button></footer>
+    </section>
+  </section>
+</div>

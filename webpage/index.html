@@ -9,9 +9,9 @@
     <title>Fourier Signal Bench</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="vendor/katex/katex.min.css">
-    <link rel="stylesheet" href="styles/base.css">
-    <link rel="stylesheet" href="styles/demo.css">
-    <link rel="stylesheet" href="styles/presenter.css">
+    <link rel="stylesheet" href="styles/base.css?release=20260924-distill-23">
+    <link rel="stylesheet" href="styles/demo.css?release=20260924-distill-23">
+    <link rel="stylesheet" href="styles/presenter.css?release=20260924-distill-23">
     <script defer src="vendor/katex/katex.min.js"></script>
   </head>
   <body>
@@ -30,7 +30,8 @@
         <span><strong>Fourier</strong><small>Signal Bench</small></span>
       </a>
       <nav class="mode-nav" aria-label="Application modes">
-        <a href="#demo" data-route-link="demo">Demo</a>
+        <a href="#demo" data-route-link="demo">Toy example</a>
+        <a href="#live" data-route-link="live">Live ESP32</a>
         <a href="#presenter" data-route-link="presenter">Presenter</a>
       </nav>
       <div class="rail-status">
@@ -40,6 +41,6 @@
     </header>
     <main id="page-outlet" tabindex="-1" aria-live="polite"></main>
     <noscript>This teaching instrument requires JavaScript to generate tones and read ESP32 telemetry.</noscript>
-    <script type="module" src="app.js?release=20260922-capture-3"></script>
+    <script type="module" src="app.js?release=20260924-distill-23"></script>
   </body>
 </html>

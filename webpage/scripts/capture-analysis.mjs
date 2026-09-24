@@ -1,5 +1,5 @@
-import { SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
-import { fastFourierTransform, mapBandStrengthsToRgb } from './signal-analysis.mjs?release=20260922-capture-3';
+import { SIGNAL_CONFIG } from './config.mjs?release=20260924-distill-23';
+import { fastFourierTransform, mapBandStrengthsToRgb } from './signal-analysis.mjs?release=20260924-distill-23';
 
 function hammingWindow(sampleIndex, numberOfSamples) {
   return 0.54 - 0.46 * Math.cos(2 * Math.PI * sampleIndex / (numberOfSamples - 1));

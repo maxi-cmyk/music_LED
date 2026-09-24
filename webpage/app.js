@@ -1,8 +1,8 @@
-import { AudioController } from './scripts/audio-controller.mjs?release=20260922-capture-3';
-import { renderMath } from './scripts/math-renderer.mjs?release=20260922-capture-3';
-import { createRouter } from './scripts/router.mjs?release=20260922-capture-3';
-import { Esp32SerialSource } from './scripts/serial-source.mjs?release=20260922-capture-3';
-import { createStore, initialState } from './scripts/shared-state.mjs?release=20260922-capture-3';
+import { AudioController } from './scripts/audio-controller.mjs?release=20260924-distill-23';
+import { renderMath } from './scripts/math-renderer.mjs?release=20260924-distill-23';
+import { createRouter } from './scripts/router.mjs?release=20260924-distill-23';
+import { Esp32SerialSource } from './scripts/serial-source.mjs?release=20260924-distill-23';
+import { createStore, initialState } from './scripts/shared-state.mjs?release=20260924-distill-23';
 
 const store = createStore(initialState);
 const audioController = new AudioController(store);
@@ -52,7 +52,7 @@ createRouter({
   context: { store, audioController, serialSource },
   onRouteChange: (route, pageRoot) => {
     store.patch({ route });
-    document.title = `${route === 'demo' ? 'Demo' : 'Presenter'} · Fourier Signal Bench`;
+    document.title = `${{ demo: 'Toy example', live: 'Live ESP32', presenter: 'Presenter' }[route]} · Fourier Signal Bench`;
     routeLinks.forEach((link) => {
       if (link.dataset.routeLink === route) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');

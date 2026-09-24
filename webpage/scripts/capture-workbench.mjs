@@ -1,92 +1,22 @@
-import { SIGNAL_CONFIG } from './config.mjs?release=20260922-capture-3';
-import {
-  capturedCoefficient,
-  reconstructCoefficient,
-} from './capture-analysis.mjs?release=20260922-capture-3';
-import { mountCaptureComparison } from './capture-comparison.mjs?release=20260923-comparison-1';
-import { updateMath } from './math-renderer.mjs?release=20260922-capture-3';
-import { allFourierContributions } from './vector-workbench.mjs?release=20260922-capture-3';
-import { drawFourierContributionPath, drawSampleVector } from './visualizations.mjs?release=20260922-capture-3';
+import { SIGNAL_CONFIG } from './config.mjs?release=20260924-distill-23';
+import { reconstructCoefficient } from './capture-analysis.mjs?release=20260924-distill-23';
+import { mountCaptureComparison } from './capture-comparison.mjs?release=20260924-distill-23';
+import { updateMath } from './math-renderer.mjs?release=20260924-distill-23';
+import { allFourierContributions } from './vector-workbench.mjs?release=20260924-distill-23';
+import { drawFourierContributionPath, drawSampleVector, ledDisplayColour } from './visualizations.mjs?release=20260924-distill-23';
 
-const STAGE_COUNT = 6;
+const STAGE_COUNT = 4;
+const DFT_STAGE = 1;
+const ANIMATION_DURATION_MILLISECONDS = 7800;
 const NEXT_STAGE_LABELS = Object.freeze([
   'Show direct DFT',
-  'Show DFT sum',
-  'Show FFT reuse',
-  'Compare results',
   'Show colour mapping',
+  'Show FFT',
   'Exit capture',
 ]);
 
 function signedImaginary(value) {
   return value < 0 ? `-${Math.abs(value).toFixed(2)}i` : `+${value.toFixed(2)}i`;
-}
-
-const REPRESENTATIVE_MATRIX_ROWS = Object.freeze([0, 1, 2, 125, 126, 127]);
-
-function matrixColumnIndices() {
-  return [0, 1, 2, 3, 124, 125, 126, 127];
-}
-
-function matrixRowDescription(frequencyBinIndex) {
-  if (frequencyBinIndex === 0) return 'DC · constant pattern';
-  if (frequencyBinIndex < SIGNAL_CONFIG.sampleCount / 2) {
-    return `positive frequency · ${frequencyBinIndex} cycles per frame`;
-  }
-  const positivePartner = SIGNAL_CONFIG.sampleCount - frequencyBinIndex;
-  return `negative-frequency mirror of row ${positivePartner}`;
-}
-
-function renderMatrixWeights(container, frequencyBinIndex) {
-  container.replaceChildren();
-  for (const sampleIndex of matrixColumnIndices()) {
-    const cell = document.createElement('span');
-    const phaseTurns = frequencyBinIndex * sampleIndex / SIGNAL_CONFIG.sampleCount;
-    const phaseRadians = -2 * Math.PI * phaseTurns;
-    const real = Math.cos(phaseRadians);
-    const imaginary = Math.sin(phaseRadians);
-    const complexValue = `${real.toFixed(2)} ${imaginary < 0 ? '−' : '+'} ${Math.abs(imaginary).toFixed(2)}i`;
-    cell.innerHTML = `<small>n=${sampleIndex}</small><b>${complexValue}</b><small>θ=${phaseTurns.toFixed(2)} turns</small>`;
-    container.append(cell);
-    if (sampleIndex === 3) {
-      const ellipsis = document.createElement('i');
-      ellipsis.textContent = '…';
-      ellipsis.setAttribute('aria-label', 'remaining matrix entries');
-      container.append(ellipsis);
-    }
-  }
-}
-
-function renderRepresentativeMatrixRows(container, preparedSamples) {
-  container.replaceChildren();
-  for (const frequencyBinIndex of REPRESENTATIVE_MATRIX_ROWS) {
-    const row = document.createElement('article');
-    row.className = 'capture-matrix-row-example';
-
-    const heading = document.createElement('header');
-    const title = document.createElement('strong');
-    title.textContent = `Row ${frequencyBinIndex} → X[${frequencyBinIndex}]`;
-    const description = document.createElement('span');
-    description.textContent = matrixRowDescription(frequencyBinIndex);
-    heading.append(title, description);
-
-    const weights = document.createElement('div');
-    weights.className = 'capture-matrix-row';
-    weights.setAttribute('aria-label', `Representative weights from Fourier matrix row ${frequencyBinIndex}`);
-    renderMatrixWeights(weights, frequencyBinIndex);
-
-    const coefficient = reconstructCoefficient(preparedSamples, frequencyBinIndex);
-    const equation = document.createElement('div');
-    equation.className = 'math capture-row-equation';
-
-    row.append(heading, weights, equation);
-    container.append(row);
-    updateMath(
-      equation,
-      String.raw`X_{\mathrm{DFT}}[${frequencyBinIndex}]=\sum_{n=0}^{127}x[n]e^{-i2\pi(${frequencyBinIndex})n/128}=${coefficient.real.toFixed(2)}${signedImaginary(coefficient.imaginary)}`,
-      true,
-    );
-  }
 }
 
 export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion }) {
@@ -101,7 +31,6 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
   const nextButton = root.querySelector('#capture-next');
   const resumeButton = root.querySelector('#resume-live');
   const replayButton = root.querySelector('#replay-complex-path');
-  const speedButtons = [...root.querySelectorAll('[data-complex-speed]')];
   const binSelect = root.querySelector('#capture-bin-select');
   const binPreviousButton = root.querySelector('#capture-bin-previous');
   const binNextButton = root.querySelector('#capture-bin-next');
@@ -109,32 +38,23 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
   const rawCanvas = root.querySelector('#capture-raw-canvas');
   const preparedCanvas = root.querySelector('#capture-prepared-canvas');
   const complexCanvas = root.querySelector('#capture-complex-canvas');
-  const matrixRows = root.querySelector('#capture-matrix-rows');
   const preparationEquation = root.querySelector('#capture-preparation-equation');
-  const outputVector = root.querySelector('#capture-output-vector');
   const complexEquation = root.querySelector('#capture-complex-equation');
-  const magnitudeEquation = root.querySelector('#capture-magnitude-equation');
   const complexProgress = root.querySelector('#complex-progress');
-  const coefficientCheck = root.querySelector('#capture-coefficient-check');
-  const captureBandOutputs = {
-    red: root.querySelector('#capture-red-band'),
-    green: root.querySelector('#capture-green-band'),
-    blue: root.querySelector('#capture-blue-band'),
-  };
   const captureRgbEquation = root.querySelector('#capture-rgb-equation');
+  const colourSteps = root.querySelector('#colour-steps');
+  const colourStepBands = root.querySelector('#colour-step-bands');
+  const colourStepGains = root.querySelector('#colour-step-gains');
+  const colourStepLeakage = root.querySelector('#colour-step-leakage');
+  const colourStepPwm = root.querySelector('#colour-step-pwm');
+  const colourStepConstant = root.querySelector('#colour-step-constant');
   const captureRgbSwatch = root.querySelector('#capture-rgb-swatch');
   const captureRgbOutput = root.querySelector('#capture-rgb-output');
   const captureComparison = mountCaptureComparison(root);
   let complexAnimationFrame = null;
-  let animationSpeedMultiplier = 3;
   let previousStage = null;
+  let previousBin = null;
   const captureApiAvailable = typeof serialSource.requestCapture === 'function';
-
-  function speedLabel() {
-    return animationSpeedMultiplier === 1
-      ? 'normal speed'
-      : `${animationSpeedMultiplier}× slower`;
-  }
 
   function stopComplexAnimation() {
     if (complexAnimationFrame) cancelAnimationFrame(complexAnimationFrame);
@@ -146,20 +66,19 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     const contributions = allFourierContributions(capture.prepared, frequencyBinIndex);
     if (reducedMotion.matches) {
       drawFourierContributionPath(complexCanvas, contributions, contributions.length - 1);
-      complexProgress.textContent = '128 of 128 measured terms accumulated · reduced motion';
+      complexProgress.textContent = '128 of 128 terms';
       return;
     }
     const startedAt = performance.now();
-    const durationMilliseconds = 2600 * animationSpeedMultiplier;
     const drawFrame = (now) => {
-      const progress = Math.min(1, (now - startedAt) / durationMilliseconds);
+      const progress = Math.min(1, (now - startedAt) / ANIMATION_DURATION_MILLISECONDS);
       const visibleTerms = Math.max(1, Math.ceil(progress * contributions.length));
       drawFourierContributionPath(
         complexCanvas,
         contributions.slice(0, visibleTerms),
         visibleTerms - 1,
       );
-      complexProgress.textContent = `${visibleTerms} of 128 measured terms accumulated · ${speedLabel()}`;
+      complexProgress.textContent = `${visibleTerms} of 128 terms`;
       if (progress < 1) complexAnimationFrame = requestAnimationFrame(drawFrame);
       else complexAnimationFrame = null;
     };
@@ -242,22 +161,6 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     const state = store.get();
     if (state.capturedEvidence) playComplexAnimation(state.capturedEvidence, state.selectedCaptureBin);
   });
-  for (const button of speedButtons) {
-    button.disabled = reducedMotion.matches;
-    button.addEventListener('click', () => {
-      animationSpeedMultiplier = Number(button.dataset.complexSpeed);
-      speedButtons.forEach((candidate) => {
-        candidate.setAttribute(
-          'aria-pressed',
-          String(candidate === button),
-        );
-      });
-      const state = store.get();
-      if (state.capturedEvidence && state.captureStage === 2) {
-        playComplexAnimation(state.capturedEvidence, state.selectedCaptureBin);
-      }
-    });
-  }
   binSelect.addEventListener('input', () => selectBin(Number(binSelect.value)));
   binPreviousButton.addEventListener('click', () => selectBin(store.get().selectedCaptureBin - 1));
   binNextButton.addEventListener('click', () => selectBin(store.get().selectedCaptureBin + 1));
@@ -294,7 +197,6 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
 
     const stageIndex = state.captureStage;
     const frequencyBinIndex = state.selectedCaptureBin;
-    const coefficient = capturedCoefficient(capture, frequencyBinIndex);
     const binSpacingHz = capture.frame.sampleRateHz / SIGNAL_CONFIG.sampleCount;
     const frequencyHz = frequencyBinIndex * binSpacingHz;
     sourceLabel.textContent = capture.aboveSilenceThreshold
@@ -302,7 +204,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
       : `${capture.sourceLabel} · below the LED silence gate`;
     captureMeta.textContent = `${capture.id} · 128 samples · ${(capture.sampleSpanMicroseconds / 1000).toFixed(1)} ms · ${capture.frame.sampleRateHz.toFixed(0)} Hz sample rate`;
     binSelect.value = String(frequencyBinIndex);
-    binOutput.textContent = `Bin ${frequencyBinIndex} of 0–64 · ${frequencyHz.toFixed(1)} Hz`;
+    binOutput.textContent = `Bin ${frequencyBinIndex} · ${frequencyHz.toFixed(1)} Hz`;
     binPreviousButton.disabled = frequencyBinIndex <= 0;
     binNextButton.disabled = frequencyBinIndex >= SIGNAL_CONFIG.nyquistBin;
 
@@ -324,38 +226,19 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
       true,
     );
 
-    renderRepresentativeMatrixRows(matrixRows, capture.prepared);
     const reconstructed = reconstructCoefficient(capture.prepared, frequencyBinIndex);
     updateMath(
-      outputVector,
-      String.raw`\mathbf{X}=F_{128}\mathbf{x}=\begin{bmatrix}X[0]\\X[1]\\\vdots\\\color{#d8ff52}{X[${frequencyBinIndex}]}\\\vdots\\X[127]\end{bmatrix}\in\mathbb{C}^{128}`,
-      true,
-    );
-    updateMath(
       complexEquation,
-      String.raw`\begin{aligned}X_{\mathrm{DFT}}[${frequencyBinIndex}]&=\sum_{n=0}^{127}x[n]e^{-i2\pi(${frequencyBinIndex})n/128}\\&=\sum_{n=0}^{127}x[n]\!\left(\cos\!\frac{2\pi(${frequencyBinIndex})n}{128}-i\sin\!\frac{2\pi(${frequencyBinIndex})n}{128}\right)\\&=${reconstructed.real.toFixed(2)}${signedImaginary(reconstructed.imaginary)}\end{aligned}`,
+      String.raw`\begin{aligned}X[${frequencyBinIndex}]&=\sum_{n=0}^{127}x[n]\,e^{-i2\pi(${frequencyBinIndex})n/128}=${reconstructed.real.toFixed(2)}${signedImaginary(reconstructed.imaginary)}\\|X[${frequencyBinIndex}]|&=${Math.hypot(reconstructed.real, reconstructed.imaginary).toFixed(2)}\end{aligned}`,
       true,
     );
-    updateMath(
-      magnitudeEquation,
-      String.raw`|X_{\mathrm{DFT}}[${frequencyBinIndex}]|=\sqrt{(${reconstructed.real.toFixed(2)})^2+(${reconstructed.imaginary.toFixed(2)})^2}=${Math.hypot(reconstructed.real, reconstructed.imaginary).toFixed(2)}`,
-      true,
-    );
-
     const contributions = allFourierContributions(capture.prepared, frequencyBinIndex);
-    const complexDifference = Math.hypot(
-      reconstructed.real - coefficient.real,
-      reconstructed.imaginary - coefficient.imaginary,
-    );
-    coefficientCheck.textContent = `Browser row sum ${reconstructed.real.toFixed(2)} ${signedImaginary(reconstructed.imaginary)} · ESP32 FFT difference ${complexDifference.toFixed(3)}`;
-    drawFourierContributionPath(complexCanvas, contributions, contributions.length - 1);
-    complexProgress.textContent = `128 of 128 measured terms accumulated · ${speedLabel()}`;
+    if (!complexAnimationFrame) {
+      drawFourierContributionPath(complexCanvas, contributions, contributions.length - 1);
+      complexProgress.textContent = '128 of 128 terms';
+    }
     captureComparison.render(capture, frequencyBinIndex, frequencyHz);
 
-    for (const [channelName, output] of Object.entries(captureBandOutputs)) {
-      const band = SIGNAL_CONFIG.bands[channelName];
-      output.textContent = `${capture.frame.bands[channelName].toFixed(1)} · bins ${band.firstBin}–${band.lastBin}`;
-    }
     const weightedStrengths = {
       red: capture.frame.bands.red * SIGNAL_CONFIG.bands.red.gain,
       green: capture.frame.bands.green * SIGNAL_CONFIG.bands.green.gain,
@@ -376,18 +259,53 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
         Math.max(0, (strength - leakageFloor) / remainingRange),
       ]),
     );
-    const rgbEquation = capture.aboveSilenceThreshold
-      ? String.raw`\begin{aligned}\mathbf{b}&=\begin{bmatrix}${capture.frame.bands.red.toFixed(1)}\\${capture.frame.bands.green.toFixed(1)}\\${capture.frame.bands.blue.toFixed(1)}\end{bmatrix},\qquad G=\begin{bmatrix}1&0&0\\0&0.82&0\\0&0&0.92\end{bmatrix}\\[4pt]\mathbf{u}=G\mathbf{b}&=\begin{bmatrix}${weightedStrengths.red.toFixed(1)}\\${weightedStrengths.green.toFixed(1)}\\${weightedStrengths.blue.toFixed(1)}\end{bmatrix}\\[4pt]\mathbf{v}&=\max\!\left(\mathbf{0},\frac{\mathbf{u}-0.15\max(\mathbf{u})\mathbf{1}}{0.85}\right)=\begin{bmatrix}${cleanedStrengths.red.toFixed(1)}\\${cleanedStrengths.green.toFixed(1)}\\${cleanedStrengths.blue.toFixed(1)}\end{bmatrix}\\[4pt]\begin{bmatrix}R\\G\\B\end{bmatrix}&=\operatorname{clip}_{0}^{255}\!\left(\left\lceil0.12\mathbf{v}\right\rceil\right)=\begin{bmatrix}${capture.frame.rgb.red}\\${capture.frame.rgb.green}\\${capture.frame.rgb.blue}\end{bmatrix}\end{aligned}`
-      : String.raw`\operatorname{RMS}=${capture.frame.rms.toFixed(2)}<${capture.frame.silenceThreshold.toFixed(2)}\quad\Longrightarrow\quad\begin{bmatrix}R\\G\\B\end{bmatrix}=\begin{bmatrix}0\\0\\0\end{bmatrix}\quad\text{(silence gate)}`;
-    updateMath(captureRgbEquation, rgbEquation, true);
+    const column = (values) => String.raw`\begin{bmatrix}${values.join(String.raw`\\`)}\end{bmatrix}`;
+    const channels = ['red', 'green', 'blue'];
+    const fullScaleStrength = SIGNAL_CONFIG.maximumBrightness / SIGNAL_CONFIG.brightnessPerMagnitudeUnit;
+    const leakageRemoved = channels.map((channel) => Math.max(0, weightedStrengths[channel] - leakageFloor));
+    const isAboveGate = capture.aboveSilenceThreshold;
+    colourSteps.hidden = !isAboveGate;
+    captureRgbEquation.hidden = isAboveGate;
+    if (isAboveGate) {
+      updateMath(
+        colourStepBands,
+        String.raw`\mathbf{b}=${column(channels.map((channel) => capture.frame.bands[channel].toFixed(1)))}\begin{matrix}\leftarrow\text{bass}\\\leftarrow\text{mids}\\\leftarrow\text{treble}\end{matrix}`,
+        true,
+      );
+      updateMath(
+        colourStepGains,
+        String.raw`\mathbf{u}=G\mathbf{b}=\begin{bmatrix}${SIGNAL_CONFIG.bands.red.gain}&0&0\\0&${SIGNAL_CONFIG.bands.green.gain}&0\\0&0&${SIGNAL_CONFIG.bands.blue.gain}\end{bmatrix}\mathbf{b}=${column(channels.map((channel) => weightedStrengths[channel].toFixed(1)))}`,
+        true,
+      );
+      updateMath(
+        colourStepLeakage,
+        String.raw`\begin{aligned}t&=${leakageRatio}\times\max(\mathbf{u})=${leakageRatio}\times${strongestWeightedStrength.toFixed(1)}=${leakageFloor.toFixed(1)}\\\mathbf{v}&=\frac{\max(0,\;\mathbf{u}-t)}{${remainingRange.toFixed(2)}}=\frac{1}{${remainingRange.toFixed(2)}}${column(leakageRemoved.map((value) => value.toFixed(1)))}=${column(channels.map((channel) => cleanedStrengths[channel].toFixed(1)))}\end{aligned}`,
+        true,
+      );
+      updateMath(
+        colourStepPwm,
+        String.raw`\begin{bmatrix}R\\G\\B\end{bmatrix}=\operatorname{clip}_{0}^{255}\!\left(\left\lceil c\,\mathbf{v}\right\rceil\right)=${column(channels.map((channel) => capture.frame.rgb[channel]))}`,
+        true,
+      );
+      updateMath(colourStepConstant, String.raw`c=\tfrac{255}{${fullScaleStrength.toFixed(0)}}\approx${SIGNAL_CONFIG.brightnessPerMagnitudeUnit}`);
+    } else {
+      updateMath(
+        captureRgbEquation,
+        String.raw`\operatorname{RMS}=${capture.frame.rms.toFixed(2)}<${capture.frame.silenceThreshold.toFixed(2)}\quad\Longrightarrow\quad\begin{bmatrix}R\\G\\B\end{bmatrix}=\begin{bmatrix}0\\0\\0\end{bmatrix}\quad\text{(silence gate)}`,
+        true,
+      );
+    }
     const { red, green, blue } = capture.frame.rgb;
-    captureRgbSwatch.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+    captureRgbSwatch.style.backgroundColor = ledDisplayColour(capture.frame.rgb).css;
     captureRgbSwatch.setAttribute('aria-label', `Captured RGB result: red ${red}, green ${green}, blue ${blue}`);
     captureRgbOutput.textContent = `R ${red} · G ${green} · B ${blue}`;
 
-    if (stageIndex === 2 && previousStage !== 2) playComplexAnimation(capture, frequencyBinIndex);
-    if (stageIndex !== 2) stopComplexAnimation();
+    if (stageIndex === DFT_STAGE && (previousStage !== DFT_STAGE || previousBin !== frequencyBinIndex)) {
+      playComplexAnimation(capture, frequencyBinIndex);
+    }
+    if (stageIndex !== DFT_STAGE) stopComplexAnimation();
     previousStage = stageIndex;
+    previousBin = frequencyBinIndex;
   }
 
   const unsubscribe = store.subscribe(render);
