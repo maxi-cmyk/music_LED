@@ -69,6 +69,8 @@
 .composer-plot { min-width: 0; margin: 0; }
 .composer-plot figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; align-items: end; margin-bottom: 14px; }
 .composer-plot h3 { margin: 0; font-family: var(--display); font-size: clamp(1.55rem, 2.5vw, 2.25rem); line-height: 1; }
+.composer-heading { display: grid; gap: 7px; }
+.composer-heading p { margin: 0; color: var(--muted); font-family: var(--measure); font-size: 0.72rem; }
 .composer-tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
 .composer-tools .tool-button[hidden] { display: none; }
 .composer-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-family: var(--measure); font-size: 0.72rem; }
@@ -307,6 +309,17 @@
 .capture-final-colour { display: flex; gap: 22px; align-items: center; padding-top: 28px; border-top: 1px solid var(--line); }
 .capture-rgb-swatch { width: 110px; aspect-ratio: 1; border-radius: 50%; box-shadow: 0 18px 45px rgba(0, 0, 0, 0.34); }
 .capture-final-colour output { font-family: var(--measure); font-size: 1rem; }
+.capture-band-composition { display: grid; gap: 12px; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+.capture-band-composition > p { margin: 0; color: var(--muted); font-size: 0.7rem; }
+.capture-band-composition > .math .katex-display { margin: 0; text-align: left; }
+.capture-band-composition > .math .katex-display > .katex { text-align: left; }
+.capture-band-composition dl { display: grid; gap: 1px; margin: 0; background: var(--line); }
+.capture-band-composition dl div { display: grid; gap: 4px; padding: 10px 12px; background: var(--surface-raised); }
+.capture-band-composition dt { font-weight: 700; }
+.capture-band-composition dl div:nth-child(1) dt { color: var(--red); }
+.capture-band-composition dl div:nth-child(2) dt { color: var(--green); }
+.capture-band-composition dl div:nth-child(3) dt { color: var(--blue); }
+.capture-band-composition dd { margin: 0; color: var(--muted); font-family: var(--measure); font-size: 0.7rem; overflow-wrap: anywhere; }
 
 .capture-stage-controls {
   display: grid;

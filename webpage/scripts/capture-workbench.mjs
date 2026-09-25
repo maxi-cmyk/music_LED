@@ -1,5 +1,5 @@
 import { SIGNAL_CONFIG } from './config.mjs?release=20260924-distill-23';
-import { reconstructCoefficient } from './capture-analysis.mjs?release=20260924-distill-23';
+import { createSimulatedCapture, reconstructCoefficient } from './capture-analysis.mjs?release=20260925-seeded-frame-1';
 import { mountCaptureComparison } from './capture-comparison.mjs?release=20260924-distill-23';
 import { updateMath } from './math-renderer.mjs?release=20260924-distill-23';
 import { allFourierContributions } from './vector-workbench.mjs?release=20260924-distill-23';
@@ -8,12 +8,27 @@ import { drawFourierContributionPath, drawSampleVector, ledDisplayColour } from 
 const STAGE_COUNT = 4;
 const DFT_STAGE = 1;
 const ANIMATION_DURATION_MILLISECONDS = 7800;
+const SEEDED_FRAME_FREQUENCIES = Object.freeze([200, 500]);
+const DISCONNECTED_CAPTURE_MESSAGE = 'Connect ESP32 for measured data, or press Shift+E to load a seeded demo frame.';
 const NEXT_STAGE_LABELS = Object.freeze([
   'Show direct DFT',
   'Show colour mapping',
   'Show FFT',
   'Exit capture',
 ]);
+
+export function isSeededFrameShortcut(event) {
+  const target = event.target;
+  const isEditing = Boolean(target?.isContentEditable)
+    || ['INPUT', 'SELECT', 'TEXTAREA'].includes(target?.tagName);
+  return !event.repeat
+    && event.shiftKey
+    && !event.altKey
+    && !event.ctrlKey
+    && !event.metaKey
+    && event.key.toLowerCase() === 'e'
+    && !isEditing;
+}
 
 function signedImaginary(value) {
   return value < 0 ? `-${Math.abs(value).toFixed(2)}i` : `+${value.toFixed(2)}i`;
@@ -89,6 +104,28 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     store.patch({ captureStage: Math.max(0, Math.min(STAGE_COUNT - 1, stageIndex)) });
   }
 
+  function showSeededFrame() {
+    const capture = createSimulatedCapture(SEEDED_FRAME_FREQUENCIES);
+    store.patch({
+      capturedEvidence: capture,
+      captureStage: 0,
+      selectedCaptureBin: capture.frame.dominantBin,
+      isFrozen: true,
+      frozenFrame: capture.frame,
+      captureStatus: 'captured',
+      captureMessage: 'Loaded seeded demo frame. This is simulated browser data, not ESP32 telemetry.',
+    });
+    requestAnimationFrame(() => {
+      workbench.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'start' });
+    });
+  }
+
+  function handleSeededFrameShortcut(event) {
+    if (!isSeededFrameShortcut(event)) return;
+    event.preventDefault();
+    showSeededFrame();
+  }
+
   captureButton.addEventListener('click', async () => {
     if (!serialSource.connected || store.get().captureStatus === 'capturing') return;
     if (!captureApiAvailable) {
@@ -135,7 +172,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
       captureStatus: serialSource.connected ? 'ready' : 'disconnected',
       captureMessage: serialSource.connected
         ? 'Ready to capture one measured ESP32 frame.'
-        : 'Connect ESP32 to capture a measured frame.',
+        : DISCONNECTED_CAPTURE_MESSAGE,
     });
     requestAnimationFrame(() => {
       captureButton.focus({ preventScroll: true });
@@ -152,6 +189,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
   }
 
   resumeButton.addEventListener('click', resumeLiveView);
+  window.addEventListener('keydown', handleSeededFrameShortcut);
   previousButton.addEventListener('click', () => showStage(store.get().captureStage - 1));
   nextButton.addEventListener('click', () => {
     if (store.get().captureStage === STAGE_COUNT - 1) resumeLiveView();
@@ -313,6 +351,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     render,
     cleanup() {
       stopComplexAnimation();
+      window.removeEventListener('keydown', handleSeededFrameShortcut);
       unsubscribe();
     },
   };

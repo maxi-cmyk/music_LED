@@ -1,8 +1,8 @@
 import { AudioController } from './scripts/audio-controller.mjs?release=20260924-distill-23';
 import { renderMath } from './scripts/math-renderer.mjs?release=20260924-distill-23';
-import { createRouter } from './scripts/router.mjs?release=20260924-distill-23';
+import { createRouter } from './scripts/router.mjs?release=20260925-clarify-2';
 import { Esp32SerialSource } from './scripts/serial-source.mjs?release=20260924-distill-23';
-import { createStore, initialState } from './scripts/shared-state.mjs?release=20260924-distill-23';
+import { createStore, initialState } from './scripts/shared-state.mjs?release=20260925-seeded-frame-1';
 
 const store = createStore(initialState);
 const audioController = new AudioController(store);
@@ -25,7 +25,7 @@ const serialSource = new Esp32SerialSource({
       ? 'Ready to capture one measured ESP32 frame.'
       : store.get().captureStatus === 'captured'
         ? store.get().captureMessage
-        : 'Connect ESP32 to capture a measured frame.',
+        : 'Connect ESP32 for measured data, or press Shift+E to load a seeded demo frame.',
   }),
 });
 

@@ -38,7 +38,7 @@ export const initialState = Object.freeze({
   capturedSamples: null,
   capturedEvidence: null,
   captureStatus: 'disconnected',
-  captureMessage: 'Connect ESP32 to capture a measured frame.',
+  captureMessage: 'Connect ESP32 for measured data, or press Shift+E to load a seeded demo frame.',
   captureStage: 0,
   selectedCaptureBin: 4,
 });

@@ -74,8 +74,10 @@ export function createSimulatedCapture(frequencies, sequence = 1) {
   return {
     id: `SIM-${String(sequence).padStart(3, '0')}`,
     source: 'simulation',
-    sourceLabel: 'Simulated dry run — not live ESP32 telemetry',
+    sourceLabel: 'Seeded demo frame — simulated in the browser, not live ESP32 telemetry',
     frequencies: [...frequencies],
+    sampleSpanMicroseconds: SIGNAL_CONFIG.sampleCount / SIGNAL_CONFIG.sampleRateHz * 1_000_000,
+    aboveSilenceThreshold: true,
     raw,
     prepared,
     mean,

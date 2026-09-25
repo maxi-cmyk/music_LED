@@ -15,7 +15,7 @@
       <p id="audio-message" class="console-message" role="status" aria-live="polite">Ready. Playback starts only when you press Play.</p>
     </div>
     <div class="signal-composer" aria-labelledby="composer-title">
-      <figure class="composer-plot"><figcaption><h3 id="composer-title">Composite waveform and constituent frequencies</h3><div class="composer-tools"><div id="composer-legend" class="composer-legend" aria-label="Plot legend"></div><button id="composer-motion" class="tool-button" type="button" aria-pressed="false">Pause animation</button></div></figcaption><canvas id="composite-canvas" width="1100" height="300" role="img" aria-label="Composite waveform x across 128 samples in 20 milliseconds, with each constituent tone drawn behind it"></canvas></figure>
+      <figure class="composer-plot"><figcaption><div class="composer-heading"><h3 id="composer-title">Composite waveform and constituent frequencies</h3><p><span class="math" data-latex="0\le t&lt;t_{\max},\quad t_{\max}=\frac{128}{6400}\,\mathrm{s}=20\,\mathrm{ms}"></span></p></div><div class="composer-tools"><div id="composer-legend" class="composer-legend" aria-label="Plot legend"></div><button id="composer-motion" class="tool-button" type="button" aria-pressed="false">Pause animation</button></div></figcaption><canvas id="composite-canvas" width="1100" height="300" role="img" aria-label="Composite waveform x across 128 samples in a 20 millisecond window, with each constituent tone drawn behind it"></canvas></figure>
       <label class="sample-cursor" for="sample-index"><span>Inspect one input sample</span><input id="sample-index" type="range" min="0" max="127" value="10"><output id="sample-index-output" class="math" data-latex="n=10" for="sample-index" aria-live="polite"></output></label>
 
       <section class="fourier-workbench" aria-labelledby="fourier-workbench-title">
@@ -24,8 +24,8 @@
           <div class="fourier-definition">
             <div class="fourier-definition-equation math" data-display="true" data-latex="\mathbf{X}=F_{128}\,\mathbf{x}"></div>
             <dl class="fourier-symbols">
-              <div><dt class="math" data-latex="\mathbf{x}\in\mathbb{R}^{128}"></dt><dd>Input: sample <span class="math" data-latex="x[n]"></span> is the waveform’s height at <span class="math" data-latex="t=n/6400\,\mathrm{s}"></span>.</dd></div>
-              <div><dt class="math" data-latex="F_{128}\in\mathbb{C}^{128\times128}"></dt><dd>Row <span class="math" data-latex="k"></span> holds the weights that test for <span class="math" data-latex="k\times50\,\mathrm{Hz}"></span>.</dd></div>
+              <div><dt class="math" data-latex="\mathbf{x}\in\mathbb{R}^{128}"></dt><dd>Input: the ESP32 records 6400 samples each second, so adjacent samples are <span class="math" data-latex="1/6400\,\mathrm{s}"></span> apart. Sample <span class="math" data-latex="x[n]"></span> is therefore captured at <span class="math" data-latex="t_n=n/6400\,\mathrm{s}"></span>. The last sample is at <span class="math" data-latex="127/6400\approx19.84\,\mathrm{ms}"></span>; the full 128-sample window ends at <span class="math" data-latex="20\,\mathrm{ms}"></span>.</dd></div>
+              <div><dt class="math" data-latex="F_{128}\in\mathbb{C}^{128\times128}"></dt><dd>Row <span class="math" data-latex="k"></span> represents the frequency <span class="math" data-latex="f_k=k\frac{f_s}{N}=k\times50\,\mathrm{Hz}"></span>. Each entry in that row is the cosine-and-sine weight applied to one captured sample to measure how strongly <span class="math" data-latex="f_k"></span> is present.</dd></div>
               <div><dt class="math" data-latex="\mathbf{X}\in\mathbb{C}^{128}"></dt><dd>Output: <span class="math" data-latex="|X[k]|"></span> is how strongly that frequency is present.</dd></div>
             </dl>
           </div>

@@ -1,5 +1,5 @@
 import { SIGNAL_CONFIG, bandRangeHz } from './config.mjs?release=20260924-distill-23';
-import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20260924-distill-23';
+import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20260925-seeded-frame-1';
 import { drawSpectrum, ledDisplayColour } from './visualizations.mjs?release=20260924-distill-23';
 
 export function mount(root, { store, serialSource }) {
