@@ -81,12 +81,14 @@ export function mount(root, { store, audioController }) {
   const fourierMatrixWorkbench = mountFourierMatrixWorkbench(root);
   const motionButton = root.querySelector('#composer-motion');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const LOOP_MILLISECONDS = 3000;
+  const BASE_LOOP_MILLISECONDS = 3000;
+  const ANIMATION_SPEED = 0.75;
+  const LOOP_MILLISECONDS = BASE_LOOP_MILLISECONDS / ANIMATION_SPEED;
   let isAnimationPaused = false;
   let animationFrameId = null;
   let loopStartTime = null;
 
-  // One 3 s loop: composite alone, tones peel out, hold, merge back.
+  // One 4 s loop at 0.75x speed: composite alone, tones peel out, hold, merge back.
   const separationAt = (elapsedMilliseconds) => {
     const phase = (elapsedMilliseconds % LOOP_MILLISECONDS) / LOOP_MILLISECONDS;
     const ease = (value) => 0.5 - 0.5 * Math.cos(Math.PI * value);
