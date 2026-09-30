@@ -50,7 +50,7 @@ function renderComposerLegend(container, frequencies) {
   const signature = frequencies.join(',');
   if (container.dataset.signature === signature) return;
   container.dataset.signature = signature;
-  const entries = [{ label: 'Composite x', colour: '#d8ff52' }];
+  const entries = [{ label: 'Combined x[n]', colour: '#d8ff52' }];
   if (frequencies.length > 1) {
     for (const frequencyHz of frequencies) {
       const detail = FREQUENCIES.find((item) => item.frequencyHz === frequencyHz);

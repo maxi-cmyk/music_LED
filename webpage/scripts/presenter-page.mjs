@@ -52,6 +52,25 @@ export function mount(root) {
   const rowCalculation = root.querySelector('#row-calculation');
   const rowExplanation = root.querySelector('#matrix-row-explanation');
   const rowButtons = [...root.querySelectorAll('[data-matrix-row]')];
+  const phaseButtons = [...root.querySelectorAll('[data-phase-mode]')];
+  const phaseSecondWave = root.querySelector('#phase-second-wave');
+  const phaseSum = root.querySelector('#phase-sum');
+  const phaseConclusion = root.querySelector('#phase-conclusion');
+  const renderPhase = (mode) => {
+    const opposite = mode === 'opposite';
+    updateMath(phaseSecondWave, opposite
+      ? String.raw`\begin{bmatrix}0&-1&0&1\end{bmatrix}`
+      : String.raw`\begin{bmatrix}0&1&0&-1\end{bmatrix}`, true);
+    updateMath(phaseSum, opposite
+      ? String.raw`\begin{bmatrix}0&0&0&0\end{bmatrix}`
+      : String.raw`\begin{bmatrix}0&2&0&-2\end{bmatrix}`, true);
+    phaseConclusion.textContent = opposite
+      ? 'Opposite-phase samples cancel: the sum is zero at all four moments.'
+      : 'Same-phase samples reinforce each other: the peaks and dips double.';
+    phaseButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.phaseMode === mode)));
+  };
+  phaseButtons.forEach((button) => button.addEventListener('click', () => renderPhase(button.dataset.phaseMode)));
+  renderPhase('same');
   const sectionLinks = [...root.querySelectorAll('[data-section-link]')];
 
   let selectedRow = 1;

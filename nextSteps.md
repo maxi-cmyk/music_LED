@@ -27,20 +27,20 @@ The implementation is complete. The direct DFT and FFT agree in automated tests,
 
 ## 3. Build the presentation
 
-Target about nine minutes so the presentation remains below the ten-minute limit.
+Target **9:20 of speaking and page transitions**, leaving 40 seconds of margin below the ten-minute limit. Rehearse using the actual browser, hardware, and speaker handoffs. The detailed cues are in [`docs/presentation-run-of-show.md`](docs/presentation-run-of-show.md).
 
-| Time | Content |
+| Time | Page and one point to make |
 |---:|---|
-| 0:00–0:30 | Introduce the sound → samples → spectrum → colour pipeline. |
-| 0:30–2:00 | Connect the continuous Fourier-transform idea to the finite DFT used by the ESP32. |
-| 2:00–4:30 | Work through $\mathbf{X}=F\mathbf{x}$ with the four-sample example and explain basis vectors, orthogonality, conjugate symmetry, and linearity. |
-| 4:30–6:15 | Show how the direct DFT implements the matrix row sums and connect the result to a controlled tone. |
-| 6:15–7:15 | Explain one FFT butterfly and show that the FFT returns the same complex coefficients. |
-| 7:15–8:00 | Present the ESP32 timing comparison and contrast $O(N^2)$ with $O(N\log N)$. |
-| 8:00–9:00 | Demonstrate individual and mixed tones using the browser spectrum and RGB output. |
-| 9:00–9:30 | State limitations and the main conclusion, then transition to Q&A. |
+| 0:00–1:15 | **Presenter · Phase & Euler:** the same frequency can start at different phases; cosine and sine checks form one complex result. Show one magnitude, then Euler’s formula. |
+| 1:15–2:45 | **Presenter · Add signals → Toy example:** align and reverse equal waves to show reinforcement and cancellation; select bass and mids to build a mixed waveform. Define Hz, sample, and frame in place. |
+| 2:45–4:25 | **Presenter · DFT matrix:** one row multiplies every sample to test one frequency; calculate one row of the four-sample example, then connect to 128 rows and the 200 Hz toy result. |
+| 4:25–7:25 | **Live ESP32:** show the measured spectrum and one mixed music passage. Connect the coloured frequency groups to the RGB LED. Explain the band-strength column, calibrated diagonal gain matrix, and later nonlinear brightness steps without deriving each constant. |
+| 7:25–9:00 | **Presenter · Why FFT:** the hardware computes the same DFT coefficients with seven stages of reuse; trace one butterfly and compare work growth. |
+| 9:00–9:20 | State the result and limitations: sampled data, 50 Hz bin spacing, uncalibrated microphone amplitude, and RGB mapping as a design choice. |
 
-- [ ] Create original slides with a signal-path diagram, four-point Fourier matrix, time/frequency plots, one FFT butterfly, the ESP32 benchmark chart, and a hardware image.
+**Speaking rule:** show one concrete example per idea. Continuous-transform integrals, basis-vector proofs, conjugate symmetry, the full recurrence, and every RGB calibration constant belong in Q&A or backup material. “Signal reformation” in the toy section means adding known component waves to build a mixture; do not claim this is an inverse DFT demonstration. Exact cancellation requires equal waves of the same frequency in opposite phase; mixed frequencies only cancel at some instants.
+
+- [ ] Create original slides with a phase/Euler visual, four-sample reinforcement and cancellation, one Fourier matrix row, the live spectrum-to-RGB mapping, one FFT butterfly, and a hardware image. Keep the measured ESP32 benchmark chart as backup if final measurements are ready.
 - [ ] Audit every equation against the CS103 glossary and LA4CS conventions, including square-bracket matrices and vectors.
 - [x] Keep the distinction explicit: the DFT is the linear transformation; the FFT is a faster algorithm for computing it; magnitude and colour mapping make the full pipeline nonlinear.
 - [ ] Label host, synthetic, recorded, and live evidence accurately.
@@ -50,7 +50,7 @@ Target about nine minutes so the presentation remains below the ten-minute limit
 
 - [ ] Assign speaking sections and a backup presenter for each section.
 - [ ] Ask each teammate to trace a 200 Hz input from microphone samples through the FFT, spectrum bands, and red LED output.
-- [ ] Review [`docs/fourier-walkthrough.md`](docs/fourier-walkthrough.md), [`docs/how-the-fourier-matrix-arises.md`](docs/how-the-fourier-matrix-arises.md), and [`docs/comparison.md`](docs/comparison.md) together, then practise the team's Q&A topics.
+- [ ] Review [`docs/fourier-walkthrough.md`](docs/fourier-walkthrough.md), [`docs/how-the-fourier-matrix-arises.md`](docs/how-the-fourier-matrix-arises.md), and [`docs/comparison.md`](docs/comparison.md) together, then practise the team's Q&A topics and the timed cues in [`docs/presentation-run-of-show.md`](docs/presentation-run-of-show.md).
 - [ ] Randomly direct Q&A questions to every teammate until everyone can answer across the theory, algorithm, experiment, and hardware.
 - [ ] Run at least two timed rehearsals with speaker handoffs and the complete live demo.
 - [ ] Run one failure rehearsal using the recorded fallback without implying that recorded data is live.

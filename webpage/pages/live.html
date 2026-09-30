@@ -17,9 +17,11 @@
       <button id="capture-button" class="tool-button" type="button" aria-pressed="false" disabled>Capture frame</button>
     </div>
     <figure class="spectrum-stage"><canvas id="spectrum-canvas" width="1200" height="430" role="img" aria-label="Live positive-frequency spectrum measured by the ESP32 microphone, shaded by LED band"></canvas><figcaption id="spectrum-summary" class="spectrum-summary">Waiting for ESP32 data</figcaption></figure>
+    <p class="spectrum-reading-note">The ESP32 computes these Fourier results with an FFT. Each bar shows one frequency-pattern strength. The horizontal axis is frequency in Hz; the compressed, automatically scaled height is transform magnitude, not calibrated loudness.</p>
     <div class="colour-output">
       <div id="rgb-swatch" class="rgb-swatch" aria-label="Measured RGB output"></div>
       <div class="colour-readout"><span>LED colour</span><output id="rgb-output">R 0 · G 0 · B 0</output><small id="rgb-brightness">Off</small></div>
+      <p class="colour-mapping-note">We choose bass for red, mids for green, and treble for blue. Three band strengths form a column. The calibrated matrix <span class="math" data-latex="\mathbf{u}=G\mathbf{b}"></span> adjusts them; brightness is set afterward.</p>
       <dl class="band-readouts"><div><dt>Red · bass <span id="red-band-range"></span></dt><dd id="red-strength">0.0 · PWM 0</dd></div><div><dt>Green · mids <span id="green-band-range"></span></dt><dd id="green-strength">0.0 · PWM 0</dd></div><div><dt>Blue · treble <span id="blue-band-range"></span></dt><dd id="blue-strength">0.0 · PWM 0</dd></div></dl>
     </div>
 
@@ -65,7 +67,7 @@
       </div>
 
       <div id="capture-panel-colour" class="capture-panel" data-capture-panel="2" role="tabpanel" aria-labelledby="capture-tab-colour" hidden>
-        <div class="capture-stage-copy"><h4>Three band strengths become RGB</h4><div class="capture-final-colour"><div id="capture-rgb-swatch" class="capture-rgb-swatch"></div><output id="capture-rgb-output"></output></div><div class="capture-band-composition"><p>The spectrum bins form the band-strength column vector:</p><div class="math" data-display="true" data-latex="\mathbf{b}=\begin{bmatrix}b_R\\b_G\\b_B\end{bmatrix}"></div><dl><div><dt>Bass · red</dt><dd><span class="math" data-latex="b_R=\sqrt{\sum_{k=1}^{5}|X[k]|^2}"></span> · bins 1–5</dd></div><div><dt>Mids · green</dt><dd><span class="math" data-latex="b_G=\sqrt{\sum_{k=6}^{20}|X[k]|^2}"></span> · bins 6–20</dd></div><div><dt>Treble · blue</dt><dd><span class="math" data-latex="b_B=\sqrt{\sum_{k=21}^{50}|X[k]|^2}"></span> · bins 21–50</dd></div></dl></div></div>
+        <div class="capture-stage-copy"><h4>Three band strengths become RGB</h4><div class="capture-final-colour"><div id="capture-rgb-swatch" class="capture-rgb-swatch"></div><output id="capture-rgb-output"></output></div><div class="capture-band-composition"><p>The frequency results are grouped into three band strengths. This chosen red, green, and blue mapping forms the column vector:</p><div class="math" data-display="true" data-latex="\mathbf{b}=\begin{bmatrix}b_R\\b_G\\b_B\end{bmatrix}"></div><dl><div><dt>Bass · red</dt><dd><span class="math" data-latex="b_R=\sqrt{\sum_{k=1}^{5}|X[k]|^2}"></span> · bins 1–5</dd></div><div><dt>Mids · green</dt><dd><span class="math" data-latex="b_G=\sqrt{\sum_{k=6}^{20}|X[k]|^2}"></span> · bins 6–20</dd></div><div><dt>Treble · blue</dt><dd><span class="math" data-latex="b_B=\sqrt{\sum_{k=21}^{50}|X[k]|^2}"></span> · bins 21–50</dd></div></dl></div></div>
         <div class="capture-colour-result"><ol id="colour-steps" class="step-list">
           <li><span class="step-label">Band strengths from the spectrum</span><div id="colour-step-bands" class="math" data-display="true"></div></li>
           <li><span class="step-label">Apply fixed colour gains</span><div id="colour-step-gains" class="math" data-display="true"></div><p><span class="math" data-latex="G"></span> is just a calibration matrix. Its three fixed diagonal gains compensate for how differently the bass, mids, and treble paths respond.</p></li>

@@ -13,6 +13,9 @@
 .presenter-band-key { display: grid; grid-template-columns: repeat(3, 1fr); }
 .presenter-band-key > span { padding: 15px 18px; color: #0d0f09; }
 .presenter-band-key b { font-size: 1.05rem; }
+.presenter-band-key > :nth-child(1) { background: var(--red); }
+.presenter-band-key > :nth-child(2) { background: var(--green); }
+.presenter-band-key > :nth-child(3) { background: var(--blue); }
 
 .lesson-nav {
   position: sticky;
@@ -25,8 +28,8 @@
   background: rgba(9, 10, 8, 0.96);
   overflow-x: auto;
 }
-.lesson-nav button { flex: 0 0 auto; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-family: var(--measure); font-size: 0.7rem; text-decoration: none; }
-.lesson-nav button:hover { color: var(--signal); transform: none; }
+.lesson-nav button, .lesson-nav a { flex: 0 0 auto; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-family: var(--measure); font-size: 0.7rem; text-decoration: none; }
+.lesson-nav button:hover, .lesson-nav a:hover { color: var(--signal); transform: none; }
 
 .lesson-section {
   display: grid;
@@ -41,6 +44,19 @@
 .lesson-copy { position: sticky; top: 150px; }
 .lesson-copy p { font-size: 1.03rem; }
 .display-equation, .complexity-callout { margin: 28px 0; padding: 22px; border-block: 1px solid var(--line); background: var(--surface); font-size: clamp(1rem, 2vw, 1.35rem); }
+
+.phase-stage { padding: clamp(28px, 5vw, 60px); border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.phase-stage > strong { color: var(--signal); }
+.phase-stage p { max-width: 60ch; }
+.sampling-key { display: grid; gap: 7px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+.phase-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.phase-controls button[aria-pressed="true"] { border-color: var(--signal); background: var(--signal); color: var(--signal-ink); }
+.phase-example { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 18px; align-items: center; width: 100%; }
+.phase-example > span { color: var(--muted); }
+.phase-example .katex-display { margin: 3px 0; text-align: left; }
+.phase-example .math { min-width: 0; overflow-x: auto; }
+.samples-bridge .phase-limit { color: var(--muted); font-size: 0.83rem; }
+.lesson-next-link { display: inline-block; margin-top: 20px; color: var(--signal); text-underline-offset: 4px; }
 
 .samples-bridge,
 .matrix-stage,
@@ -104,6 +120,9 @@
 .butterfly-output { color: var(--ink); font-weight: 700; }
 .fft-result { padding: 22px; background: var(--surface); color: var(--signal); font-size: 0.9rem; }
 .fft-result .katex-display { margin: 0; }
+.fft-count-note { margin: 0; padding: 24px 30px; border-top: 1px solid var(--line); color: var(--muted); }
+.fft-proof-details > summary { min-height: 44px; padding: 18px 30px; cursor: pointer; color: var(--ink); }
+.fft-proof-details > summary:hover { color: var(--signal); }
 .complexity-proof { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr); gap: 30px; padding: 34px 30px; border-top: 1px solid var(--line); background: var(--signal); color: var(--signal-ink); }
 .complexity-proof > div:first-child > strong { font-size: 1.15rem; }
 .complexity-proof p { margin: 8px 0 0; color: var(--signal-ink); }

@@ -1,7 +1,7 @@
 const ROUTES = Object.freeze({
-  demo: Object.freeze({ partial: 'pages/demo.html?release=20260925-clarify-2', module: './demo-page.mjs?release=20260927-composer-scale-1' }),
-  live: Object.freeze({ partial: 'pages/live.html?release=20260925-clarify-2', module: './live-page.mjs?release=20260925-seeded-frame-1' }),
-  presenter: Object.freeze({ partial: 'pages/presenter.html?release=20260925-clarify-2', module: './presenter-page.mjs?release=20260924-distill-23' }),
+  demo: Object.freeze({ partial: 'pages/demo.html?release=20261001-matrix-units-1', module: './demo-page.mjs?release=20261001-matrix-units-1' }),
+  live: Object.freeze({ partial: 'pages/live.html?release=20261001-talk-sequence-1', module: './live-page.mjs?release=20260925-seeded-frame-1' }),
+  presenter: Object.freeze({ partial: 'pages/presenter.html?release=20261001-talk-sequence-1', module: './presenter-page.mjs?release=20261001-talk-sequence-1' }),
 });
 export function createRouter({ outlet, context, onRouteChange }) {
   let unmount = () => {};
