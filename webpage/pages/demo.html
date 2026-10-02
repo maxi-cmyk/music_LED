@@ -29,7 +29,46 @@
               <div><dt class="math" data-latex="\mathbf{X}\in\mathbb{C}^{128\times1}"></dt><dd><strong>Output:</strong> Row <span class="math" data-latex="k"></span> gives <span class="math" data-latex="X[k]"></span>; its magnitude <span class="math" data-latex="|X[k]|"></span> is that pattern’s strength (unitless here). For real input, bins 65–127 mirror bins 63–1, so we show 0–64.</dd></div>
             </dl>
           </div>
-          <div class="fourier-row-rule math" data-display="true" data-latex="X[k]=\sum_{n=0}^{127}F[k,n]x[n]"></div>
+          <div class="fourier-formulas" aria-label="Fourier weight and row formulas">
+            <div class="fourier-formula"><span>One matrix weight · N = 4 or 128 below</span><div class="math" data-display="true" data-latex="F[k,n]=e^{-i\theta}=\cos\theta-i\sin\theta,\quad\theta=\frac{2\pi kn}{N}"></div></div>
+            <div class="fourier-formula"><span>One 128-sample row</span><div class="math" data-display="true" data-latex="X[k]=\sum_{n=0}^{127}F[k,n]x[n]"></div></div>
+          </div>
+          <section class="weight-plane" aria-labelledby="weight-plane-title">
+            <div class="weight-plane-heading">
+              <div><h5 id="weight-plane-title">Where the matrix weights point</h5><p>Follow one weight around the complex plane. The faint points show every position in the selected row.</p></div>
+              <div class="weight-plane-modes" role="group" aria-label="Choose a Fourier matrix row">
+                <button type="button" data-weight-mode="four" aria-pressed="false">F₄ · row 1</button>
+                <button type="button" data-weight-mode="fine" aria-pressed="true">F₁₂₈ · row 1</button>
+                <button type="button" data-weight-mode="quarter" aria-pressed="false">F₁₂₈ · row 32</button>
+              </div>
+            </div>
+            <div class="weight-plane-body">
+              <svg id="weight-plane-graphic" class="weight-plane-graphic" viewBox="0 0 400 400" role="img" aria-label="Unit circle showing the selected Fourier matrix weight">
+                <line class="weight-axis" x1="32" y1="200" x2="368" y2="200"></line>
+                <line class="weight-axis" x1="200" y1="32" x2="200" y2="368"></line>
+                <circle class="weight-circle" cx="200" cy="200" r="142"></circle>
+                <g id="weight-plane-points"></g>
+                <line id="weight-plane-arrow" class="weight-arrow" x1="200" y1="200" x2="342" y2="200"></line>
+                <polygon id="weight-plane-arrowhead" class="weight-arrowhead" points="342,200 326,193 326,207"></polygon>
+                <circle class="weight-origin" cx="200" cy="200" r="4"></circle>
+                <text class="weight-axis-label" x="370" y="192">Re</text>
+                <text class="weight-axis-label" x="208" y="30">+Im</text>
+                <text class="weight-axis-label" x="208" y="384">−Im</text>
+                <text class="weight-cardinal" x="348" y="220">1</text>
+                <text class="weight-cardinal" x="192" y="52">i</text>
+                <text class="weight-cardinal" x="35" y="220">−1</text>
+                <text class="weight-cardinal" x="186" y="365">−i</text>
+              </svg>
+              <div class="weight-plane-explanation">
+                <div class="weight-plane-step"><span>Selected weight</span><output id="weight-plane-value">F₁₂₈[1,10]</output></div>
+                <p id="weight-plane-angle" class="weight-plane-angle"></p>
+                <p id="weight-plane-note" class="weight-plane-note"></p>
+                <label class="weight-plane-slider" for="weight-plane-index"><span>Sample position <output id="weight-plane-index-label">n = 10</output></span><input id="weight-plane-index" type="range" min="0" max="127" value="10"></label>
+                <button id="weight-plane-play" class="tool-button weight-plane-play" type="button" aria-pressed="false">Play rotation</button>
+                <p class="weight-plane-footnote">The arrow is a matrix weight, not a microphone reading. It multiplies <span class="math" data-latex="x[n]"></span> in the row calculation above.</p>
+              </div>
+            </div>
+          </section>
           <div class="fourier-notes">
             <details>
               <summary>How does the microphone produce <span class="math" data-latex="x[n]"></span>?</summary>

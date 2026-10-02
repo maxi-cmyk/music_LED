@@ -1,5 +1,6 @@
 import { FREQUENCIES, PRESETS, SIGNAL_CONFIG, bandRangeHz } from './config.mjs?release=20260924-distill-23';
 import { mountFourierMatrixWorkbench } from './fourier-matrix-workbench.mjs?release=20260924-distill-23';
+import { mountFourierWeightPlane } from './fourier-weight-plane.mjs?release=20261001-weight-arrow-1';
 import { selectionLabel } from './selection-label.mjs?release=20260924-distill-23';
 import { drawWaveComposition } from './visualizations.mjs?release=20260924-distill-23';
 
@@ -81,6 +82,11 @@ export function mount(root, { store, audioController }) {
   const fourierMatrixWorkbench = mountFourierMatrixWorkbench(root);
   const motionButton = root.querySelector('#composer-motion');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const weightPlane = mountFourierWeightPlane(root, {
+    sampleControl: sampleIndex,
+    reducedMotion,
+    onSampleChange: () => render(store.get()),
+  });
   const BASE_LOOP_MILLISECONDS = 3000;
   const ANIMATION_SPEED = 0.75;
   const LOOP_MILLISECONDS = BASE_LOOP_MILLISECONDS / ANIMATION_SPEED;
@@ -159,7 +165,10 @@ export function mount(root, { store, audioController }) {
   playButton.addEventListener('click', () => audioController.play());
   stopButton.addEventListener('click', () => audioController.stop());
   volumeControl.addEventListener('input', () => audioController.setVolume(Number(volumeControl.value)));
-  sampleIndex.addEventListener('input', () => render(store.get()));
+  sampleIndex.addEventListener('input', () => {
+    weightPlane.pause();
+    render(store.get());
+  });
 
   const render = (state) => {
     selectionSummary.textContent = selectionLabel(state.selectedFrequencies);
@@ -184,6 +193,7 @@ export function mount(root, { store, audioController }) {
     if (animationFrameId) drawComposition(separationAt(performance.now() - (loopStartTime ?? performance.now())));
     renderComposerLegend(composerLegend, state.selectedFrequencies);
     fourierMatrixWorkbench.render(state.selectedFrequencies, selectedSampleIndex);
+    weightPlane.render(selectedSampleIndex);
   };
 
   const unsubscribe = store.subscribe(render);
@@ -193,6 +203,7 @@ export function mount(root, { store, audioController }) {
     if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
     reducedMotion.removeEventListener('change', syncAnimation);
     fourierMatrixWorkbench.cleanup();
+    weightPlane.cleanup();
     unsubscribe();
     window.removeEventListener('resize', onResize);
   };
