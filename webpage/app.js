@@ -1,6 +1,6 @@
 import { AudioController } from './scripts/audio-controller.mjs?release=20260924-distill-23';
 import { renderMath } from './scripts/math-renderer.mjs?release=20260924-distill-23';
-import { createRouter } from './scripts/router.mjs?release=20260927-composer-scale-1';
+import { createRouter } from './scripts/router.mjs?release=20261009-demo-simplify-1';
 import { Esp32SerialSource } from './scripts/serial-source.mjs?release=20260924-distill-23';
 import { createStore, initialState } from './scripts/shared-state.mjs?release=20260925-seeded-frame-1';
 

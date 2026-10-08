@@ -1,8 +1,6 @@
 import { FREQUENCIES, PRESETS, SIGNAL_CONFIG, bandRangeHz } from './config.mjs?release=20260924-distill-23';
-import { mountFourierMatrixWorkbench } from './fourier-matrix-workbench.mjs?release=20260924-distill-23';
-import { mountFourierWeightPlane } from './fourier-weight-plane.mjs?release=20261001-weight-arrow-1';
 import { selectionLabel } from './selection-label.mjs?release=20260924-distill-23';
-import { drawWaveComposition } from './visualizations.mjs?release=20260924-distill-23';
+import { drawWaveComposition } from './visualizations.mjs?release=20261009-demo-simplify-1';
 
 function createPresetButtons(container, onSelect) {
   for (const preset of PRESETS) {
@@ -78,73 +76,9 @@ export function mount(root, { store, audioController }) {
   const audioMessage = root.querySelector('#audio-message');
   const compositeCanvas = root.querySelector('#composite-canvas');
   const composerLegend = root.querySelector('#composer-legend');
-  const sampleIndex = root.querySelector('#sample-index');
-  const fourierMatrixWorkbench = mountFourierMatrixWorkbench(root);
-  const motionButton = root.querySelector('#composer-motion');
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const weightPlane = mountFourierWeightPlane(root, {
-    sampleControl: sampleIndex,
-    reducedMotion,
-    onSampleChange: () => render(store.get()),
-  });
-  const BASE_LOOP_MILLISECONDS = 3000;
-  const ANIMATION_SPEED = 0.75;
-  const LOOP_MILLISECONDS = BASE_LOOP_MILLISECONDS / ANIMATION_SPEED;
-  let isAnimationPaused = false;
-  let animationFrameId = null;
-  let loopStartTime = null;
-
-  // One 4 s loop at 0.75x speed: composite alone, tones peel out, hold, merge back.
-  const separationAt = (elapsedMilliseconds) => {
-    const phase = (elapsedMilliseconds % LOOP_MILLISECONDS) / LOOP_MILLISECONDS;
-    const ease = (value) => 0.5 - 0.5 * Math.cos(Math.PI * value);
-    if (phase < 0.2) return 0;
-    if (phase < 0.53) return ease((phase - 0.2) / 0.33);
-    if (phase < 0.87) return 1;
-    return 1 - ease((phase - 0.87) / 0.13);
+  const drawComposition = () => {
+    drawWaveComposition(compositeCanvas, store.get().selectedFrequencies);
   };
-
-  const drawComposition = (separation) => {
-    const state = store.get();
-    drawWaveComposition(compositeCanvas, state.selectedFrequencies, Number(sampleIndex.value), separation);
-  };
-
-  const shouldAnimate = () => !isAnimationPaused
-    && !reducedMotion.matches
-    && store.get().selectedFrequencies.length > 1;
-
-  const animateComposition = (timestamp) => {
-    if (!shouldAnimate()) {
-      animationFrameId = null;
-      loopStartTime = null;
-      drawComposition(1);
-      return;
-    }
-    loopStartTime ??= timestamp;
-    drawComposition(separationAt(timestamp - loopStartTime));
-    animationFrameId = window.requestAnimationFrame(animateComposition);
-  };
-
-  const syncAnimation = () => {
-    const canAnimate = !reducedMotion.matches && store.get().selectedFrequencies.length > 1;
-    motionButton.hidden = !canAnimate;
-    motionButton.textContent = isAnimationPaused ? 'Play animation' : 'Pause animation';
-    motionButton.setAttribute('aria-pressed', String(isAnimationPaused));
-    if (shouldAnimate()) {
-      if (!animationFrameId) animationFrameId = window.requestAnimationFrame(animateComposition);
-    } else {
-      if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
-      loopStartTime = null;
-      drawComposition(1);
-    }
-  };
-
-  motionButton.addEventListener('click', () => {
-    isAnimationPaused = !isAnimationPaused;
-    syncAnimation();
-  });
-  reducedMotion.addEventListener('change', syncAnimation);
 
   const updateSelection = (frequencies, activePreset = null) => {
     store.patch({ selectedFrequencies: [...frequencies], activePreset });
@@ -165,11 +99,6 @@ export function mount(root, { store, audioController }) {
   playButton.addEventListener('click', () => audioController.play());
   stopButton.addEventListener('click', () => audioController.stop());
   volumeControl.addEventListener('input', () => audioController.setVolume(Number(volumeControl.value)));
-  sampleIndex.addEventListener('input', () => {
-    weightPlane.pause();
-    render(store.get());
-  });
-
   const render = (state) => {
     selectionSummary.textContent = selectionLabel(state.selectedFrequencies);
     volumeControl.value = state.volumePercent;
@@ -188,22 +117,14 @@ export function mount(root, { store, audioController }) {
       );
     });
 
-    const selectedSampleIndex = Number(sampleIndex.value);
-    syncAnimation();
-    if (animationFrameId) drawComposition(separationAt(performance.now() - (loopStartTime ?? performance.now())));
     renderComposerLegend(composerLegend, state.selectedFrequencies);
-    fourierMatrixWorkbench.render(state.selectedFrequencies, selectedSampleIndex);
-    weightPlane.render(selectedSampleIndex);
+    drawComposition();
   };
 
   const unsubscribe = store.subscribe(render);
-  const onResize = () => render(store.get());
+  const onResize = () => drawComposition();
   window.addEventListener('resize', onResize);
   return () => {
-    if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
-    reducedMotion.removeEventListener('change', syncAnimation);
-    fourierMatrixWorkbench.cleanup();
-    weightPlane.cleanup();
     unsubscribe();
     window.removeEventListener('resize', onResize);
   };

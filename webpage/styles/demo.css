@@ -71,111 +71,12 @@
 .composer-plot h3 { margin: 0; font-family: var(--display); font-size: clamp(1.55rem, 2.5vw, 2.25rem); line-height: 1; }
 .composer-heading { display: grid; gap: 7px; }
 .composer-heading p { margin: 0; color: var(--muted); font-family: var(--measure); font-size: 0.72rem; }
-.composer-tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
-.composer-tools .tool-button[hidden] { display: none; }
 .composer-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-family: var(--measure); font-size: 0.72rem; }
 .legend-entry { display: inline-flex; gap: 8px; align-items: center; }
 .legend-entry::before { content: ""; width: 18px; border-top: 2px solid var(--legend-colour); }
 .legend-component::before { border-top-style: dashed; }
-.math-label { display: block; margin-bottom: 8px; color: var(--muted); font-family: var(--measure); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }
 .composer-plot canvas { display: block; width: 100%; height: clamp(300px, 26vw, 360px); border: 1px solid var(--line); border-radius: 12px; background: #080906; }
-.sample-cursor { display: grid; grid-template-columns: auto minmax(160px, 1fr) auto; gap: 18px; align-items: center; color: var(--muted); font-family: var(--measure); font-size: 0.7rem; }
-.sample-cursor input { width: 100%; }
-.sample-cursor output { min-width: 28ch; color: var(--ink); text-align: right; }
-
-.fourier-workbench { display: grid; min-width: 0; gap: 0; margin-top: 10px; border-block: 1px solid var(--line-strong); background: var(--background); }
-.fourier-workbench-heading { display: grid; min-width: 0; gap: clamp(22px, 3vw, 34px); padding: clamp(24px, 4vw, 44px); }
-.fourier-workbench-heading h4 { margin: 0; font-family: var(--display); font-size: clamp(1.75rem, 3vw, 2.75rem); line-height: 0.98; letter-spacing: -0.03em; }
-.fourier-workbench-heading p { max-width: 64ch; margin: 0; font-size: 0.94rem; }
-.fourier-definition { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(24px, 5vw, 72px); align-items: center; min-width: 0; }
-.fourier-definition-equation .katex-display { margin: 0; font-size: clamp(1.8rem, 3.4vw, 2.8rem); }
-.fourier-symbols { display: grid; gap: 14px; margin: 0; padding-left: clamp(18px, 3vw, 32px); border-left: 1px solid var(--line-strong); }
-.fourier-symbols div { display: grid; grid-template-columns: minmax(150px, auto) minmax(0, 1fr); gap: 4px 20px; align-items: baseline; }
-.fourier-symbols dt { color: var(--ink); font-size: 1.05rem; white-space: nowrap; }
-.fourier-symbols dd { max-width: 62ch; margin: 0; font-size: 0.94rem; }
-.fourier-notes { min-width: 0; border-top: 1px solid var(--line); }
-.fourier-notes details { min-width: 0; padding-block: 4px; border-bottom: 1px solid var(--line); }
-.fourier-notes summary { min-height: 44px; padding-block: 12px; cursor: pointer; color: var(--ink); }
-.fourier-notes summary:hover { color: var(--signal); }
-.fourier-notes details > p { margin: 0 0 16px; }
-
-.fourier-formulas { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(18px, 3vw, 48px); min-width: 0; padding-top: clamp(14px, 2vw, 22px); border-top: 1px solid var(--line); }
-.fourier-formula { min-width: 0; }
-.fourier-formula > span { display: block; margin-bottom: 8px; color: var(--muted); font-family: var(--measure); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
-.fourier-formula .math { min-width: 0; overflow-x: auto; }
-.fourier-formula .katex-display { margin: 0; font-size: clamp(0.92rem, 1.35vw, 1.15rem); text-align: left; }
-.fourier-formula .katex-display > .katex { text-align: left; }
-
-.weight-plane { min-width: 0; padding-top: 4px; }
-.weight-plane-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px 32px; align-items: end; margin-bottom: 20px; }
-.weight-plane-heading h5 { margin: 0 0 6px; font-family: var(--display); font-size: clamp(1.35rem, 2vw, 1.8rem); line-height: 1; }
-.weight-plane-heading p { max-width: 52ch; margin: 0; color: var(--muted); font-size: 0.86rem; }
-.weight-plane-modes { display: flex; flex-wrap: wrap; gap: 7px; }
-.weight-plane-modes button { min-height: 42px; padding: 8px 12px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted); font-family: var(--measure); font-size: 0.75rem; cursor: pointer; }
-.weight-plane-modes button[aria-pressed="true"] { border-color: var(--signal); color: var(--signal); box-shadow: inset 0 -3px 0 var(--signal); }
-.weight-plane-modes button:hover { color: var(--ink); }
-.weight-plane-body { display: grid; grid-template-columns: minmax(270px, 400px) minmax(0, 1fr); gap: clamp(22px, 4vw, 60px); align-items: center; }
-.weight-plane-graphic { display: block; width: 100%; max-width: 400px; height: auto; border: 1px solid var(--line); background: radial-gradient(circle at center, #141a0c 0, #090b07 64%, #080906 100%); }
-.weight-axis { stroke: #46503a; stroke-width: 1; }
-.weight-circle { fill: none; stroke: #677350; stroke-width: 1.5; }
-.weight-point { fill: #758561; opacity: 0.52; }
-.weight-point-passed { fill: var(--signal); opacity: 0.76; }
-.weight-point-current { fill: var(--signal); opacity: 1; }
-.weight-arrow { stroke: var(--signal); stroke-width: 3.5; stroke-linecap: round; }
-.weight-arrowhead { fill: var(--signal); }
-.weight-origin { fill: var(--ink); }
-.weight-axis-label, .weight-cardinal { fill: var(--muted); font-family: var(--measure); font-size: 13px; }
-.weight-cardinal { fill: var(--ink); font-size: 16px; }
-.weight-plane-explanation { display: grid; align-content: center; gap: 12px; min-width: 0; }
-.weight-plane-step { display: grid; gap: 8px; }
-.weight-plane-step > span { color: var(--muted); font-family: var(--measure); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
-.weight-plane-step output { color: var(--signal); font-family: var(--measure); font-size: clamp(1.1rem, 1.6vw, 1.5rem); overflow-wrap: anywhere; }
-.weight-plane-angle { margin: 0; color: var(--ink); font-family: var(--measure); font-size: 0.85rem; }
-.weight-plane-note { min-height: 3em; max-width: 48ch; margin: 0; color: var(--muted); font-size: 0.9rem; }
-.weight-plane-slider { display: grid; gap: 9px; margin-top: 10px; color: var(--ink); font-family: var(--measure); font-size: 0.76rem; }
-.weight-plane-slider span { display: flex; justify-content: space-between; gap: 12px; }
-.weight-plane-slider input { width: 100%; }
-.weight-plane-play { justify-self: start; min-height: 44px; }
-.weight-plane-footnote { max-width: 46ch; margin: 8px 0 0; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.82rem; }
-
-
-.fourier-selected-heading { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; padding: clamp(22px, 3vw, 34px) clamp(24px, 4vw, 44px) 16px; }
-.fourier-selected-heading h5 { margin: 0; font-family: var(--display); font-size: clamp(1.35rem, 2vw, 1.8rem); line-height: 1; letter-spacing: -0.02em; }
-.fourier-selected-heading .katex { font-size: 1.05rem; }
-.fourier-selected-breakdowns { display: grid; min-width: 0; gap: 22px; padding: 0 clamp(24px, 4vw, 44px) clamp(28px, 4vw, 48px); }
-.fourier-tone-breakdown { min-width: 0; border-top: 1px solid var(--line); }
-.fourier-tone-heading { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; padding: 18px 0 4px; }
-.fourier-tone-heading h6 { margin: 0; color: var(--signal); font-family: var(--display); font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1; }
-.fourier-tone-heading p { max-width: 70ch; margin: 0; font-size: clamp(0.9rem, 1.1vw, 1.02rem); }
-.fourier-measurement-row { display: grid; min-width: 0; gap: 14px; padding: 14px 0 24px; }
-.fourier-measurement-row + .fourier-measurement-row { border-top: 1px solid var(--line-strong); }
-.fourier-measurement-row > header { display: flex; justify-content: space-between; gap: 24px; align-items: end; }
-.fourier-measurement-row > * { min-width: 0; }
-.fourier-row-formula { min-width: 0; max-width: 100%; overflow-x: auto; color: var(--signal); font-size: clamp(0.95rem, 1.3vw, 1.15rem); }
-.fourier-representative-terms { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(88px, 0.4fr) minmax(0, 1fr); gap: 1px; min-width: 0; background: var(--line); }
-.fourier-term, .fourier-term-ellipsis { min-width: 0; padding: 16px; background: var(--surface-raised); }
-.fourier-term-ellipsis { display: grid; place-items: center; align-content: center; gap: 8px; color: var(--muted); text-align: center; }
-.fourier-term-ellipsis span { font-family: var(--measure); font-size: 0.72rem; }
-.fourier-row-result { padding-top: 4px; }
-.fourier-tone-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 clamp(24px, 4vw, 44px) 18px; }
-.fourier-tone-tabs[hidden] { display: none; }
-.fourier-tone-tab { min-height: 40px; padding: 8px 14px; font-family: var(--measure); font-size: 0.74rem; }
-.fourier-tone-tab[aria-pressed="true"] { border-color: var(--frequency-colour); box-shadow: inset 0 -3px 0 var(--frequency-colour); color: var(--ink); }
-.fourier-tone-mapping { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
-.fourier-tone-mapping .katex { font-size: 1.15rem; }
-.fourier-row-title { margin: 0; color: var(--ink); font-size: clamp(1.05rem, 1.4vw, 1.25rem); font-weight: 700; }
-.fourier-inline-math { display: inline; }
-.fourier-term-index { margin-bottom: 10px; color: var(--signal); }
-.fourier-term-values { min-width: 0; overflow-x: auto; }
-.fourier-term-values .katex-display { margin: 0; font-size: clamp(0.86rem, 1.05vw, 0.98rem); }
-.fourier-term-values .katex-display > .katex, .fourier-row-result .katex-display > .katex { text-align: left; }
-.fourier-term-ellipsis strong { font-size: 2rem; line-height: 1; }
-.fourier-row-result .math { min-width: 0; overflow-x: auto; }
-.fourier-row-result .katex-display { margin: 8px 0 0; font-size: clamp(0.95rem, 1.35vw, 1.15rem); text-align: left; }
 .band-readouts dt span { display: block; margin-top: 2px; color: var(--muted); font-family: var(--measure); font-size: 0.68rem; font-weight: 400; }
-.fourier-breakdown-empty { display: grid; gap: 8px; padding: clamp(28px, 4vw, 44px); border: 1px solid var(--line); background: var(--surface); }
-.fourier-breakdown-empty strong { color: var(--signal); font-size: 1.08rem; }
-.fourier-breakdown-empty p { margin: 0; }
 
 .measurement-stage { padding-top: 8px; }
 .measurement-heading { display: flex; justify-content: space-between; gap: 28px; align-items: end; }
@@ -373,21 +274,11 @@
   background: var(--background);
 }
 
-@media (max-width: 1240px) {
-  .fourier-representative-terms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fourier-term-ellipsis { grid-column: 1 / -1; grid-row: 2; grid-auto-flow: column; justify-content: center; gap: 14px; padding-block: 10px; }
-  .fourier-term:last-child { grid-column: 1 / -1; }
-}
-
 @media (max-width: 980px) {
   .demo-intro { align-items: stretch; flex-direction: column; }
   .physical-route { max-width: 660px; }
   .sound-console { grid-template-columns: 1fr; }
   .frequency-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .fourier-definition { grid-template-columns: 1fr; }
-  .fourier-symbols { padding-left: 0; border-left: 0; }
-  .fourier-formulas { grid-template-columns: 1fr; }
-  .weight-plane-body { grid-template-columns: minmax(220px, 330px) minmax(0, 1fr); }
   .colour-output { grid-template-columns: 120px 1fr; }
   .rgb-swatch { width: 104px; }
   .band-readouts { grid-column: 1 / -1; }
@@ -402,16 +293,6 @@
   .preset-list > :last-child { grid-column: 1 / -1; }
   .frequency-list { grid-template-columns: repeat(2, 1fr); }
   .composer-plot canvas { height: 260px; }
-  .sample-cursor { grid-template-columns: 1fr; gap: 9px; }
-  .sample-cursor output { grid-row: 2; min-width: 0; overflow-x: auto; text-align: left; }
-  .sample-cursor input { grid-column: 1; grid-row: 3; }
-  .fourier-selected-heading { align-items: start; flex-direction: column; gap: 10px; }
-  .fourier-tone-heading { grid-template-columns: 1fr; gap: 8px; }
-  .fourier-measurement-row > header { align-items: start; flex-direction: column; gap: 10px; }
-  .fourier-symbols div { grid-template-columns: 1fr; }
-  .weight-plane-body { grid-template-columns: 1fr; }
-  .weight-plane-graphic { max-width: 360px; }
-  .fourier-representative-terms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .measurement-heading { align-items: stretch; flex-direction: column; }
   .serial-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .spectrum-toolbar { justify-content: flex-start; flex-wrap: wrap; }
@@ -435,11 +316,4 @@
   .butterfly-working .katex-display { font-size: 0.8rem; }
   .butterfly-inputs, .butterfly-outputs { grid-template-rows: none; }
   .capture-stage-controls { grid-template-columns: 1fr 1fr; }
-}
-
-@media (max-width: 520px) {
-  .fourier-representative-terms { grid-template-columns: 1fr; }
-  .fourier-term, .fourier-term-ellipsis { min-height: 0; }
-  .fourier-term-ellipsis { grid-row: auto; }
-  .fourier-selected-breakdowns { padding-inline: 18px; }
 }
