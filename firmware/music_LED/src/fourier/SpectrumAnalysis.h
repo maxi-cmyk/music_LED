@@ -7,31 +7,31 @@
 namespace fourier {
 
 struct SpectrumMagnitudes {
-  size_t numberOfSamples = 0;
-  float magnitude[fourier_config::kMaximumNumberOfSamples] = {};
+    size_t number_of_samples = 0;
+    float magnitude[fourier_config::MAXIMUM_NUMBER_OF_SAMPLES] = {};
 };
 
 struct DominantFrequency {
-  size_t frequencyBinIndex = 0;
-  float frequencyHz = 0.0f;
-  float magnitude = 0.0f;
+    size_t frequency_bin_index = 0;
+    float frequency_hz = 0.0f;
+    float magnitude = 0.0f;
 };
 
-bool calculateSpectrumMagnitudes(
-    const FrequencySpectrum &frequencyDomainCoefficients,
-    SpectrumMagnitudes *magnitudes);
+bool calculate_spectrum_magnitudes(
+        const FrequencySpectrum &frequency_domain_coefficients,
+        SpectrumMagnitudes *magnitudes);
 
-float frequencyForBinHz(size_t frequencyBinIndex, size_t numberOfSamples,
-                        float samplingFrequencyHz);
+float frequency_for_bin_hz(size_t frequency_bin_index, size_t number_of_samples,
+                           float sampling_frequency_hz);
 
 // Searches bins 1 through N/2. DC is excluded and the Nyquist bin is included.
-bool findDominantNonnegativeFrequency(const SpectrumMagnitudes &magnitudes,
-                                      float samplingFrequencyHz,
-                                      DominantFrequency *dominantFrequency);
+bool find_dominant_nonnegative_frequency(const SpectrumMagnitudes &magnitudes,
+                                         float sampling_frequency_hz,
+                                         DominantFrequency *dominant_frequency);
 
 // Returns sqrt(sum(|X[k]|^2)) over an inclusive bin range.
-float calculateBandStrength(const SpectrumMagnitudes &magnitudes,
-                            size_t firstFrequencyBinIndex,
-                            size_t lastFrequencyBinIndex);
+float calculate_band_strength(const SpectrumMagnitudes &magnitudes,
+                              size_t first_frequency_bin_index,
+                              size_t last_frequency_bin_index);
 
 } // namespace fourier
