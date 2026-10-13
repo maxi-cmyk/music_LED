@@ -6,20 +6,21 @@
 
 namespace synthetic_signals {
 
-bool generateZeroSignal(size_t numberOfSamples, fourier::AudioSamples *output);
-bool generateConstantSignal(size_t numberOfSamples, float amplitude,
-                            fourier::AudioSamples *output);
-bool generateImpulseSignal(size_t numberOfSamples, size_t impulseSampleIndex,
-                           float amplitude, fourier::AudioSamples *output);
-bool generateFourPointWorkedExample(fourier::AudioSamples *output);
-bool generateCosineAtBin(size_t numberOfSamples, size_t frequencyBinIndex,
-                         float amplitude, float phaseRadians,
-                         fourier::AudioSamples *output);
-bool generateTwoCosinesAtBins(size_t numberOfSamples,
-                              size_t firstFrequencyBinIndex,
-                              float firstAmplitude, float firstPhaseRadians,
-                              size_t secondFrequencyBinIndex,
-                              float secondAmplitude, float secondPhaseRadians,
+bool generate_zero_signal(size_t number_of_samples,
+                          fourier::AudioSamples *output);
+bool generate_constant_signal(size_t number_of_samples, float amplitude,
                               fourier::AudioSamples *output);
+bool generate_impulse_signal(size_t number_of_samples,
+                             size_t impulse_sample_index, float amplitude,
+                             fourier::AudioSamples *output);
+bool generate_four_point_worked_example(fourier::AudioSamples *output);
+bool generate_cosine_at_bin(size_t number_of_samples,
+                            size_t frequency_bin_index, float amplitude,
+                            float phase_radians, fourier::AudioSamples *output);
+bool generate_two_cosines_at_bins(
+        size_t number_of_samples, size_t first_frequency_bin_index,
+        float first_amplitude, float first_phase_radians,
+        size_t second_frequency_bin_index, float second_amplitude,
+        float second_phase_radians, fourier::AudioSamples *output);
 
 } // namespace synthetic_signals

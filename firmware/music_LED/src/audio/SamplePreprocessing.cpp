@@ -6,47 +6,56 @@
 
 namespace {
 
-float windowCoefficient(WindowFunction windowFunction, size_t sampleIndex,
-                        size_t numberOfSamples) {
-  if (windowFunction == WindowFunction::None || numberOfSamples <= 1) {
-    return 1.0f;
-  }
-  return 0.54f - 0.46f * cosf(2.0f * fourier_config::kPi *
-                              static_cast<float>(sampleIndex) /
-                              static_cast<float>(numberOfSamples - 1));
+float window_coefficient(WindowFunction window_function, size_t sample_index,
+                         size_t number_of_samples) {
+    if (window_function == WindowFunction::None || number_of_samples <= 1) {
+        return 1.0f;
+    }
+    constexpr float HAMMING_OFFSET = 0.54f;
+    constexpr float HAMMING_COSINE_WEIGHT = 0.46f;
+    return HAMMING_OFFSET
+           - HAMMING_COSINE_WEIGHT
+                     * cosf(2.0f * fourier_config::FOURIER_PI
+                            * static_cast<float>(sample_index)
+                            / static_cast<float>(number_of_samples - 1));
 }
 
 } // namespace
 
-bool prepareAudioSamples(const fourier::AudioSamples &rawSamples,
-                         WindowFunction windowFunction,
-                         fourier::AudioSamples *preparedSamples,
-                         SamplePreprocessingResults *results) {
-  if (preparedSamples == nullptr || results == nullptr ||
-      !fourier_config::isSupportedSampleCount(rawSamples.numberOfSamples)) {
-    if (preparedSamples != nullptr)
-      preparedSamples->numberOfSamples = 0;
-    return false;
-  }
+bool prepare_audio_samples(const fourier::AudioSamples &raw_samples,
+                           WindowFunction window_function,
+                           fourier::AudioSamples *prepared_samples,
+                           SamplePreprocessingResults *results) {
+    if (prepared_samples == nullptr || results == nullptr
+        || !fourier_config::is_supported_sample_count(
+                raw_samples.number_of_samples)) {
+        if (prepared_samples != nullptr) {
+            prepared_samples->number_of_samples = 0;
+        }
+        return false;
+    }
 
-  *results = SamplePreprocessingResults{};
-  const size_t numberOfSamples = rawSamples.numberOfSamples;
-  for (size_t sampleIndex = 0; sampleIndex < numberOfSamples; ++sampleIndex) {
-    results->frameMean += rawSamples.amplitude[sampleIndex];
-  }
-  results->frameMean /= static_cast<float>(numberOfSamples);
+    *results = SamplePreprocessingResults{};
+    const size_t number_of_samples = raw_samples.number_of_samples;
+    for (size_t sample_index = 0; sample_index < number_of_samples;
+         ++sample_index) {
+        results->frame_mean += raw_samples.amplitude[sample_index];
+    }
+    results->frame_mean /= static_cast<float>(number_of_samples);
 
-  preparedSamples->numberOfSamples = numberOfSamples;
-  float sumCenteredSquares = 0.0f;
-  for (size_t sampleIndex = 0; sampleIndex < numberOfSamples; ++sampleIndex) {
-    const float centeredSample =
-        rawSamples.amplitude[sampleIndex] - results->frameMean;
-    sumCenteredSquares += centeredSample * centeredSample;
-    preparedSamples->amplitude[sampleIndex] =
-        centeredSample *
-        windowCoefficient(windowFunction, sampleIndex, numberOfSamples);
-  }
-  results->centeredRootMeanSquare =
-      sqrtf(sumCenteredSquares / static_cast<float>(numberOfSamples));
-  return true;
+    prepared_samples->number_of_samples = number_of_samples;
+    float sum_centered_squares = 0.0f;
+    for (size_t sample_index = 0; sample_index < number_of_samples;
+         ++sample_index) {
+        const float centered_sample
+                = raw_samples.amplitude[sample_index] - results->frame_mean;
+        sum_centered_squares += centered_sample * centered_sample;
+        prepared_samples->amplitude[sample_index]
+                = centered_sample
+                  * window_coefficient(window_function, sample_index,
+                                       number_of_samples);
+    }
+    results->centered_root_mean_square = sqrtf(
+            sum_centered_squares / static_cast<float>(number_of_samples));
+    return true;
 }
