@@ -65,6 +65,9 @@ After uploading the sketch, serve the browser interface from the repository root
 python3 -B webpage/serve.py
 ```
 
+The command opens `http://127.0.0.1:8080` in your default browser. Keep the
+terminal running while using the page; press Ctrl+C to stop the server.
+
 The local server disables browser caching so every page load uses one coherent
 version of the JavaScript modules during development and live demonstrations.
 
