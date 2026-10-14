@@ -98,7 +98,10 @@ export function analyseGeneratedFrequencies(frequencies, volumePercent = 20) {
         * Math.sin(2 * Math.PI * frequencyHz * sampleTimeSeconds);
     }
   }
+  return { ...analyseSamples(samples), source: 'generated' };
+}
 
+export function analyseSamples(samples) {
   const frameMean = samples.reduce((sum, sample) => sum + sample, 0) / samples.length;
   let sumCenteredSquares = 0;
   const preparedSamples = samples.map((sample, sampleIndex) => {
@@ -124,7 +127,7 @@ export function analyseGeneratedFrequencies(frequencies, volumePercent = 20) {
   }
 
   return {
-    source: 'generated',
+    source: 'samples',
     sequence: 0,
     sampleRateHz: SIGNAL_CONFIG.sampleRateHz,
     rms,

@@ -1,0 +1,103 @@
+:root {
+  --chalk: #f2f2ec;
+  --dim: #9a9a94;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #000;
+  color: var(--chalk);
+  font-family: "Neue Haas Grotesk Display", "Neue Haas Grotesk Text", "Neue Haas Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6vw;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+  padding: 0 8vw;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+  color: var(--dim);
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.kicker i {
+  width: 1.6rem;
+  height: 3px;
+  background: #ff6b5a;
+}
+.kicker i:nth-child(2) { background: #8fe36a; }
+.kicker i:nth-child(3) { background: #5cbcff; }
+.kicker span { margin-left: 0.8rem; }
+
+main > .intro { min-width: 0; container-type: inline-size; }
+
+h1 {
+  margin: 0 0 1.4rem;
+  font-size: clamp(4rem, 9vw, 8rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.blurb {
+  margin: 0 0 4rem;
+  color: var(--dim);
+  font-size: min(1.25rem, 2.7cqw);
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.topics {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topics li + li { margin-top: 1.6rem; }
+
+.topics a {
+  display: inline-block;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--chalk);
+  color: var(--chalk);
+  font-size: 2rem;
+  text-decoration: none;
+  transition: padding-right 0.25s;
+}
+
+.topics a:hover { padding-right: 4rem; }
+
+.topics span {
+  margin-right: 1.2rem;
+  color: var(--dim);
+  font-size: 1rem;
+}
+
+#epicycles {
+  position: relative;
+  justify-self: end; /* right edge stays inside the page padding; extra size grows left, behind the text */
+  height: 100vh;
+  aspect-ratio: 1;
+  transform: translateX(5%);
+}
+#epicycles canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+#epicycles button {
+  position: absolute; top: 8vh; right: 0; z-index: 2;
+  display: grid; place-items: center; width: 3rem; height: 3rem; padding: 0;
+  background: none; color: var(--chalk); border: 1px solid var(--chalk); border-radius: 50%; cursor: pointer;
+}
+#epicycles button.live { color: #ff6b5a; border-color: #ff6b5a; }
+main > .intro { position: relative; z-index: 1; }
