@@ -62,13 +62,23 @@ Compile the firmware with the ESP32 Arduino core:
 After uploading the sketch, serve the browser interface from the repository root:
 
 ```bash
-python3 -B webpage/serve.py
+npm --prefix spectra install
+python3 -B serve.py
 ```
 
-The local server disables browser caching so every page load uses one coherent
-version of the JavaScript modules during development and live demonstrations.
+This branch serves **Spectra** at `http://127.0.0.1:8080`. You can also start it
+with `npm run dev` from the repository root. The previous
+`python3 -B webpage/serve.py` command forwards to the same Spectra launcher.
+Keep the terminal open; Ctrl+C stops the server. Vite uses port 8080 strictly
+so a port conflict cannot silently send you to a different app.
 
-Open `http://127.0.0.1:8080` in desktop Chrome or Edge. Use the navigation rail to switch between the uncluttered live Demo and the Presenter walkthrough. The page can generate controlled tones through the computer speaker and, after the user approves the serial port, display the spectrum and RGB values reported by the ESP32. **Capture frame** asks the ESP32 for its next complete sampling window and freezes the raw samples, prepared samples, Fourier coefficients, magnitudes, band strengths, and RGB result that share that capture ID. Its guided workbench reconstructs a direct DFT row, traces the seven radix-2 FFT stages, and compares the reconstructed DFT coefficients with the FFT coefficients calculated on the ESP32 for that same frame. On the Live ESP32 page, press **Shift+E** to load an explicitly labelled, deterministic seeded frame when the board is unavailable. Close Arduino Serial Monitor first because only one application can own the USB serial port at a time.
+Spectra imports the shared Fourier analysis from `webpage/scripts/`; its page,
+React components, styles, and animation are served from `spectra/`.
+See [`spectra/README.md`](spectra/README.md) for microphone behaviour and checks.
+
+### Original Fourier webpage reference
+
+The original `webpage/` implementation is retained as a reference. Its navigation rail switches between the live Demo and Presenter walkthrough, and it can generate controlled tones through the computer speaker and, after the user approves the serial port, display the spectrum and RGB values reported by the ESP32. **Capture frame** asks the ESP32 for its next complete sampling window and freezes the raw samples, prepared samples, Fourier coefficients, magnitudes, band strengths, and RGB result that share that capture ID. Its guided workbench reconstructs a direct DFT row, traces the seven radix-2 FFT stages, and compares the reconstructed DFT coefficients with the FFT coefficients calculated on the ESP32 for that same frame. On the Live ESP32 page, press **Shift+E** to load an explicitly labelled, deterministic seeded frame when the board is unavailable. Close Arduino Serial Monitor first because only one application can own the USB serial port at a time.
 
 The audio path remains physical: browser → speaker → air → microphone → ESP32. The browser does not send test samples directly to the firmware.
 

@@ -101,3 +101,22 @@ h1 {
 }
 #epicycles button.live { color: #ff6b5a; border-color: #ff6b5a; }
 main > .intro { position: relative; z-index: 1; }
+
+#epicycles button:focus-visible { outline: 2px solid var(--chalk); outline-offset: 5px; }
+#epicycles button[aria-busy="true"] { border-style: dashed; }
+.mic-status {
+  position: absolute;
+  top: calc(8vh + 3.5rem);
+  right: 0;
+  z-index: 2;
+  max-width: min(30ch, 75vw);
+  margin: 0;
+  padding: 0.5rem;
+  background: #000;
+  color: var(--chalk);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.mic-status:empty { display: none; }

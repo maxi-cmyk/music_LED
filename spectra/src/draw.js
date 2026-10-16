@@ -4,18 +4,19 @@
 import * as THREE from 'three';
 import { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-// the webpage's real analysis pipeline (Hamming + FFT + band strengths + RGB mapping)
-import { analyseSamples, SIGNAL_CONFIG } from '../../webpage/scripts/signal-analysis.mjs';
+// Reuse the webpage FFT; adapt microphone band strengths for the animation.
+import { createMicrophone } from './microphone.mjs';
+import { REST_RADIUS, RADIUS_RANGE } from './mic-response.mjs';
 
-// [base radius, angular speed rad/s, phase, colour]
+// [idle radius, angular speed rad/s, phase, colour]
 const CIRCLES = [
-  [1.5, 1.0, 0, 0xff6b5a, ],
-  [0.8, 3.1, 1.3, 0x8fe36a, ],
-  [0.4, 7.3, 2.6, 0x5cbcff, ],
+  [0.9, 1.0, 0, 0xff6b5a, ],
+  [0.9, 3.1, 1.3, 0x8fe36a, ],
+  [0.9, 7.3, 2.6, 0x5cbcff, ],
 ];
 const N = 360, DZ = 0.03; // trail points, spacing along the time axis
 
-export default function start(host) {
+export default function start(host, onMicState) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   host.appendChild(renderer.domElement);
@@ -69,22 +70,7 @@ export default function start(host) {
   grid.position.set(0, -2.6, -N * DZ / 2); grid.scale.z = 1.4;
   scene.add(grid);
 
-  // microphone
-  let analyser, bins, stream, ac, gains = [1, 1, 1];
-  const enableMic = async () => {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    ac = new AudioContext({ sampleRate: SIGNAL_CONFIG.sampleRateHz }); // same 128 samples @ 6.4 kHz as the firmware
-    await ac.resume();
-    analyser = ac.createAnalyser(); analyser.fftSize = SIGNAL_CONFIG.sampleCount;
-    ac.createMediaStreamSource(stream).connect(analyser);
-    bins = new Float32Array(analyser.fftSize);
-  };
-
-  const disableMic = () => {
-    stream.getTracks().forEach((t) => t.stop());
-    ac.close();
-    analyser = null;
-  };
+  const microphone = createMicrophone(onMicState);
 
   // axis orientation gizmo; click an axis to snap the camera there
   const gizmo = new ViewHelper(camera, renderer.domElement);
@@ -109,21 +95,22 @@ export default function start(host) {
   resize();
   window.addEventListener('resize', resize);
 
-  let t = 0, raf;
-  (function frame() {
-    t += 1 / 60;
-    if (analyser) {
-      analyser.getFloatTimeDomainData(bins);
-      const { rgb } = analyseSamples(bins.map((v) => v * 32768)); // ponytail: scale guess for mic vs ADC counts, tune if too quiet/loud
-      CIRCLES.forEach((_, i) => {
-        const target = 0.5 + 1.5 * rgb[['red', 'green', 'blue'][i]] / 255;
-        gains[i] += (target - gains[i]) * 0.2;
-      });
-    } else gains = CIRCLES.map((_, i) => 1 + 0.25 * Math.sin(t * 0.25 + i * 2));
+  let t = 0, raf, previousTime, radii = CIRCLES.map(([radius]) => radius);
+  (function frame(now = performance.now()) {
+    const dt = previousTime === undefined ? 1 / 60 : Math.min((now - previousTime) / 1000, 0.1);
+    previousTime = now;
+    t += dt;
+    const response = microphone.read(dt);
+    const targets = response
+      ? response.levels.map((level) => REST_RADIUS + RADIUS_RANGE * level)
+      : CIRCLES.map(([radius], i) => radius * (1 + 0.25 * Math.sin(t * 0.25 + i * 2)));
+    radii = targets.map((target, i) => radii[i] + (target - radii[i]) * -Math.expm1(-dt / 0.08));
+    if (response) onMicState?.('live', response.calibrating
+      ? 'Keep quiet briefly while the microphone adjusts.' : 'Microphone on.');
 
     let x = 0, y = 0;
-    CIRCLES.forEach(([r0, speed, phase], i) => {
-      const r = r0 * gains[i], a = speed * t + phase;
+    CIRCLES.forEach(([, speed, phase], i) => {
+      const r = radii[i], a = speed * t + phase;
       const { r: rg, arm } = rings[i];
       rg.position.set(x, y, 0); rg.scale.set(r, r, 1);
       arm.position.set(x, y, 0); arm.scale.set(r, 1, 1); arm.rotation.z = a;
@@ -143,10 +130,15 @@ export default function start(host) {
   })();
 
   return {
-    enableMic,
-    disableMic,
+    enableMic: microphone.start,
+    disableMic: microphone.stop,
     stop() {
       cancelAnimationFrame(raf);
+      microphone.stop();
+      scene.traverse((object) => {
+        object.geometry?.dispose();
+        object.material?.dispose();
+      });
       window.removeEventListener('resize', resize);
       controls.dispose(); gizmo.dispose(); renderer.dispose(); renderer.domElement.remove();
     },

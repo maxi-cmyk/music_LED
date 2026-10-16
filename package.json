@@ -1,0 +1,9 @@
+{
+  "name": "music-leds-demo",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix spectra run dev",
+    "build": "npm --prefix spectra run build",
+    "test": "npm --prefix spectra test"
+  }
+}
