@@ -1,6 +1,5 @@
-import { SIGNAL_CONFIG, bandRangeHz } from './config.mjs?release=20260924-distill-23';
 import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20260925-seeded-frame-1';
-import { drawSpectrum, ledDisplayColour } from './visualizations.mjs?release=20261009-demo-simplify-1';
+import { drawSpectrum } from './visualizations.mjs?release=20261009-demo-simplify-1';
 
 export function mount(root, { store, serialSource }) {
   const connectButton = root.querySelector('#connect-serial');
@@ -8,18 +7,6 @@ export function mount(root, { store, serialSource }) {
   const serialMessage = root.querySelector('#serial-message');
   const spectrumCanvas = root.querySelector('#spectrum-canvas');
   const spectrumSummary = root.querySelector('#spectrum-summary');
-  const rgbSwatch = root.querySelector('#rgb-swatch');
-  const rgbOutput = root.querySelector('#rgb-output');
-  const rgbBrightness = root.querySelector('#rgb-brightness');
-  const bandOutputs = {
-    red: root.querySelector('#red-strength'),
-    green: root.querySelector('#green-strength'),
-    blue: root.querySelector('#blue-strength'),
-  };
-  for (const [channel, band] of Object.entries(SIGNAL_CONFIG.bands)) {
-    const { lowHz, highHz } = bandRangeHz(band);
-    root.querySelector(`#${channel}-band-range`).textContent = `${lowHz}–${highHz} Hz`;
-  }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const captureWorkbench = mountCaptureWorkbench(root, { store, serialSource, reducedMotion });
   let animationFrameId = null;
@@ -124,18 +111,6 @@ export function mount(root, { store, serialSource }) {
       ? `${frameStateLabel} · bar height |X[k]| on a log scale · strongest at ${frame.dominantHz.toFixed(0)} Hz · ${frame.sampleRateHz.toFixed(0)} Hz sample rate`
       : 'Waiting for ESP32 data · bar height will be |X[k]| on a log scale';
 
-    const rgb = frame?.rgb ?? { red: 0, green: 0, blue: 0 };
-    const display = ledDisplayColour(rgb);
-    rgbSwatch.style.backgroundColor = display.css;
-    rgbBrightness.textContent = display.brightnessPercent
-      ? `Hue shown at full brightness · LED at ${display.brightnessPercent}%`
-      : 'Off';
-    const evidenceLabel = frame?.source === 'simulation' ? 'Simulated colour' : 'Measured colour';
-    rgbSwatch.setAttribute('aria-label', `${evidenceLabel}: red ${rgb.red}, green ${rgb.green}, blue ${rgb.blue}`);
-    rgbOutput.textContent = `R ${rgb.red} · G ${rgb.green} · B ${rgb.blue}`;
-    for (const channel of ['red', 'green', 'blue']) {
-      bandOutputs[channel].textContent = `strength ${(frame?.bands[channel] ?? 0).toFixed(1)}`;
-    }
   };
 
   const unsubscribe = store.subscribe(render);

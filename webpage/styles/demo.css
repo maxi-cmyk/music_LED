@@ -95,22 +95,7 @@
 .spectrum-stage { margin: 0; }
 .spectrum-summary { padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--measure); font-size: 0.7rem; }
 
-.spectrum-reading-note { margin: 12px 0 0; color: var(--muted); font-size: 0.84rem; }
-.colour-output { display: grid; grid-template-columns: 150px minmax(180px, 0.55fr) minmax(400px, 1fr); gap: 28px; align-items: center; margin-top: 28px; padding: 28px; border-block: 1px solid var(--line); }
-.colour-mapping-note { grid-column: 1 / -1; max-width: 74ch; margin: 0; color: var(--muted); font-size: 0.84rem; }
-.rgb-swatch { width: 130px; aspect-ratio: 1; border-radius: 50%; background: #000; box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32); }
-.colour-readout { display: grid; gap: 8px; }
-.colour-readout span { color: var(--muted); }
-.colour-readout output { font-family: var(--measure); font-size: 1.08rem; }
-.colour-readout small { color: var(--muted); font-size: 0.74rem; }
 .connection-message[hidden] { display: none; }
-.band-readouts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; }
-.band-readouts div { padding: 14px 18px; border-left: 1px solid var(--line); }
-.band-readouts dt { font-weight: 700; }
-.band-readouts div:nth-child(1) dt { color: var(--red); }
-.band-readouts div:nth-child(2) dt { color: var(--green); }
-.band-readouts div:nth-child(3) dt { color: var(--blue); }
-.band-readouts dd { margin: 6px 0 0; color: var(--muted); font-family: var(--measure); font-size: 0.72rem; }
 
 .capture-workbench {
   scroll-margin-top: 94px;
@@ -251,17 +236,17 @@
 .capture-final-colour { display: flex; gap: 22px; align-items: center; padding-top: 28px; border-top: 1px solid var(--line); }
 .capture-rgb-swatch { width: 110px; aspect-ratio: 1; border-radius: 50%; box-shadow: 0 18px 45px rgba(0, 0, 0, 0.34); }
 .capture-final-colour output { font-family: var(--measure); font-size: 1rem; }
-.capture-band-composition { display: grid; gap: 12px; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
-.capture-band-composition > p { margin: 0; color: var(--muted); font-size: 0.7rem; }
+.capture-band-composition { display: grid; gap: 24px; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+.capture-band-composition > .math { font-size: 1.3rem; overflow-x: auto; }
 .capture-band-composition > .math .katex-display { margin: 0; text-align: left; }
 .capture-band-composition > .math .katex-display > .katex { text-align: left; }
 .capture-band-composition dl { display: grid; gap: 1px; margin: 0; background: var(--line); }
-.capture-band-composition dl div { display: grid; gap: 4px; padding: 10px 12px; background: var(--surface-raised); }
-.capture-band-composition dt { font-weight: 700; }
+.capture-band-composition dl div { display: grid; gap: 12px; padding: 20px 24px; background: var(--surface-raised); }
+.capture-band-composition dt { font-size: 1.15rem; font-weight: 700; }
 .capture-band-composition dl div:nth-child(1) dt { color: var(--red); }
 .capture-band-composition dl div:nth-child(2) dt { color: var(--green); }
 .capture-band-composition dl div:nth-child(3) dt { color: var(--blue); }
-.capture-band-composition dd { margin: 0; color: var(--muted); font-family: var(--measure); font-size: 0.7rem; overflow-wrap: anywhere; }
+.capture-band-composition dd { margin: 0; color: var(--muted); font-family: var(--measure); font-size: 0.9rem; overflow-wrap: anywhere; }
 
 .capture-stage-controls {
   display: grid;
@@ -279,9 +264,6 @@
   .physical-route { max-width: 660px; }
   .sound-console { grid-template-columns: 1fr; }
   .frequency-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .colour-output { grid-template-columns: 120px 1fr; }
-  .rgb-swatch { width: 104px; }
-  .band-readouts { grid-column: 1 / -1; }
   .capture-panel { grid-template-columns: 1fr; }
   .capture-stage-copy { border-right: 0; border-bottom: 1px solid var(--line); }
   .capture-stage-tabs { grid-template-columns: repeat(2, 1fr); }
@@ -297,10 +279,6 @@
   .serial-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .spectrum-toolbar { justify-content: flex-start; flex-wrap: wrap; }
   .capture-status { flex-basis: 100%; }
-  .colour-output { grid-template-columns: 84px 1fr; padding-inline: 0; }
-  .rgb-swatch { width: 76px; }
-  .band-readouts { grid-template-columns: 1fr; }
-  .band-readouts div { border-top: 1px solid var(--line); border-left: 0; }
   .capture-workbench-heading { align-items: stretch; flex-direction: column; }
   .capture-heading-actions { justify-items: stretch; }
   .capture-heading-actions output { text-align: left; }

@@ -52,7 +52,7 @@ createRouter({
   context: { store, audioController, serialSource },
   onRouteChange: (route, pageRoot) => {
     store.patch({ route });
-    document.title = `${{ demo: 'Toy example', live: 'Live ESP32', presenter: 'Presenter' }[route]} · Fourier Signal Bench`;
+    document.title = `${{ demo: 'Toy example', live: 'Live ESP32' }[route]} · Fourier Signal Bench`;
     routeLinks.forEach((link) => {
       if (link.dataset.routeLink === route) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
