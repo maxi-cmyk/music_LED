@@ -70,19 +70,62 @@
       </div>
 
       <div id="capture-panel-fft" class="capture-panel" data-capture-panel="3" role="tabpanel" aria-labelledby="capture-tab-fft" hidden>
-        <div class="capture-stage-copy">
-          <h4>How the FFT reaches the same X faster</h4>
-          <ol class="step-list fft-steps">
-            <li><span class="step-label">Split the samples into even and odd</span><div class="math" data-display="true" data-latex="\begin{aligned}X[k]&amp;=\underbrace{\sum_{m=0}^{63}x[2m]\,e^{-i2\pi mk/64}}_{E[k]}\\&amp;\quad+\;W_{128}^{k}\underbrace{\sum_{m=0}^{63}x[2m+1]\,e^{-i2\pi mk/64}}_{O[k]}\end{aligned}"></div><p><span class="math" data-latex="E[k]"></span> is a DFT of the 64 even samples, <span class="math" data-latex="O[k]"></span> a DFT of the 64 odd samples. Each is half the size of the original problem.</p></li>
-            <li><span class="step-label">Twiddle factor</span><div class="math" data-display="true" data-latex="W_{128}^{k}=e^{-i2\pi k/128}=\cos\tfrac{2\pi k}{128}-i\sin\tfrac{2\pi k}{128}"></div></li>
-            <li><span class="step-label">Butterfly: one rotation, two outputs</span><div class="math" data-display="true" data-latex="\begin{aligned}X[k]&amp;=E[k]+W_{128}^{k}O[k]\\X[k+64]&amp;=E[k]-W_{128}^{k}O[k]\end{aligned}"></div></li>
-            <li><span class="step-label">Split again until one sample is left</span>
-              <ol class="fft-split-ladder" aria-label="Repeated halving from one 128-sample DFT to 128 one-sample DFTs">
-                <li><b>1</b> DFT of <b>128</b></li><li><b>2</b> of <b>64</b></li><li><b>4</b> of <b>32</b></li><li><b>8</b> of <b>16</b></li><li><b>16</b> of <b>8</b></li><li><b>32</b> of <b>4</b></li><li><b>64</b> of <b>2</b></li><li><b>128</b> of <b>1</b></li>
-              </ol>
-              <p>A DFT of one sample is the sample itself. The FFT starts there and runs the butterflies back up: 7 levels (<span class="math" data-latex="\log_2 128"></span>) of 64 butterflies each, 448 in total, instead of <span class="math" data-latex="128^2=16{,}384"></span> weighted samples for the direct DFT.</p></li>
+        <section class="fft-derivation" aria-labelledby="fft-derivation-title">
+          <header><h4 id="fft-derivation-title">From the DFT to the FFT</h4><p>The same 128-point transform, rearranged so smaller results can be reused.</p></header>
+          <ol class="fft-derivation-steps">
+            <li>
+              <div class="fft-derivation-copy"><h5>Start with the 128-point DFT</h5><p>For each frequency bin k, multiply all 128 input samples by their Fourier weights and add.</p><p>Lowercase <span class="math" data-latex="x[n]"></span> is an input sample; uppercase <span class="math" data-latex="X[k]"></span> is an output coefficient.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="X[k]=\sum_{n=0}^{127}x[n]e^{-i2\pi kn/128}"></div><p class="fft-equation-note">Compute this for <span class="math" data-latex="k=0,\ldots,127"></span> to obtain all 128 outputs.</p></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Separate even and odd sample positions</h5><p>Write even positions as n = 2m and odd positions as n = 2m + 1. Both groups start at m = 0 and contain 64 samples.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}X[k]&amp;=\sum_{m=0}^{63}x[2m]e^{-i2\pi k(2m)/128}\\&amp;\quad+\sum_{m=0}^{63}x[2m+1]e^{-i2\pi k(2m+1)/128}\end{aligned}"></div><p class="fft-equation-note">Even samples: <span class="math" data-latex="x[0],x[2],\ldots,x[126]"></span>.<br>Odd samples: <span class="math" data-latex="x[1],x[3],\ldots,x[127]"></span>.</p></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Factor out the odd sample’s extra offset</h5><p>In the odd term, split 2m + 1 into the 2m part and the extra 1. The extra factor does not depend on m, so it comes outside the sum.</p><p>After simplifying, both sums use a denominator of 64.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}e^{-i2\pi k(2m+1)/128}&amp;=e^{-i2\pi km/64}e^{-i2\pi k/128}\\X[k]&amp;=\sum_{m=0}^{63}x[2m]e^{-i2\pi km/64}\\&amp;\quad+e^{-i2\pi k/128}\sum_{m=0}^{63}x[2m+1]e^{-i2\pi km/64}\end{aligned}"></div></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Name the two smaller DFTs</h5><p>The first sum is a 64-point DFT of the even samples, <span class="math" data-latex="E[k]"></span>. The second is a 64-point DFT of the odd samples, <span class="math" data-latex="O[k]"></span>.</p><p>The extra factor is the <strong>twiddle factor</strong>. It accounts for the odd samples’ one-sample offset.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}E[k]&amp;=\sum_{m=0}^{63}x[2m]e^{-i2\pi km/64}\\O[k]&amp;=\sum_{m=0}^{63}x[2m+1]e^{-i2\pi km/64}\\W_{128}^{k}&amp;=e^{-i2\pi k/128}\end{aligned}"></div><div class="math fft-key-equation" data-display="true" data-latex="X[k]=E[k]+W_{128}^{k}O[k]"></div></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Why do the smaller DFTs repeat after 64 bins?</h5><p>We need 128 outputs, but each smaller DFT has only 64 distinct bins. Replace k with k + 64 in its weight.</p><p>The extra factor is 1 because m is an integer: m whole turns leave the weight unchanged. Every term in both sums stays the same.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}e^{-i2\pi m(k+64)/64}&amp;=e^{-i2\pi mk/64}\underbrace{e^{-i2\pi m}}_{1}\\&amp;=e^{-i2\pi mk/64}\end{aligned}"></div><div class="math fft-key-equation" data-display="true" data-latex="E[k+64]=E[k],\qquad O[k+64]=O[k]"></div></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Why does the twiddle change sign?</h5><p>The twiddle uses a denominator of 128. Increasing k by 64 adds a half turn, which multiplies it by −1.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}W_{128}^{k+64}&amp;=e^{-i2\pi(k+64)/128}\\&amp;=e^{-i2\pi k/128}\underbrace{e^{-i\pi}}_{-1}\\&amp;=-W_{128}^{k}\end{aligned}"></div></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Use the same smaller results for two outputs</h5><p>Substitute those two facts into the formula for <span class="math" data-latex="X[k+64]"></span>. The even result stays the same; the odd contribution changes sign.</p><p>Compute <span class="math" data-latex="T=W_{128}^{k}O[k]"></span> once, then add or subtract it. This shared multiply and add/subtract pair is a <strong>butterfly</strong>.</p><p>For example, k = 4 gives bins 4 and 68. The pairs (0, 64), (1, 65), …, (63, 127) cover all 128 outputs.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}X[k+64]&amp;=E[k+64]+W_{128}^{k+64}O[k+64]\\&amp;=E[k]-W_{128}^{k}O[k]\end{aligned}"></div><div class="math fft-key-equation" data-display="true" data-latex="\begin{aligned}T&amp;=W_{128}^{k}O[k]\\X[k]&amp;=E[k]+T\\X[k+64]&amp;=E[k]-T\end{aligned}"></div><p class="fft-equation-note">Here, <span class="math" data-latex="0\leq k&lt;64"></span>.</p></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Recurse: split E[k] into two 32-point DFTs</h5><p>We still need to compute <span class="math" data-latex="E[k]"></span>. Split its index m into m = 2r and m = 2r + 1, exactly as before.</p><p>The original sample indices become 4r and 4r + 2. Name the resulting 32-point DFTs <span class="math" data-latex="E_{\mathrm{even}}[k]"></span> and <span class="math" data-latex="E_{\mathrm{odd}}[k]"></span>.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}E[k]&amp;=\sum_{r=0}^{31}x[4r]e^{-i2\pi k(2r)/64}\\&amp;\quad+\sum_{r=0}^{31}x[4r+2]e^{-i2\pi k(2r+1)/64}\end{aligned}"></div><div class="math" data-display="true" data-latex="\begin{aligned}E_{\mathrm{even}}[k]&amp;=\sum_{r=0}^{31}x[4r]e^{-i2\pi kr/32}\\E_{\mathrm{odd}}[k]&amp;=\sum_{r=0}^{31}x[4r+2]e^{-i2\pi kr/32}\end{aligned}"></div><div class="math fft-key-equation" data-display="true" data-latex="E[k]=E_{\mathrm{even}}[k]+W_{64}^{k}E_{\mathrm{odd}}[k]"></div><p class="fft-equation-note">Input groups: <span class="math" data-latex="x[0],x[4],\ldots,x[124]"></span> and <span class="math" data-latex="x[2],x[6],\ldots,x[126]"></span>.</p></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Recurse: split O[k] the same way</h5><p>In <span class="math" data-latex="O[k]"></span>, the same substitution gives original sample indices 4r + 1 and 4r + 3.</p><p>“Even” and “odd” now describe positions <strong>within the current group</strong>. Both children of O still contain odd-indexed original samples.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}O[k]&amp;=\sum_{r=0}^{31}x[4r+1]e^{-i2\pi k(2r)/64}\\&amp;\quad+\sum_{r=0}^{31}x[4r+3]e^{-i2\pi k(2r+1)/64}\end{aligned}"></div><div class="math" data-display="true" data-latex="\begin{aligned}O_{\mathrm{even}}[k]&amp;=\sum_{r=0}^{31}x[4r+1]e^{-i2\pi kr/32}\\O_{\mathrm{odd}}[k]&amp;=\sum_{r=0}^{31}x[4r+3]e^{-i2\pi kr/32}\end{aligned}"></div><div class="math fft-key-equation" data-display="true" data-latex="O[k]=O_{\mathrm{even}}[k]+W_{64}^{k}O_{\mathrm{odd}}[k]"></div><p class="fft-equation-note">Input groups: <span class="math" data-latex="x[1],x[5],\ldots,x[125]"></span> and <span class="math" data-latex="x[3],x[7],\ldots,x[127]"></span>.</p></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Each smaller DFT has its own butterflies</h5><p>Each parent is now a 64-point DFT. Its twiddle is <span class="math" data-latex="W_{64}^{k}=e^{-i2\pi k/64}"></span>, and its output pair is 32 bins apart.</p><p>For k = 0, …, 31, these pairs compute all 64 values of E and all 64 values of O. Those values feed the 128-point butterflies above.</p></div>
+              <div class="fft-derivation-equation"><div class="math fft-key-equation" data-display="true" data-latex="\begin{aligned}E[k]&amp;=E_{\mathrm{even}}[k]+W_{64}^{k}E_{\mathrm{odd}}[k]\\E[k+32]&amp;=E_{\mathrm{even}}[k]-W_{64}^{k}E_{\mathrm{odd}}[k]\end{aligned}"></div><div class="math fft-key-equation" data-display="true" data-latex="\begin{aligned}O[k]&amp;=O_{\mathrm{even}}[k]+W_{64}^{k}O_{\mathrm{odd}}[k]\\O[k+32]&amp;=O_{\mathrm{even}}[k]-W_{64}^{k}O_{\mathrm{odd}}[k]\end{aligned}"></div></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Repeat until a DFT contains one sample</h5><p>For any current transform of size N, let A and B be the DFTs of its even and odd positions. The same butterfly rule applies at every size.</p><p>Keep halving the <strong>transform size</strong> until each DFT contains one sample a. Its only output is a itself.</p><p>Then combine upward: 1-point results make 2-point results, then 4-point results, continuing to the full 128-point result.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}F_N[k]&amp;=A[k]+W_N^kB[k]\\F_N[k+N/2]&amp;=A[k]-W_N^kB[k]\end{aligned}"></div><p class="fft-equation-note">Here, <span class="math" data-latex="W_N^k=e^{-i2\pi k/N}"></span> and <span class="math" data-latex="0\leq k&lt;N/2"></span>.</p><div class="math" data-display="true" data-latex="128\to64\to32\to16\to8\to4\to2\to1"></div><div class="math fft-key-equation" data-display="true" data-latex="F_1[0]=a"></div><p class="fft-equation-note">The ESP32 implements this as an iterative radix-2 Cooley–Tukey FFT: bit-reverse the input order, then combine with butterflies of size 2, 4, 8, …, 128. The recursive explanation describes the same decomposition.</p></div>
+            </li>
+            <li>
+              <div class="fft-derivation-copy"><h5>Time complexity: why this saves work</h5><p>A direct DFT evaluates N weighted terms for each of N outputs. The FFT reuses smaller results across <span class="math" data-latex="\log_2N"></span> combining stages, with N/2 butterflies per stage.</p><p>For 128 samples, there are seven stages with 64 butterflies each. A weighted term and a butterfly involve different operations, so the counts below are not an exact speedup ratio.</p></div>
+              <div class="fft-derivation-equation"><div class="math" data-display="true" data-latex="\begin{aligned}\text{Direct DFT: }&amp;128\times128=16\,384\text{ weighted terms}\\\text{FFT: }&amp;\log_2 128=7\text{ stages}\\&amp;7\times64=448\text{ butterflies}\end{aligned}"></div><div class="math fft-key-equation" data-display="true" data-latex="\text{DFT: }O(N^2)\qquad\text{FFT: }O(N\log_2N)"></div></div>
+            </li>
           </ol>
-        </div>
+        </section>
+        <details class="fft-capture-details">
+          <summary>Numerical butterfly for this captured frame <span id="fft-capture-summary">128 samples</span></summary>
+          <div class="fft-capture-intro"><p>Substitute values from this frozen capture into the butterfly equations above.</p><label for="capture-fft-bin-select">Frequency bin <output id="capture-fft-frequency"></output></label><input id="capture-fft-bin-select" type="range" min="0" max="64" step="1" value="4" aria-label="Captured FFT coefficient bin"></div>
         <div class="capture-fft-evidence">
           <header><strong id="capture-fft-bin-label">The last butterfly for bin 4</strong><span>Every value below is traced from this frozen frame.</span></header>
           <div class="butterfly" role="group" aria-label="Butterfly diagram for the selected bin">
@@ -102,6 +145,7 @@
           <p id="capture-fft-conclusion" class="capture-fft-conclusion"></p>
           <p id="comparison-verdict" class="capture-fft-verdict" role="status"></p>
         </div>
+        </details>
       </div>
 
       <footer class="capture-stage-controls"><button id="capture-previous" class="secondary-button" type="button">Back</button><button id="capture-next" class="primary-button" type="button">Next</button></footer>

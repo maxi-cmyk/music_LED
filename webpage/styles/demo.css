@@ -189,12 +189,41 @@
 .capture-fft-evidence header strong { display: block; margin-bottom: 5px; color: var(--ink); font-size: 1rem; }
 .capture-fft-evidence header span { font-size: 0.7rem; }
 
-.fft-steps { margin-top: 22px; }
-.fft-steps .katex-display { font-size: clamp(0.9rem, 1.15vw, 1.02rem); }
-.fft-split-ladder { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; padding: 0; list-style: none; }
-.fft-split-ladder li { padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-raised); color: var(--muted); font-family: var(--measure); font-size: 0.72rem; }
-.fft-split-ladder li:not(:last-child)::after { content: " \2192"; color: var(--signal); }
-.fft-split-ladder b { color: var(--ink); font-weight: 400; }
+/* Keep the algebra as one reading path; numerical substitution is optional. */
+#capture-panel-fft { grid-template-columns: minmax(0, 1fr); }
+.fft-derivation { min-width: 0; padding: clamp(24px, 4vw, 48px); scroll-margin-top: 96px; }
+.fft-derivation > header h4 { margin: 0; font-family: var(--display); font-size: clamp(2rem, 3.2vw, 3rem); line-height: 1.05; }
+.fft-derivation > header p { max-width: 65ch; margin: 14px 0 0; color: var(--muted); font-size: 1rem; }
+.fft-derivation-steps { display: grid; gap: 0; list-style: none; margin: 36px 0 0; padding: 0; counter-reset: fft-derivation; }
+.fft-derivation-steps > li { display: grid; grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1.35fr); align-items: center; gap: clamp(24px, 4vw, 64px); min-width: 0; padding: 34px 0; border-top: 1px solid var(--line); counter-increment: fft-derivation; }
+.fft-derivation-steps > li:last-child { padding-bottom: 8px; }
+.fft-derivation-copy h5 { margin: 0 0 14px; font-family: var(--body); font-size: 1.1rem; line-height: 1.4; }
+.fft-derivation-copy h5::before { content: counter(fft-derivation) ' · '; color: var(--signal); font-family: var(--measure); font-weight: 400; }
+.fft-derivation-copy p { max-width: 45ch; margin: 12px 0 0; color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+.fft-derivation-equation { min-width: 0; overflow-x: auto; font-size: clamp(0.95rem, 1.35vw, 1.2rem); }
+.fft-derivation-equation > .math { display: block; min-width: 0; max-width: 100%; overflow-x: auto; }
+.fft-derivation-equation .katex-display { margin: 14px 0; text-align: left; }
+.fft-derivation-equation .katex-display > .katex { text-align: left; }
+.fft-key-equation { padding-top: 14px; color: var(--signal); }
+.fft-equation-note { max-width: 64ch; margin: 18px 0 0; color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+.fft-capture-details { min-width: 0; border-top: 1px solid var(--line); background: var(--background); }
+.fft-capture-details > summary { padding: 24px clamp(24px, 4vw, 48px); cursor: pointer; font-size: 0.9rem; }
+.fft-capture-details > summary span { margin-left: 16px; color: var(--muted); font-family: var(--measure); font-size: 0.68rem; }
+.fft-capture-details > summary:focus-visible { outline: 2px solid var(--signal); outline-offset: -4px; }
+.fft-capture-intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 0.5fr); align-items: center; gap: 12px 28px; padding: 0 clamp(24px, 4vw, 48px); }
+.fft-capture-intro p { grid-row: span 2; max-width: 65ch; color: var(--muted); font-size: 0.85rem; }
+.fft-capture-intro label { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 0.8rem; }
+.fft-capture-intro input { width: 100%; }
+@media (max-width: 980px) {
+  .fft-derivation-steps > li { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 28px 0; }
+  .fft-derivation-copy p { max-width: 65ch; }
+}
+@media (max-width: 600px) {
+  .fft-capture-intro { grid-template-columns: 1fr; }
+  .fft-capture-intro p { grid-row: auto; }
+  .fft-capture-details > summary span { display: block; margin: 8px 0 0; }
+  .fft-derivation-equation { font-size: 0.9rem; }
+}
 
 .butterfly { display: grid; grid-template-columns: minmax(0, 1fr) clamp(48px, 9vw, 120px) minmax(0, 1fr); align-items: stretch; min-width: 0; }
 .butterfly-inputs, .butterfly-outputs { display: grid; grid-template-rows: 1fr 1fr; gap: 16px; min-width: 0; }

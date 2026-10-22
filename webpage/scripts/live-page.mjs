@@ -1,4 +1,4 @@
-import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20260925-seeded-frame-1';
+import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20261022-fft-derivation-1';
 import { drawSpectrum } from './visualizations.mjs?release=20261009-demo-simplify-1';
 
 export function mount(root, { store, serialSource }) {
