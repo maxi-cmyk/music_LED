@@ -9,117 +9,136 @@
 
 namespace {
 
-bool sampleIsClipped(uint16_t sample) {
-  return sample <=
-             audio_config::kAdcMinimumValue + audio_config::kClippingMargin ||
-         sample >=
-             audio_config::kAdcMaximumValue - audio_config::kClippingMargin;
+bool sample_is_clipped(uint16_t sample) {
+    return sample <= audio_config::ADC_MINIMUM_VALUE
+                             + audio_config::CLIPPING_MARGIN
+           || sample >= audio_config::ADC_MAXIMUM_VALUE
+                                - audio_config::CLIPPING_MARGIN;
 }
 
-void waitUntilMicrosecondDeadline(uint32_t deadlineMicroseconds) {
-  while (static_cast<int32_t>(micros() - deadlineMicroseconds) < 0) {
-    delayMicroseconds(1);
-  }
+void wait_until_microsecond_deadline(uint32_t deadline_microseconds) {
+    while (static_cast<int32_t>(micros() - deadline_microseconds) < 0) {
+        delayMicroseconds(1);
+    }
+}
+
+struct SamplingSchedule {
+    uint32_t fractional_interval_accumulator = 0;
+    uint32_t next_deadline_microseconds = 0;
+};
+
+void advance_sampling_deadline(SamplingSchedule &schedule) {
+    uint32_t interval_microseconds
+            = fourier_config::BASE_SAMPLE_INTERVAL_MICROSECONDS;
+    schedule.fractional_interval_accumulator
+            += fourier_config::SAMPLE_INTERVAL_REMAINDER;
+    if (schedule.fractional_interval_accumulator
+        >= fourier_config::SAMPLING_FREQUENCY_HZ) {
+        ++interval_microseconds;
+        schedule.fractional_interval_accumulator
+                -= fourier_config::SAMPLING_FREQUENCY_HZ;
+    }
+    schedule.next_deadline_microseconds += interval_microseconds;
+    wait_until_microsecond_deadline(schedule.next_deadline_microseconds);
+}
+
+uint32_t record_audio_sample(fourier::AudioSamples &raw_samples,
+                             size_t sample_index,
+                             AudioSamplingDiagnostics &diagnostics,
+                             SamplingSchedule &schedule) {
+    const uint32_t sample_time_microseconds = micros();
+    const uint32_t lateness_microseconds
+            = sample_time_microseconds - schedule.next_deadline_microseconds;
+    if (lateness_microseconds > diagnostics.maximum_lateness_microseconds) {
+        diagnostics.maximum_lateness_microseconds = lateness_microseconds;
+    }
+    if (lateness_microseconds
+        >= fourier_config::BASE_SAMPLE_INTERVAL_MICROSECONDS) {
+        ++diagnostics.missed_deadlines;
+        schedule.next_deadline_microseconds = sample_time_microseconds;
+        schedule.fractional_interval_accumulator = 0;
+    }
+
+    const uint16_t raw_adc_sample
+            = static_cast<uint16_t>(analogRead(pins::MICROPHONE_ANALOG));
+    raw_samples.amplitude[sample_index] = static_cast<float>(raw_adc_sample);
+    if (sample_is_clipped(raw_adc_sample)) {
+        ++diagnostics.clipped_samples;
+    }
+    return sample_time_microseconds;
 }
 
 } // namespace
 
-void setupAudioSampler() {
-  pinMode(pins::kMicrophoneAnalog, INPUT);
-  analogReadResolution(12);
-  analogSetPinAttenuation(pins::kMicrophoneAnalog, ADC_11db);
+void setup_audio_sampler() {
+    pinMode(pins::MICROPHONE_ANALOG, INPUT);
+    analogReadResolution(audio_config::ADC_RESOLUTION_BITS);
+    analogSetPinAttenuation(pins::MICROPHONE_ANALOG, ADC_11db);
 }
 
-bool collectAudioSamples(fourier::AudioSamples *rawSamples,
-                         AudioSamplingDiagnostics *diagnostics) {
-  if (rawSamples == nullptr || diagnostics == nullptr)
-    return false;
-
-  *diagnostics = AudioSamplingDiagnostics{};
-  diagnostics->expectedSampleSpanMicroseconds =
-      fourier_config::kExpectedSampleSpanMicroseconds;
-  rawSamples->numberOfSamples = fourier_config::kNumberOfSamples;
-
-  uint32_t fractionalIntervalAccumulator = 0;
-  uint32_t nextSampleDeadlineMicroseconds = micros();
-  uint32_t firstSampleTimeMicroseconds = 0;
-  uint32_t lastSampleTimeMicroseconds = 0;
-
-  for (size_t sampleIndex = 0; sampleIndex < fourier_config::kNumberOfSamples;
-       ++sampleIndex) {
-    if (sampleIndex > 0) {
-      uint32_t intervalMicroseconds =
-          fourier_config::kBaseSampleIntervalMicroseconds;
-      fractionalIntervalAccumulator += fourier_config::kSampleIntervalRemainder;
-      if (fractionalIntervalAccumulator >=
-          fourier_config::kSamplingFrequencyHz) {
-        ++intervalMicroseconds;
-        fractionalIntervalAccumulator -= fourier_config::kSamplingFrequencyHz;
-      }
-      nextSampleDeadlineMicroseconds += intervalMicroseconds;
-      waitUntilMicrosecondDeadline(nextSampleDeadlineMicroseconds);
+bool collect_audio_samples(fourier::AudioSamples *raw_samples,
+                           AudioSamplingDiagnostics *diagnostics) {
+    if (raw_samples == nullptr || diagnostics == nullptr) {
+        return false;
     }
 
-    uint32_t sampleTimeMicroseconds = micros();
-    const uint32_t latenessMicroseconds =
-        sampleTimeMicroseconds - nextSampleDeadlineMicroseconds;
-    if (latenessMicroseconds > diagnostics->maximumLatenessMicroseconds) {
-      diagnostics->maximumLatenessMicroseconds = latenessMicroseconds;
+    *diagnostics = AudioSamplingDiagnostics{};
+    diagnostics->expected_sample_span_microseconds
+            = fourier_config::EXPECTED_SAMPLE_SPAN_MICROSECONDS;
+    raw_samples->number_of_samples = fourier_config::NUMBER_OF_SAMPLES;
+
+    SamplingSchedule schedule{};
+    schedule.next_deadline_microseconds = micros();
+    const uint32_t first_sample_time_microseconds
+            = record_audio_sample(*raw_samples, 0, *diagnostics, schedule);
+    uint32_t last_sample_time_microseconds = first_sample_time_microseconds;
+    for (size_t sample_index = 1;
+         sample_index < fourier_config::NUMBER_OF_SAMPLES; ++sample_index) {
+        advance_sampling_deadline(schedule);
+        last_sample_time_microseconds = record_audio_sample(
+                *raw_samples, sample_index, *diagnostics, schedule);
     }
-    if (latenessMicroseconds >=
-        fourier_config::kBaseSampleIntervalMicroseconds) {
-      ++diagnostics->missedDeadlines;
-      nextSampleDeadlineMicroseconds = sampleTimeMicroseconds;
-      fractionalIntervalAccumulator = 0;
+
+    diagnostics->sample_span_microseconds
+            = last_sample_time_microseconds - first_sample_time_microseconds;
+    if (diagnostics->sample_span_microseconds > 0) {
+        diagnostics->achieved_sampling_frequency_hz
+                = static_cast<float>(fourier_config::NUMBER_OF_SAMPLES - 1)
+                  * static_cast<float>(fourier_config::MICROSECONDS_PER_SECOND)
+                  / static_cast<float>(diagnostics->sample_span_microseconds);
     }
-
-    const uint16_t rawAdcSample =
-        static_cast<uint16_t>(analogRead(pins::kMicrophoneAnalog));
-    rawSamples->amplitude[sampleIndex] = static_cast<float>(rawAdcSample);
-    if (sampleIsClipped(rawAdcSample))
-      ++diagnostics->clippedSamples;
-
-    if (sampleIndex == 0)
-      firstSampleTimeMicroseconds = sampleTimeMicroseconds;
-    lastSampleTimeMicroseconds = sampleTimeMicroseconds;
-  }
-
-  diagnostics->sampleSpanMicroseconds =
-      lastSampleTimeMicroseconds - firstSampleTimeMicroseconds;
-  if (diagnostics->sampleSpanMicroseconds > 0) {
-    diagnostics->achievedSamplingFrequencyHz =
-        static_cast<float>(fourier_config::kNumberOfSamples - 1) *
-        static_cast<float>(fourier_config::kMicrosecondsPerSecond) /
-        static_cast<float>(diagnostics->sampleSpanMicroseconds);
-  }
-  return true;
+    return true;
 }
 
-float measureMicrophoneNoiseRms() {
-  // ADC2 can produce a short transient after its pin and attenuation are
-  // configured. Let the microphone/ADC settle and discard initial conversions
-  // so that transient cannot become the fixed noise floor for the whole run.
-  delay(audio_config::kMicrophoneSettleMilliseconds);
-  for (size_t discardedSample = 0;
-       discardedSample < audio_config::kNoiseCalibrationDiscardSamples;
-       ++discardedSample) {
-    analogRead(pins::kMicrophoneAnalog);
-    delayMicroseconds(audio_config::kNoiseCalibrationIntervalMicroseconds);
-  }
+float measure_microphone_noise_rms() {
+    // ADC2 can produce a short transient after its pin and attenuation are
+    // configured. Let the microphone/ADC settle and discard initial conversions
+    // so that transient cannot become the fixed noise floor for the whole run.
+    delay(audio_config::MICROPHONE_SETTLE_MILLISECONDS);
+    for (size_t discarded_sample = 0;
+         discarded_sample < audio_config::NOISE_CALIBRATION_DISCARD_SAMPLES;
+         ++discarded_sample) {
+        analogRead(pins::MICROPHONE_ANALOG);
+        delayMicroseconds(
+                audio_config::NOISE_CALIBRATION_INTERVAL_MICROSECONDS);
+    }
 
-  float runningMean = 0.0f;
-  float sumSquaredDifferences = 0.0f;
-  for (size_t sampleNumber = 1;
-       sampleNumber <= audio_config::kNoiseCalibrationSamples; ++sampleNumber) {
-    const float sample =
-        static_cast<float>(analogRead(pins::kMicrophoneAnalog));
-    const float differenceFromPreviousMean = sample - runningMean;
-    runningMean +=
-        differenceFromPreviousMean / static_cast<float>(sampleNumber);
-    sumSquaredDifferences +=
-        differenceFromPreviousMean * (sample - runningMean);
-    delayMicroseconds(audio_config::kNoiseCalibrationIntervalMicroseconds);
-  }
-  return sqrtf(sumSquaredDifferences /
-               static_cast<float>(audio_config::kNoiseCalibrationSamples - 1));
+    float running_mean = 0.0f;
+    float sum_squared_differences = 0.0f;
+    for (size_t sample_number = 1;
+         sample_number <= audio_config::NOISE_CALIBRATION_SAMPLES;
+         ++sample_number) {
+        const float sample
+                = static_cast<float>(analogRead(pins::MICROPHONE_ANALOG));
+        const float difference_from_previous_mean = sample - running_mean;
+        running_mean += difference_from_previous_mean
+                        / static_cast<float>(sample_number);
+        sum_squared_differences
+                += difference_from_previous_mean * (sample - running_mean);
+        delayMicroseconds(
+                audio_config::NOISE_CALIBRATION_INTERVAL_MICROSECONDS);
+    }
+    return sqrtf(
+            sum_squared_differences
+            / static_cast<float>(audio_config::NOISE_CALIBRATION_SAMPLES - 1));
 }

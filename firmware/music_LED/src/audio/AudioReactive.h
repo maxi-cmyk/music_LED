@@ -4,28 +4,28 @@
 #include <stdint.h>
 
 struct LiveAudioDiagnostics {
-  uint32_t sampleSpanMicroseconds = 0;
-  uint32_t expectedSampleSpanMicroseconds = 0;
-  uint32_t maximumLatenessMicroseconds = 0;
-  uint16_t missedSampleDeadlines = 0;
-  uint16_t clippedSamples = 0;
-  float achievedSamplingFrequencyHz = 0.0f;
-  float centeredRootMeanSquare = 0.0f;
-  float noiseFloorRootMeanSquare = 0.0f;
-  float silenceThresholdRootMeanSquare = 0.0f;
-  size_t dominantFrequencyBinIndex = 0;
-  float dominantFrequencyHz = 0.0f;
-  float dominantMagnitude = 0.0f;
-  float bassStrength = 0.0f;
-  float midrangeStrength = 0.0f;
-  float trebleStrength = 0.0f;
-  uint8_t redBrightness = 0;
-  uint8_t greenBrightness = 0;
-  uint8_t blueBrightness = 0;
-  bool signalAboveSilenceThreshold = false;
+    uint32_t sample_span_microseconds = 0;
+    uint32_t expected_sample_span_microseconds = 0;
+    uint32_t maximum_lateness_microseconds = 0;
+    uint16_t missed_sample_deadlines = 0;
+    uint16_t clipped_samples = 0;
+    float achieved_sampling_frequency_hz = 0.0f;
+    float centered_root_mean_square = 0.0f;
+    float noise_floor_root_mean_square = 0.0f;
+    float silence_threshold_root_mean_square = 0.0f;
+    size_t dominant_frequency_bin_index = 0;
+    float dominant_frequency_hz = 0.0f;
+    float dominant_magnitude = 0.0f;
+    float bass_strength = 0.0f;
+    float midrange_strength = 0.0f;
+    float treble_strength = 0.0f;
+    uint8_t red_brightness = 0;
+    uint8_t green_brightness = 0;
+    uint8_t blue_brightness = 0;
+    bool signal_above_silence_threshold = false;
 };
 
-void setupAudioReactive();
-void updateAudioReactive();
-void stopAudioReactive();
-const LiveAudioDiagnostics &liveAudioDiagnostics();
+void setup_audio_reactive();
+void update_audio_reactive();
+void stop_audio_reactive();
+const LiveAudioDiagnostics &live_audio_diagnostics();

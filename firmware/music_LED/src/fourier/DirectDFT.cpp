@@ -6,40 +6,48 @@
 
 namespace fourier {
 
-bool computeDirectDFT(const AudioSamples &timeDomainSamples,
-                      FrequencySpectrum *frequencyDomainCoefficients) {
-  if (frequencyDomainCoefficients == nullptr)
-    return false;
-  frequencyDomainCoefficients->numberOfSamples = 0;
+bool compute_direct_dft(const AudioSamples &time_domain_samples,
+                        FrequencySpectrum *frequency_domain_coefficients) {
+    if (frequency_domain_coefficients == nullptr) {
+        return false;
+    }
+    frequency_domain_coefficients->number_of_samples = 0;
 
-  const size_t numberOfSamples = timeDomainSamples.numberOfSamples;
-  if (!fourier_config::isSupportedSampleCount(numberOfSamples))
-    return false;
-
-  // Each outer-loop iteration is one row of the Fourier matrix multiplied by
-  // the time-domain vector. Matrix entry F[k,n] is exp(-2 pi i k n / N).
-  for (size_t frequencyBinIndex = 0; frequencyBinIndex < numberOfSamples;
-       ++frequencyBinIndex) {
-    float frequencyDomainReal = 0.0f;
-    float frequencyDomainImaginary = 0.0f;
-
-    for (size_t sampleIndex = 0; sampleIndex < numberOfSamples; ++sampleIndex) {
-      const float angleRadians =
-          -2.0f * fourier_config::kPi * static_cast<float>(frequencyBinIndex) *
-          static_cast<float>(sampleIndex) / static_cast<float>(numberOfSamples);
-      const float timeDomainAmplitude =
-          timeDomainSamples.amplitude[sampleIndex];
-      frequencyDomainReal += timeDomainAmplitude * cosf(angleRadians);
-      frequencyDomainImaginary += timeDomainAmplitude * sinf(angleRadians);
+    const size_t number_of_samples = time_domain_samples.number_of_samples;
+    if (!fourier_config::is_supported_sample_count(number_of_samples)) {
+        return false;
     }
 
-    frequencyDomainCoefficients->real[frequencyBinIndex] = frequencyDomainReal;
-    frequencyDomainCoefficients->imaginary[frequencyBinIndex] =
-        frequencyDomainImaginary;
-  }
+    // Each outer-loop iteration is one row of the Fourier matrix multiplied by
+    // the time-domain vector. Matrix entry F[k,n] is exp(-2 pi i k n / N).
+    for (size_t frequency_bin_index = 0;
+         frequency_bin_index < number_of_samples; ++frequency_bin_index) {
+        float frequency_domain_real = 0.0f;
+        float frequency_domain_imaginary = 0.0f;
 
-  frequencyDomainCoefficients->numberOfSamples = numberOfSamples;
-  return true;
+        for (size_t sample_index = 0; sample_index < number_of_samples;
+             ++sample_index) {
+            const float angle_radians
+                    = -2.0f * fourier_config::FOURIER_PI
+                      * static_cast<float>(frequency_bin_index)
+                      * static_cast<float>(sample_index)
+                      / static_cast<float>(number_of_samples);
+            const float time_domain_amplitude
+                    = time_domain_samples.amplitude[sample_index];
+            frequency_domain_real
+                    += time_domain_amplitude * cosf(angle_radians);
+            frequency_domain_imaginary
+                    += time_domain_amplitude * sinf(angle_radians);
+        }
+
+        frequency_domain_coefficients->real[frequency_bin_index]
+                = frequency_domain_real;
+        frequency_domain_coefficients->imaginary[frequency_bin_index]
+                = frequency_domain_imaginary;
+    }
+
+    frequency_domain_coefficients->number_of_samples = number_of_samples;
+    return true;
 }
 
 } // namespace fourier

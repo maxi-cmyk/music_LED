@@ -6,65 +6,68 @@
 
 namespace {
 
-float weightedChannel(float bandStrength, float channelGain) {
-  return bandStrength > 0.0f ? bandStrength * channelGain : 0.0f;
+float weighted_channel(float band_strength, float channel_gain) {
+    return band_strength > 0.0f ? band_strength * channel_gain : 0.0f;
 }
 
-float suppressCrossBandLeakage(float weightedStrength,
-                               float strongestWeightedStrength) {
-  if (strongestWeightedStrength <= 0.0f)
-    return 0.0f;
-  const float leakageFloor = lighting_config::kCrossBandLeakageRatio *
-                             strongestWeightedStrength;
-  const float cleanedStrength =
-      (weightedStrength - leakageFloor) /
-      (1.0f - lighting_config::kCrossBandLeakageRatio);
-  return cleanedStrength > 0.0f ? cleanedStrength : 0.0f;
+float suppress_cross_band_leakage(float weighted_strength,
+                                  float strongest_weighted_strength) {
+    if (strongest_weighted_strength <= 0.0f) {
+        return 0.0f;
+    }
+    const float leakage_floor = lighting_config::CROSS_BAND_LEAKAGE_RATIO
+                                * strongest_weighted_strength;
+    const float cleaned_strength
+            = (weighted_strength - leakage_floor)
+              / (1.0f - lighting_config::CROSS_BAND_LEAKAGE_RATIO);
+    return cleaned_strength > 0.0f ? cleaned_strength : 0.0f;
 }
 
-uint8_t scaledChannel(float cleanedStrength) {
-  float brightness =
-      cleanedStrength * lighting_config::kBrightnessPerMagnitudeUnit;
-  if (brightness < 0.0f)
-    brightness = 0.0f;
-  if (brightness > lighting_config::kMaximumChannelBrightness) {
-    brightness = lighting_config::kMaximumChannelBrightness;
-  }
-  return static_cast<uint8_t>(ceilf(brightness));
+uint8_t scaled_channel(float cleaned_strength) {
+    float brightness
+            = cleaned_strength * lighting_config::BRIGHTNESS_PER_MAGNITUDE_UNIT;
+    if (brightness < 0.0f) {
+        brightness = 0.0f;
+    }
+    if (brightness > lighting_config::MAXIMUM_CHANNEL_BRIGHTNESS) {
+        brightness = lighting_config::MAXIMUM_CHANNEL_BRIGHTNESS;
+    }
+    return static_cast<uint8_t>(ceilf(brightness));
 }
 
 } // namespace
 
-FrequencyBandStrengths
-calculateFrequencyBandStrengths(const fourier::SpectrumMagnitudes &magnitudes) {
-  return {
-      fourier::calculateBandStrength(magnitudes, lighting_config::kBassFirstBin,
-                                     lighting_config::kBassLastBin),
-      fourier::calculateBandStrength(magnitudes,
-                                     lighting_config::kMidrangeFirstBin,
-                                     lighting_config::kMidrangeLastBin),
-      fourier::calculateBandStrength(magnitudes,
-                                     lighting_config::kTrebleFirstBin,
-                                     lighting_config::kTrebleLastBin),
-  };
+FrequencyBandStrengths calculate_frequency_band_strengths(
+        const fourier::SpectrumMagnitudes &magnitudes) {
+    return {
+            fourier::calculate_band_strength(magnitudes,
+                                             lighting_config::BASS_FIRST_BIN,
+                                             lighting_config::BASS_LAST_BIN),
+            fourier::calculate_band_strength(
+                    magnitudes, lighting_config::MIDRANGE_FIRST_BIN,
+                    lighting_config::MIDRANGE_LAST_BIN),
+            fourier::calculate_band_strength(magnitudes,
+                                             lighting_config::TREBLE_FIRST_BIN,
+                                             lighting_config::TREBLE_LAST_BIN),
+    };
 }
 
 RgbBrightness
-mapFrequencyBandsToRgb(const FrequencyBandStrengths &bandStrengths) {
-  const float weightedRed =
-      weightedChannel(bandStrengths.bass, lighting_config::kRedChannelGain);
-  const float weightedGreen = weightedChannel(
-      bandStrengths.midrange, lighting_config::kGreenChannelGain);
-  const float weightedBlue = weightedChannel(
-      bandStrengths.treble, lighting_config::kBlueChannelGain);
-  const float strongestWeightedStrength =
-      fmaxf(weightedRed, fmaxf(weightedGreen, weightedBlue));
-  return {
-      scaledChannel(
-          suppressCrossBandLeakage(weightedRed, strongestWeightedStrength)),
-      scaledChannel(
-          suppressCrossBandLeakage(weightedGreen, strongestWeightedStrength)),
-      scaledChannel(
-          suppressCrossBandLeakage(weightedBlue, strongestWeightedStrength)),
-  };
+map_frequency_bands_to_rgb(const FrequencyBandStrengths &band_strengths) {
+    const float weighted_red = weighted_channel(
+            band_strengths.bass, lighting_config::RED_CHANNEL_GAIN);
+    const float weighted_green = weighted_channel(
+            band_strengths.midrange, lighting_config::GREEN_CHANNEL_GAIN);
+    const float weighted_blue = weighted_channel(
+            band_strengths.treble, lighting_config::BLUE_CHANNEL_GAIN);
+    const float strongest_weighted_strength
+            = fmaxf(weighted_red, fmaxf(weighted_green, weighted_blue));
+    return {
+            scaled_channel(suppress_cross_band_leakage(
+                    weighted_red, strongest_weighted_strength)),
+            scaled_channel(suppress_cross_band_leakage(
+                    weighted_green, strongest_weighted_strength)),
+            scaled_channel(suppress_cross_band_leakage(
+                    weighted_blue, strongest_weighted_strength)),
+    };
 }

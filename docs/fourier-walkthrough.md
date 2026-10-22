@@ -72,7 +72,7 @@ $$
 \mathbf{X} = F\mathbf{x}.
 $$
 
-Row $k$ of $F$ represents one complex sinusoidal frequency pattern. Multiplying that row by $\mathbf{x}$ produces coefficient $X[k]$. The nested loops in `computeDirectDFT` perform exactly these row-by-vector products without storing the whole matrix.
+Row $k$ of $F$ represents one complex sinusoidal frequency pattern. Multiplying that row by $\mathbf{x}$ produces coefficient $X[k]$. The nested loops in `compute_direct_dft` perform exactly these row-by-vector products without storing the whole matrix.
 
 For example, row $k=1$ of $F_4$ uses the four phases
 
