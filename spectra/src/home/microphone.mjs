@@ -1,4 +1,4 @@
-import { SIGNAL_CONFIG } from '../../webpage/scripts/signal-analysis.mjs';
+import { SIGNAL_CONFIG } from '../../../webpage/scripts/signal-analysis.mjs';
 import { createFrameSampler, createMicResponse } from './mic-response.mjs';
 
 export function createMicrophone(onState = () => {}, environment = globalThis) {

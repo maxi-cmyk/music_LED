@@ -120,3 +120,57 @@ main > .intro { position: relative; z-index: 1; }
   overflow-wrap: anywhere;
 }
 .mic-status:empty { display: none; }
+
+.overview { position: fixed; inset: 0; background: #000; }
+.overview .home {
+  position: absolute; bottom: 2.5rem; right: 2.5rem; padding: 0 0 0.3rem;
+  background: none; border: 0; border-bottom: 1px solid var(--chalk);
+  color: var(--chalk); font: inherit; font-size: 1.25rem; cursor: pointer;
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+main { animation: fade-in 0.8s ease-out; }
+.overview .home { animation: fade-in 0.8s ease-out 1s backwards; }
+
+.frame { position: absolute; top: 46%; left: 50%; width: min(80%, 144vh); transform: translate(-50%, -50%); overflow: visible; }
+.frame .axis { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 4 6; }
+.frame .wave { fill: none; stroke: var(--dim); stroke-width: 1.5; opacity: 0.5; }
+.frame .reading { opacity: 0; animation: fade-in 0.25s ease-out forwards; }
+.frame .reading line { stroke: var(--chalk); stroke-width: 1; opacity: 0.35; }
+.frame .reading circle { fill: var(--chalk); }
+.frame .bracket { opacity: 0; animation: fade-in 0.8s ease-out forwards; }
+.frame .bracket path { fill: none; stroke: var(--chalk); stroke-width: 1.5; }
+.frame .bracket text { fill: var(--chalk); font-size: 16px; letter-spacing: 0.08em; }
+
+.caption { position: absolute; bottom: 12vh; left: 50%; width: min(100ch, 92%); transform: translateX(-50%); text-align: center; animation: fade-in 0.8s ease-out 2s backwards; }
+.caption p { margin: 0; text-wrap: balance; color: var(--dim); font-size: 1.05rem; line-height: 1.6; }
+
+.frame .avg { stroke: var(--chalk); stroke-width: 1; stroke-dasharray: 2 5; }
+.frame .avg-label, .frame .step { fill: var(--dim); font-size: 20px; letter-spacing: 0.08em; }
+.frame .step { fill: var(--chalk); }
+.frame .window { stroke: #5cbcff; stroke-width: 1.5; stroke-dasharray: 4 5; }
+.frame .step { letter-spacing: 0.02em; }
+
+.frame .tone { fill: none; stroke: var(--chalk); stroke-width: 1.5; }
+.frame .base { stroke: var(--chalk); stroke-width: 1; }
+.frame .bar { fill: var(--chalk); }
+.frame .zone { font-size: 16px; letter-spacing: 0.02em; }
+
+/* nav: hover the left edge to reveal a tall, scrollable list (scrollbar hidden) of every step */
+.edge { position: absolute; top: 0; bottom: 0; left: 0; width: 3rem; }
+.rail {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 17rem; padding: 50vh 0;
+  overflow: hidden; /* scrolled by script in Overview.jsx */
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.edge:hover + .rail, .rail:hover, .rail:focus-within { opacity: 1; pointer-events: auto; }
+.ticks { position: relative; }
+.ticks::before { content: ''; position: absolute; left: 2.5rem; top: 1.5rem; bottom: 1.5rem; border-left: 1px solid var(--dim); }
+.rail button {
+  position: relative; display: block; height: 3rem; margin-left: 2.5rem; padding: 0 0 0 2.2rem; text-align: left;
+  background: none; border: 0; color: var(--dim); font: inherit; font-size: 1rem; cursor: pointer;
+}
+.rail button::before { content: ''; position: absolute; left: 0; top: 50%; width: 0.7rem; border-top: 1px solid var(--dim); }
+.rail button.first::before { width: 1.3rem; }
+.rail button:hover, .rail button.on { color: var(--chalk); }
+.rail button:hover::before, .rail button.on::before { width: 1.8rem; border-color: var(--chalk); border-top-width: 2px; }

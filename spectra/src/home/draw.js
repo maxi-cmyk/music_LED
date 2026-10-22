@@ -76,12 +76,26 @@ export default function start(host, onMicState) {
   const gizmo = new ViewHelper(camera, renderer.domElement);
   gizmo.center = controls.target;
   gizmo.location.right = 8;
+  // ViewHelper's own animation slerps through a degenerate lookAt at the poles (red -> green swings sideways),
+  // so read where it would end up and animate polar/azimuth angles ourselves.
+  let snap = null;
   renderer.domElement.addEventListener('pointerdown', (e) => {
+    snap = null;
+    const pos = camera.position.clone(), quat = camera.quaternion.clone();
     if (!gizmo.handleClick(e)) return;
     e.stopImmediatePropagation(); // don't start an orbit drag from the gizmo
     controls.autoRotate = false;
+    const from = new THREE.Spherical().setFromVector3(pos.clone().sub(controls.target));
+    gizmo.update(1e3); // jump to the end of the animation, then undo
+    const to = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+    camera.position.copy(pos); camera.quaternion.copy(quat);
+    if (Math.sin(to.phi) < 0.01) { // at a pole azimuth is undefined: keep the current one
+      to.phi = to.phi < 1 ? 0.001 : Math.PI - 0.001;
+      to.theta = from.theta;
+    }
+    const turn = ((to.theta - from.theta + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    snap = { from, dPhi: to.phi - from.phi, dTheta: turn, t: 0 };
   }, { capture: true });
-  const clock = new THREE.Clock();
 
   const resize = () => {
     const w = host.clientWidth, h = host.clientHeight;
@@ -120,11 +134,16 @@ export default function start(host, onMicState) {
     tip.position.set(x, y, 0);
     push(sumTrail, x, y);
 
+    if (snap) {
+      snap.t = Math.min(snap.t + dt / 0.5, 1);
+      const k = snap.t * snap.t * (3 - 2 * snap.t);
+      camera.position.setFromSphericalCoords(snap.from.radius, snap.from.phi + snap.dPhi * k, snap.from.theta + snap.dTheta * k).add(controls.target);
+      if (snap.t === 1) snap = null;
+    }
     controls.update();
     renderer.autoClear = true;
     renderer.render(scene, camera);
     renderer.autoClear = false;
-    if (gizmo.animating) gizmo.update(clock.getDelta()); else clock.getDelta();
     gizmo.render(renderer);
     raf = requestAnimationFrame(frame);
   })();

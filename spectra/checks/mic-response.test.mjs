@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { analyseSamples } from '../../webpage/scripts/signal-analysis.mjs';
-import { createMicResponse, createFrameSampler } from '../src/mic-response.mjs';
-import { createMicrophone } from '../src/microphone.mjs';
+import { createMicResponse, createFrameSampler } from '../src/home/mic-response.mjs';
+import { createMicrophone } from '../src/home/microphone.mjs';
 
 const tone = (frequencies, amplitude = 0.01, rate = 6400, length = 128) =>
   Float64Array.from({ length }, (_, n) => frequencies.reduce((sum, [hz, strength = 1]) =>

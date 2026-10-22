@@ -1,4 +1,4 @@
-import { analyseSamples, SIGNAL_CONFIG } from '../../webpage/scripts/signal-analysis.mjs';
+import { analyseSamples, SIGNAL_CONFIG } from '../../../webpage/scripts/signal-analysis.mjs';
 
 export const CHANNELS = ['red', 'green', 'blue'];
 export const REST_RADIUS = 0.35;

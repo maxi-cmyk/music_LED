@@ -1,8 +1,12 @@
-import Epicycles from './Epicycles.jsx';
+import { useState } from 'react';
+import Epicycles from './home/Epicycles.jsx';
+import Overview from './overview/Overview.jsx';
 
 const TOPICS = ['Project Overview', 'Fourier Analysis', 'Common Questions'];
 
 export default function App() {
+  const [view, setView] = useState('home');
+  if (view === 'overview') return <Overview onHome={() => setView('home')} />;
   return (
     <main>
       <section className="intro">
@@ -11,7 +15,7 @@ export default function App() {
         <p className="blurb">Explaining fourier transformation, simplified with visual diagrams</p>
         <ul className="topics">
           {TOPICS.map((t, i) => (
-            <li key={t}><a href="#"><span>{String(i + 1).padStart(2, '0')}</span>{t}</a></li>
+            <li key={t}><a href="#" onClick={(e) => { e.preventDefault(); if (i === 0) setView('overview'); }}><span>{String(i + 1).padStart(2, '0')}</span>{t}</a></li>
           ))}
         </ul>
       </section>
