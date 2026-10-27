@@ -1,6 +1,6 @@
 import { W, MID, PAD, TONES } from './Frame.jsx';
 import { seg, easeCubic } from './ease.js';
-import { ROWS, DOWN, BAR, BANDS, bandOf, tone, pts, lerp } from './Split.jsx';
+import { CENTRE, DOWN, BAR, BANDS, bandOf, tone, pts, lerp } from './Split.jsx';
 
 export const GAIN = [1, 0.82, 0.92]; // firmware's per-channel balance: red, green, blue
 export const LEAK = 0.15; // anything under 15% of the strongest channel is switched off
@@ -14,7 +14,7 @@ const AMP = 100; // keep equal to Frame.jsx's AMP
 export const groups = BANDS.map(([name, , color], b) => {
   const idx = TONES.map((_, k) => k).filter((k) => bandOf(TONES[k]) === b);
   const total = idx.reduce((sum, k) => sum + TONES[k][1], 0);
-  const start = idx.reduce((sum, k) => sum + ROWS[k], 0) / idx.length + DOWN; // where page 3 left this band's wave
+  const start = CENTRE[b] + DOWN; // where page 3 left this band's wave
   return { name, color, idx, total, start, weighted: total * GAIN[b] };
 });
 const strongest = Math.max(...groups.map((g) => g.weighted));

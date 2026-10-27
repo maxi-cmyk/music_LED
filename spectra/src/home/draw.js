@@ -75,7 +75,7 @@ export default function start(host, onMicState) {
   // axis orientation gizmo; click an axis to snap the camera there
   const gizmo = new ViewHelper(camera, renderer.domElement);
   gizmo.center = controls.target;
-  gizmo.location.right = 8;
+  gizmo.location.right = -18; // axes span ~39px each side of the 128px box's centre (+X sphere centre at 32px, radius ~7px): -23 is exactly flush with the container's edge, so a little less to keep the red sphere uncut
   // ViewHelper's own animation slerps through a degenerate lookAt at the poles (red -> green swings sideways),
   // so read where it would end up and animate polar/azimuth angles ourselves.
   let snap = null;
@@ -100,7 +100,10 @@ export default function start(host, onMicState) {
   const resize = () => {
     const w = host.clientWidth, h = host.clientHeight;
     renderer.setSize(w, h, false);
-    gizmo.location.bottom = h * 0.07; // keep clear of the page's bottom edge
+    // the gizmo's axes fill ~76px of its 128px box, so its right edge sits flush with the container's and its bottom edge sits as far
+    // from the page bottom as the container is from the page's right side (the mic button's top uses the same gap in style.css)
+    const gap = window.innerWidth - host.getBoundingClientRect().right;
+    gizmo.location.bottom = gap - 25; // axes bottom edge ~25px above the box bottom (64 - 39)
     camera.aspect = w / h;
     // keep the horizontal field of view constant so narrow containers don't crop the sides
     camera.fov = Math.min(80, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(30)) / Math.min(1, camera.aspect))));

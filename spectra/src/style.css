@@ -1,6 +1,7 @@
 :root {
   --chalk: #f2f2ec;
   --dim: #9a9a94;
+  --gap: calc((8vw - 5vh) * 0.67); /* mic button and gizmo distance from the page's top/right/bottom edges */
 }
 
 * { box-sizing: border-box; }
@@ -75,6 +76,7 @@ h1 {
   color: var(--chalk);
   font-size: 2rem;
   text-decoration: none;
+  white-space: nowrap;
   transition: padding-right 0.25s;
 }
 
@@ -91,11 +93,11 @@ h1 {
   justify-self: end; /* right edge stays inside the page padding; extra size grows left, behind the text */
   height: 100vh;
   aspect-ratio: 1;
-  transform: translateX(5%);
+  transform: translateX(calc(8vw - var(--gap))); /* pushes the container's right edge to --gap from the page edge */
 }
 #epicycles canvas { width: 100%; height: 100%; display: block; cursor: grab; }
 #epicycles button {
-  position: absolute; top: 8vh; right: 0; z-index: 2;
+  position: absolute; top: var(--gap); right: 0; z-index: 2;
   display: grid; place-items: center; width: 3rem; height: 3rem; padding: 0;
   background: none; color: var(--chalk); border: 1px solid var(--chalk); border-radius: 50%; cursor: pointer;
 }
@@ -122,15 +124,12 @@ main > .intro { position: relative; z-index: 1; }
 .mic-status:empty { display: none; }
 
 .overview { position: fixed; inset: 0; background: #000; }
-.overview .home {
-  position: absolute; bottom: 2.5rem; right: 2.5rem; padding: 0 0 0.3rem;
-  background: none; border: 0; border-bottom: 1px solid var(--chalk);
-  color: var(--chalk); font: inherit; font-size: 1.25rem; cursor: pointer;
-}
+.overview .controls { position: absolute; top: 2rem; right: 2.5rem; display: flex; gap: 1.2rem; }
+.overview .controls button { display: grid; padding: 0.3rem; background: none; border: 0; color: var(--dim); cursor: pointer; transition: color 0.3s; }
+.overview .controls button:hover, .overview .controls button.on { color: var(--chalk); }
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 main { animation: fade-in 0.8s ease-out; }
-.overview .home { animation: fade-in 0.8s ease-out 1s backwards; }
 
 .frame { position: absolute; top: 46%; left: 50%; width: min(80%, 144vh); transform: translate(-50%, -50%); overflow: visible; }
 .frame .axis { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 4 6; }
@@ -157,20 +156,26 @@ main { animation: fade-in 0.8s ease-out; }
 .frame .zone { font-size: 16px; letter-spacing: 0.02em; }
 
 /* nav: hover the left edge to reveal a tall, scrollable list (scrollbar hidden) of every step */
-.edge { position: absolute; top: 0; bottom: 0; left: 0; width: 3rem; }
+.edge { position: absolute; top: 0; bottom: 0; left: 0; width: 17rem; }
+@property --h { syntax: '<length>'; inherits: true; initial-value: 8rem; }
+@property --f { syntax: '<length>'; inherits: true; initial-value: 3.2rem; }
 .rail {
+  --h: 8rem; --f: 3.2rem; /* half-height of the visible band; the outer --f of each end fades out */
   position: absolute; top: 0; bottom: 0; left: 0; width: 17rem; padding: 50vh 0;
   overflow: hidden; /* scrolled by script in Overview.jsx */
-  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  pointer-events: none; transition: --h 0.4s, --f 0.4s;
+  mask-image: linear-gradient(transparent calc(50% - var(--h)), #000 calc(50% - var(--h) + var(--f)), #000 calc(50% + var(--h) - var(--f)), transparent calc(50% + var(--h)));
 }
-.edge:hover + .rail, .rail:hover, .rail:focus-within { opacity: 1; pointer-events: auto; }
+.edge:hover + .rail, .rail:hover, .rail:focus-within { --h: 16rem; --f: 6.4rem; pointer-events: auto; }
 .ticks { position: relative; }
-.ticks::before { content: ''; position: absolute; left: 2.5rem; top: 1.5rem; bottom: 1.5rem; border-left: 1px solid var(--dim); }
 .rail button {
-  position: relative; display: block; height: 3rem; margin-left: 2.5rem; padding: 0 0 0 2.2rem; text-align: left;
-  background: none; border: 0; color: var(--dim); font: inherit; font-size: 1rem; cursor: pointer;
+  position: relative; display: block; height: 2.43rem; margin-left: 2.5rem; padding: 0 0 0 1.6rem; text-align: left;
+  background: none; border: 0; color: transparent; font: inherit; font-size: 1rem; cursor: pointer; transition: color 0.3s;
 }
-.rail button::before { content: ''; position: absolute; left: 0; top: 50%; width: 0.7rem; border-top: 1px solid var(--dim); }
-.rail button.first::before { width: 1.3rem; }
-.rail button:hover, .rail button.on { color: var(--chalk); }
-.rail button:hover::before, .rail button.on::before { width: 1.8rem; border-color: var(--chalk); border-top-width: 2px; }
+.rail button::before { /* page-dot style: every dash the same, only the current one is bright */
+  content: ''; position: absolute; left: 0; top: 50%; height: 1.2rem; transform: translateY(-50%);
+  border-left: 3px solid var(--chalk); border-radius: 2px; opacity: 0.3; transition: opacity 0.3s, height 0.3s;
+}
+.rail button.on::before, .rail button:hover::before { opacity: 1; height: 1.65rem; }
+.edge:hover + .rail button, .rail:hover button, .rail:focus-within button { color: var(--dim); }
+.edge:hover + .rail button.on, .rail:hover button.on, .rail:focus-within button.on, .rail button:hover { color: var(--chalk); }

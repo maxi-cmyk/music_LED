@@ -4,7 +4,8 @@ import { ham, seg } from './ease.js';
 export const ROWS = [285, 190, 105, 20]; // where each tone slides to, grouped so each band's tones are neighbours
 const HZ_PER_CYCLE = 50; // 128 readings at 6400/s: one cycle per frame = 50 Hz
 export const BANDS = [['Bass', 250, '#ff6b5a'], ['Mids', 1000, '#8fe36a'], ['Treble', 2500, '#5cbcff']];
-export const DOWN = 40; // once the bass waves merge there are only 3 rows; shift them down to centre the graph
+export const CENTRE = [190, 105, 20]; // where each band's row ends up once its tones merge: evenly spaced (the bass lands on the row its upper tone was on)
+export const DOWN = 85; // once the bass waves merge there are only 3 rows; shift them down to centre the graph on MID
 export const BAR = 80; // bar length per unit of total strength
 const END = 13.2;
 
@@ -24,7 +25,7 @@ export default function Split({ t }) {
 
   const groups = BANDS.map(([name, , color], b) => {
     const idx = TONES.map((tn, k) => k).filter((k) => bandOf(TONES[k]) === b);
-    const centre = idx.reduce((sum, k) => sum + ROWS[k], 0) / idx.length;
+    const centre = CENTRE[b];
     const y = (k) => lerp(MID + (ROWS[k] - MID) * move, centre, merge) + DOWN * merge; // a band's tones converge on its centre row
     const ys = idx.map(y);
     return { name, color, idx, y, centre: lerp(MID, centre, move) + DOWN * merge, lo: Math.min(...ys), hi: Math.max(...ys), total: idx.reduce((sum, k) => sum + TONES[k][1], 0) };

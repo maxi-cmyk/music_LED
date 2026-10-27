@@ -12,7 +12,7 @@ const SPLIT = 'The cleaned frame is split into pure tones of different pitch, mu
 
 const TAPER = "Then it is faded at the edges so that sharp cut-offs don't smear the result.";
 
-const PAGES = [
+const OVERVIEW = [
   { name: 'Frames', labels: ['Snapshots', 'One frame'], View: Frame, stops: S1, text: [
     'The microphone takes 6,400 snapshots every second. Each point records the amplitude for the soundwave.',
     '128 in a row make 1 frame.',
@@ -41,10 +41,11 @@ const PAGES = [
 ];
 const HOLD = 3500; // auto mode waits this long (ms) at each stop before moving on
 
-export default function Overview({ onHome }) {
+export default function Overview({ onHome, pages: PAGES = OVERVIEW }) { // pages: the same player also runs the Fourier page
   // p: page index, i: stop being moved to, t: seconds into the page's animation, rest: when t last reached a stop
   const s = useRef({ p: 0, i: 0, t: 0, rest: performance.now(), auto: false }); // i: stop being moved to
   const [view, setView] = useState({ p: 0, t: 0, shown: 0, end: false });
+  const [auto, setAuto] = useState(false);
   const nav = useRef();
 
   useEffect(() => {
@@ -109,7 +110,8 @@ export default function Overview({ onHome }) {
   const show = (raw) => (raw < 0 ? -rb(-raw) : raw > max() ? max() + rb(raw - max()) : raw);
   const unshow = (v) => (v < 0 ? -rbInv(Math.min(-v, D - 1)) : v > max() ? max() + rbInv(Math.min(v - max(), D - 1)) : v);
   const release = useRef(0), locked = useRef(0); // locked: +1/-1 = sprang back from the top/bottom limit; ignore pushing further that way
-  useWheel(({ delta: [, dy] }) => {
+  useWheel(({ delta: [, dy], last }) => {
+    if (last) return; // use-gesture's own "wheel ended" call lands ~180ms after the last tick: it would freeze a recentre already under way
     clearTimeout(release.current);
     release.current = setTimeout(() => { locked.current = 0; api.start({ y: clamp(y.get()), config: settle }); }, 30); // let go short of the limit
     if (locked.current && Math.sign(dy) === locked.current) return; // still pushing the way we were just stopped
@@ -120,17 +122,20 @@ export default function Overview({ onHome }) {
       api.start({ y: clamp(raw), config: settle });
     } else api.start({ y: show(raw), immediate: true });
   }, { target: nav, eventOptions: { passive: false } });
-  useEffect(() => {
+  const recentre = () => {
+    clearTimeout(release.current); // a pending wheel-release would otherwise overwrite this with the scrolled position
+    locked.current = 0;
     const btn = nav.current.querySelector('.on');
     api.start({ y: clamp(btn.offsetTop + btn.offsetHeight / 2), config: settle }); // centre the current step
-  }, [view.p, view.shown]);
+  };
+  useEffect(recentre, [view.p, view.shown]);
 
   const { View, text } = PAGES[view.p];
   const caption = text[view.shown];
   return (
     <div className="overview">
       <div className="edge" />
-      <nav className="rail" ref={nav}>
+      <nav className="rail" ref={nav} onMouseLeave={recentre}>
         <animated.div className="ticks" style={{ y: y.to((v) => -v) }}>
           {PAGES.flatMap((pg, p) => pg.stops.map((_, i) => (
             <button key={`${p}.${i}`} className={`${i === 0 ? 'first ' : ''}${p === view.p && i === view.shown ? 'on' : ''}`}
@@ -142,7 +147,19 @@ export default function Overview({ onHome }) {
       <div className="caption" key={caption} style={{ animationDelay: '0s' }}>
         <p>{caption}</p>
       </div>
-      {view.end && <button className="home" onClick={onHome}>Return home</button>}
+      <div className="controls">
+        <button aria-label={auto ? 'Pause auto mode' : 'Play auto mode'} aria-pressed={auto}
+          onClick={() => { s.current.auto = !auto; s.current.rest = performance.now(); setAuto(!auto); }}>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            {auto ? <path d="M8 5v14M16 5v14" /> : <path d="M7 4.5v15l12-7.5z" />}
+          </svg>
+        </button>
+        <button aria-label="Home" onClick={onHome}>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 11l9-7.5 9 7.5M5.5 9.5V20h13V9.5M10 20v-6h4v6" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
