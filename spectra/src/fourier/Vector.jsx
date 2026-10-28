@@ -27,14 +27,15 @@ const scrollAt = (dt) => {
 const value = (i) => (MID - Y(i / (N - 1))) / AMP; // height above the zero line, as drawn on the Overview
 
 // the Overview's frame of dots slides left; then each dot in turn lights up and writes its height into its slot of the vector x, which scrolls (with motion blur) to keep that slot centred
-export default function Vector({ t }) {
+export const END = { s: S, tx: GX - S * 500, ty: CY - S * (TOP + MID) / 2 }; // where the graph rests when the vector is full: Score starts from here
+export function VectorBody({ t, graph = true, fade = 1 }) { // graph=false: just the vector column, fade: its opacity
   const sh = seg(t, STOPS[0] + 0.05, STOPS[1]), s = 1 - (1 - S) * sh, tx = (GX - S * 500) * sh, ty = (CY - S * (TOP + MID) / 2) * sh; // the graph shrinks to scale S, its drawing centred at (GX, CY)
   const dt = t - FILL_AT, c = reading(dt), pos = scrollAt(dt);
   const blur = Math.min(5, (Math.abs(pos - scrollAt(dt - 0.05)) / 0.05) * RH * 0.001); // blur follows scroll speed
   const bot = VY + K * RH;
   return (
-    <svg className="frame" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Each of the 128 snapshots writes its height into its slot of the vector x">
-      <g transform={`translate(${tx} ${ty}) scale(${s})`}>
+    <>
+      {graph && <g transform={`translate(${tx} ${ty}) scale(${s})`}>
         <line className="axis" x1={60} x2={W - 60} y1={MID} y2={MID} />
         {Array.from({ length: N }, (_, i) => {
           const u = i / (N - 1), o = Math.min(1, Math.max(0, (t - i * STEP) / 0.25)), on = i <= c;
@@ -45,8 +46,8 @@ export default function Vector({ t }) {
             </g>
           );
         })}
-      </g>
-      <g opacity={sh}>
+      </g>}
+      <g opacity={sh * fade}>
         <clipPath id="vec"><rect x={MIDX - HALF - 10} y={VY} width={2 * HALF + 20} height={K * RH} /></clipPath>
         <filter id="vblur"><feGaussianBlur stdDeviation={`0 ${blur}`} /></filter>
         <text x={MIDX - HALF - 22} y={VY + K * RH / 2 + 8} textAnchor="end" fill="var(--chalk)" fontSize="22">x =</text>
@@ -68,6 +69,14 @@ export default function Vector({ t }) {
           </g>
         </g>
       </g>
+    </>
+  );
+}
+
+export default function Vector({ t }) {
+  return (
+    <svg className="frame" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Each of the 128 snapshots writes its height into its slot of the vector x">
+      <VectorBody t={t} />
     </svg>
   );
 }
