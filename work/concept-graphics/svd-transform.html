@@ -1,0 +1,34 @@
+<div id="svd-transform">
+  <h3>SVD: input directions → stretching → output directions</h3>
+  <div class="viz-controls"><label class="form-label" for="svd-stage">Stage <select id="svd-stage" class="form-select"><option value="0">Input</option><option value="1">Apply V transpose</option><option value="2">Apply singular values</option><option value="3" selected>Apply U</option></select></label></div>
+  <svg class="svd-diagram" role="img" aria-label="A unit circle and two marked input directions transformed through an SVD into an ellipse"></svg>
+  <div id="svd-result" class="tabular-nums" aria-live="polite"></div>
+  <style>
+    #svd-transform .svd-diagram{width:100%;height:280px;display:block}
+    #svd-transform .svd-diagram text{fill:var(--foreground);font-size:12px}
+  </style>
+  <script>
+  (()=>{
+    const root=document.getElementById('svd-transform'),svg=root.querySelector('svg'),select=root.querySelector('select'),ns='http://www.w3.org/2000/svg';
+    const rot=(p,a)=>[Math.cos(a)*p[0]-Math.sin(a)*p[1],Math.sin(a)*p[0]+Math.cos(a)*p[1]];
+    const add=(t,attrs,txt)=>{const e=document.createElementNS(ns,t);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(txt)e.textContent=txt;svg.append(e);};
+    function draw(){
+      const w=root.clientWidth,s=Math.min(48,(w-70)/5),cx=w/2,cy=140,stage=+select.value;
+      svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${w} 280`);
+      const transform=p=>{let z=p;if(stage>=1)z=rot(z,-Math.PI/6);if(stage>=2)z=[2*z[0],.6*z[1]];if(stage>=3)z=rot(z,Math.PI/4);return z;},P=p=>[cx+s*p[0],cy-s*p[1]];
+      function line(p,q,col,width=1){const x=P(p),y=P(q);add('line',{x1:x[0],y1:x[1],x2:y[0],y2:y[1],stroke:col,'stroke-width':width});}
+      line([-2.3,0],[2.3,0],'var(--border)');line([0,-2.3],[0,2.3],'var(--border)');
+      add('circle',{cx,cy,r:s,fill:'none',stroke:'var(--border)','stroke-dasharray':'4 4'});
+      const pts=Array.from({length:129},(_,i)=>P(transform([Math.cos(2*Math.PI*i/128),Math.sin(2*Math.PI*i/128)])));
+      add('polyline',{points:pts.map(p=>p.join(',')).join(' '),fill:'none',stroke:'var(--muted-foreground)','stroke-width':1.5});
+      [[Math.PI/6,'var(--viz-series-1)','direction 1'],[2*Math.PI/3,'var(--viz-series-2)','direction 2']].forEach(([a,col,label])=>{
+        const z=transform([Math.cos(a),Math.sin(a)]),p=P(z);line([0,0],z,col,2);add('circle',{cx:p[0],cy:p[1],r:5,fill:col});add('text',{x:p[0]+(p[0]<cx?-8:8),y:p[1]-8,'text-anchor':p[0]<cx?'end':'start'},label);
+      });
+      root.querySelector('#svd-result').textContent=['Input circle · two perpendicular input directions','Input directions aligned with the axes · lengths unchanged','Singular values: 2 and 0.6 · circle becomes an ellipse','Output directions rotated 45° · axis lengths remain 2 and 0.6'][stage];
+    }
+    function restore(s){const z=s?.privateContent?.svdStage;if(Number.isInteger(z)&&z>=0&&z<=3)select.value=z;draw();}
+    select.onchange=()=>{draw();window.openai?.setWidgetState?.({modelContent:{concept:'SVD',stage:+select.value},privateContent:{svdStage:+select.value}})?.catch(()=>{});};
+    new ResizeObserver(draw).observe(root);restore(window.openai?.widgetState);window.addEventListener('openai:set_globals',e=>restore(e.detail?.globals?.widgetState));
+  })();
+  </script>
+</div>

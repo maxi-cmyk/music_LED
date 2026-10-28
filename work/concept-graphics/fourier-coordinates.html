@@ -1,0 +1,43 @@
+<div id="fourier-coordinates">
+  <h3>Fourier: samples become frequency coordinates</h3>
+  <div class="viz-controls">
+    <label class="form-label" for="fourier-cos">Cosine amount <output id="fourier-a">1</output><input id="fourier-cos" class="form-range" type="range" min="-2" max="2" step="0.25" value="1"></label>
+    <label class="form-label" for="fourier-sin">Sine amount <output id="fourier-b">2</output><input id="fourier-sin" class="form-range" type="range" min="-2" max="2" step="0.25" value="2"></label>
+  </div>
+  <svg class="fourier-diagram" role="img" aria-label="Four time samples transformed into four complex DFT coefficients"></svg>
+  <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Basis pattern</th><th>n = 0</th><th>1</th><th>2</th><th>3</th></tr></thead><tbody><tr><td>Cosine</td><td>1</td><td>0</td><td>−1</td><td>0</td></tr><tr><td>Sine</td><td>0</td><td>1</td><td>0</td><td>−1</td></tr></tbody></table></div>
+  <div id="fourier-result" class="tabular-nums" aria-live="polite"></div>
+  <style>
+    #fourier-coordinates .fourier-diagram{width:100%;height:235px;display:block}
+    #fourier-coordinates .fourier-diagram text{fill:var(--foreground);font-size:12px}
+  </style>
+  <script>
+  (()=>{
+    const root=document.getElementById('fourier-coordinates'),svg=root.querySelector('svg'),a=root.querySelector('#fourier-cos'),b=root.querySelector('#fourier-sin'),ns='http://www.w3.org/2000/svg';
+    const fmt=x=>(Math.abs(x)<1e-8?0:x).toFixed(2).replace(/\.00$/,'');
+    const complex=(re,im)=>`${fmt(re)} ${im<0?'−':'+'} ${fmt(Math.abs(im))}i`;
+    function draw(){
+      const w=root.clientWidth,A=+a.value,B=+b.value,values=[A,B,-A,-B],coeff=['0',complex(2*A,-2*B),'0',complex(2*A,2*B)];
+      svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${w} 235`);
+      function add(t,attrs,txt){const e=document.createElementNS(ns,t);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(txt!==undefined)e.textContent=txt;svg.append(e);}
+      add('text',{x:0,y:18},'Time samples');add('text',{x:0,y:156},'Frequency coefficients');
+      for(let n=0;n<4;n++){
+        const x=w*(n+.5)/4;
+        add('circle',{cx:x,cy:58,r:22,fill:'var(--viz-series-1)',opacity:.12});
+        add('text',{x,y:62,'text-anchor':'middle'},fmt(values[n]));
+        add('text',{x,y:94,'text-anchor':'middle'},`n = ${n}`);
+        add('text',{x,y:190,'text-anchor':'middle'},coeff[n]);
+        add('text',{x,y:218,'text-anchor':'middle'},`k = ${n}`);
+      }
+      add('line',{x1:w/2,y1:102,x2:w/2,y2:133,stroke:'var(--muted-foreground)','stroke-width':1.5});
+      add('path',{d:`M${w/2-4},128 L${w/2},133 L${w/2+4},128`,fill:'none',stroke:'var(--muted-foreground)'});
+      add('text',{x:w/2+14,y:122},'DFT');
+      root.querySelector('#fourier-a').textContent=fmt(A);root.querySelector('#fourier-b').textContent=fmt(B);
+      root.querySelector('#fourier-result').textContent=`Reconstruction: ${fmt(A)} × cosine pattern + ${fmt(B)} × sine pattern.`;
+    }
+    function restore(s){const z=s?.privateContent;if(z&&Number.isFinite(z.a)&&Number.isFinite(z.b)){a.value=z.a;b.value=z.b;}draw();}
+    function changed(){draw();window.openai?.setWidgetState?.({modelContent:{concept:'four-sample Fourier basis',cosineAmount:+a.value,sineAmount:+b.value},privateContent:{a:+a.value,b:+b.value}})?.catch(()=>{});}
+    a.oninput=changed;b.oninput=changed;new ResizeObserver(draw).observe(root);restore(window.openai?.widgetState);window.addEventListener('openai:set_globals',e=>restore(e.detail?.globals?.widgetState));
+  })();
+  </script>
+</div>

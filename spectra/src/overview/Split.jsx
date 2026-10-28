@@ -1,5 +1,6 @@
 import { W, MID, PAD, N, AMP, TONES, wave, X } from './Frame.jsx';
 import { ham, seg } from './ease.js';
+import { M, TG } from '../math/Tex.jsx';
 
 export const ROWS = [285, 190, 105, 20]; // where each tone slides to, grouped so each band's tones are neighbours
 const HZ_PER_CYCLE = 50; // 128 readings at 6400/s: one cycle per frame = 50 Hz
@@ -16,7 +17,7 @@ export const pts = (fn) => Array.from({ length: 513 }, (_, i) => `${X(i / 512)},
 export const lerp = (a, b, k) => a + (b - a) * k;
 
 // starts exactly as page 2 ends (tapered frame), then: split into tones, label, group by band, add up each band
-export const STOPS = [0, 2.4, 3.7, 6.2];
+export const STOPS = [2.4, 3.7, 6.2]; // split, grouped, added up
 
 export default function Split({ t }) {
   const f1 = seg(t, 0, 0.6), emerge = seg(t, 0.3, 0.7), sumFade = seg(t, 0.3, 0.7), move = seg(t, 0.8, 1.9);
@@ -42,35 +43,35 @@ export default function Split({ t }) {
       {Array.from({ length: N }, (_, i) => {
         const u = i / (N - 1), y = MID - AMP * wave(u) * ham(u);
         return (
-          <g key={i} className="reading" style={{ animation: 'none', opacity: 1 - f1 }}>
+          <TG key={i} className="reading" style={{ animation: 'none', opacity: 1 - f1 }}>
             <line x1={X(u)} x2={X(u)} y1={MID} y2={y} />
             <circle cx={X(u)} cy={y} r="3.5" />
-          </g>
+          </TG>
         );
       })}
       {groups.map((g) => (
-        <g key={g.name}>
+        <TG key={g.name}>
           {g.idx.map((k) => {
             const p = pts((u) => g.y(k) - AMP * tone(TONES[k], u));
             const sep = emerge * (1 - (g.idx.length > 1 ? sumIn : 0));
             return (
-              <g key={k} opacity={sep}>
+              <TG key={k} opacity={sep}>
                 <polyline className="tone" points={p} />
                 <polyline className="tone" stroke={g.color} opacity={colour} points={p} />
-                <text className="zone" x={PAD - 10} y={g.y(k) + 5} textAnchor="end" opacity={hzIn}>{hzOf(TONES[k])} Hz</text>
-              </g>
+                <M className="zone" x={PAD - 10} y={g.y(k) + 5} textAnchor="end" opacity={hzIn}>{hzOf(TONES[k])} Hz</M>
+              </TG>
             );
           })}
           {g.idx.length > 1 && (
             <polyline className="tone" stroke={g.color} opacity={sumIn}
               points={pts((u) => g.centre - AMP * g.idx.reduce((sum, k) => sum + tone(TONES[k], u), 0))} />
           )}
-          <g opacity={names}>
+          <TG opacity={names}>
             <path d={`M${PAD - 14} ${g.lo - 24} h-6 V${g.hi + 24} h6`} fill="none" stroke={g.color} strokeWidth="1.5" />
-            <text className="zone" x={PAD - 30} y={(g.lo + g.hi) / 2 + 5} textAnchor="end" fill={g.color}>{g.name}</text>
-          </g>
+            <M className="zone" x={PAD - 30} y={(g.lo + g.hi) / 2 + 5} textAnchor="end" fill={g.color}>{g.name}</M>
+          </TG>
           <rect x={W - PAD + 14} y={(g.lo + g.hi) / 2 - 7} width={g.total * BAR * grow} height="14" fill={g.color} />
-        </g>
+        </TG>
       ))}
     </svg>
   );

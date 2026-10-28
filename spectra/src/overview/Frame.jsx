@@ -1,4 +1,5 @@
 import { seg } from './ease.js';
+import { M, TG } from '../math/Tex.jsx';
 
 export const W = 1000, H = 340, MID = 190, PAD = 60, N = 128;
 export const AMP = 100, OFF = 85; // OFF: raw readings sit above zero until they are centred
@@ -22,16 +23,16 @@ export default function Frame({ t }) {
       {Array.from({ length: N }, (_, i) => {
         const u = i / (N - 1), d = { animation: 'none', opacity: Math.min(1, Math.max(0, (t - i * STEP) / 0.25)) };
         return (
-          <g key={i} className="reading" style={d}>
+          <TG key={i} className="reading" style={d}>
             <line x1={X(u)} x2={X(u)} y1={MID} y2={Y(u)} />
             <circle cx={X(u)} cy={Y(u)} r="3.5" />
-          </g>
+          </TG>
         );
       })}
-      <g className="bracket" style={{ animation: 'none', opacity: seg(t, END + 0.3, END + 1.1) }}>
+      <TG className="bracket" style={{ animation: 'none', opacity: seg(t, END + 0.3, END + 1.1) }}>
         <path d={`M${PAD} 282 v8 H${W - PAD} v-8`} />
-        <text x={W / 2} y="316" textAnchor="middle">128 snapshots = 20 ms</text>
-      </g>
+        <M x={W / 2} y="316" textAnchor="middle">128 snapshots $=$ 20 ms</M>
+      </TG>
     </svg>
   );
 }

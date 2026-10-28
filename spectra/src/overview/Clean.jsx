@@ -1,8 +1,9 @@
 import { W, H, MID, PAD, N, AMP, OFF, wave, X } from './Frame.jsx';
 import { ham, seg } from './ease.js';
+import { M, TG } from '../math/Tex.jsx';
 
 const A = AMP;
-export const STOPS = [0, 2.3, 4.9];
+export const STOPS = [2.3, 4.9]; // centred, faded; the page opens on the frame the last page ended with
 
 // the same frame as page 1, cleaned in two steps: centred on zero, then tapered at the edges
 export default function Clean({ t }) {
@@ -24,16 +25,16 @@ export default function Clean({ t }) {
       {Array.from({ length: N }, (_, i) => {
         const u = i / (N - 1);
         return (
-          <g key={i} className="reading" style={{ animation: 'none', opacity: 1 }}>
+          <TG key={i} className="reading" style={{ animation: 'none', opacity: 1 }}>
             <line x1={X(u)} x2={X(u)} y1={MID} y2={Y(u)} />
             <circle cx={X(u)} cy={Y(u)} r="3.5" />
-          </g>
+          </TG>
         );
       })}
-      <g className="bracket" style={{ animation: 'none', opacity: 1 - seg(t, 0, 0.5) }}>
+      <TG className="bracket" style={{ animation: 'none', opacity: 1 - seg(t, 0, 0.5) }}>
         <path d={`M${PAD} 282 v8 H${W - PAD} v-8`} />
-        <text x={W / 2} y="316" textAnchor="middle">128 snapshots = 20 ms</text>
-      </g>
+        <M x={W / 2} y="316" textAnchor="middle">128 snapshots $=$ 20 ms</M>
+      </TG>
     </svg>
   );
 }

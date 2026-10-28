@@ -41,7 +41,7 @@ main {
 }
 .kicker i:nth-child(2) { background: #8fe36a; }
 .kicker i:nth-child(3) { background: #5cbcff; }
-.kicker span { margin-left: 0.8rem; }
+.kicker > span { margin-left: 0.8rem; }
 
 main > .intro { min-width: 0; container-type: inline-size; }
 
@@ -124,14 +124,15 @@ main > .intro { position: relative; z-index: 1; }
 .mic-status:empty { display: none; }
 
 .overview { position: fixed; inset: 0; background: #000; }
-.overview .controls { position: absolute; top: 2rem; right: 2.5rem; display: flex; gap: 1.2rem; }
-.overview .controls button { display: grid; padding: 0.3rem; background: none; border: 0; color: var(--dim); cursor: pointer; transition: color 0.3s; }
-.overview .controls button:hover, .overview .controls button.on { color: var(--chalk); }
+.overview .controls, .sandbox .controls { position: absolute; top: 2rem; right: 2.5rem; display: flex; gap: 1.2rem; }
+.overview .controls button, .sandbox .controls button { display: grid; padding: 0.3rem; background: none; border: 0; color: var(--dim); cursor: pointer; transition: color 0.3s; }
+.overview .controls button:hover, .overview .controls button.on, .sandbox .controls button:hover { color: var(--chalk); }
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 main { animation: fade-in 0.8s ease-out; }
 
-.frame { position: absolute; top: 46%; left: 50%; width: min(80%, 144vh); transform: translate(-50%, -50%); overflow: visible; }
+.overview { --gut: min(18rem, 34vw); } /* room for the step list when it opens */
+.frame { position: absolute; top: 46%; left: calc(var(--gut) + (100% - var(--gut)) / 2); width: min(calc((100% - var(--gut)) * 0.92), 144vh); transform: translate(-50%, -50%); overflow: visible; }
 .frame .axis { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 4 6; }
 .frame .wave { fill: none; stroke: var(--dim); stroke-width: 1.5; opacity: 0.5; }
 .frame .reading { opacity: 0; animation: fade-in 0.25s ease-out forwards; }
@@ -141,7 +142,7 @@ main { animation: fade-in 0.8s ease-out; }
 .frame .bracket path { fill: none; stroke: var(--chalk); stroke-width: 1.5; }
 .frame .bracket text { fill: var(--chalk); font-size: 16px; letter-spacing: 0.08em; }
 
-.caption { position: absolute; bottom: 12vh; left: 50%; width: min(100ch, 92%); transform: translateX(-50%); text-align: center; animation: fade-in 0.8s ease-out 2s backwards; }
+.caption { position: absolute; bottom: 12vh; left: calc(var(--gut, 0px) + (100% - var(--gut, 0px)) / 2); width: min(100ch, calc(100% - var(--gut, 0px) - 2rem)); transform: translateX(-50%); text-align: center; animation: fade-in 0.8s ease-out 2s backwards; }
 .caption p { margin: 0; text-wrap: balance; color: var(--dim); font-size: 1.05rem; line-height: 1.6; }
 
 .frame .avg { stroke: var(--chalk); stroke-width: 1; stroke-dasharray: 2 5; }
@@ -179,3 +180,86 @@ main { animation: fade-in 0.8s ease-out; }
 .rail button.on::before, .rail button:hover::before { opacity: 1; height: 1.65rem; }
 .edge:hover + .rail button, .rail:hover button, .rail:focus-within button { color: var(--dim); }
 .edge:hover + .rail button.on, .rail:hover button.on, .rail:focus-within button.on, .rail button:hover { color: var(--chalk); }
+
+.circuit { position: absolute; inset: 0; z-index: 0; }
+.circuit .stage { position: absolute; inset: 0; }
+.circuit .stage canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+.circuit .tip {
+  position: fixed; top: 0; left: 0; z-index: 5; width: 20rem; padding: 0.8rem 1rem; pointer-events: none;
+  background: #000; border: 1px solid var(--dim); border-radius: 4px;
+}
+.circuit .tip strong { display: block; margin-bottom: 0.3rem; color: var(--chalk); font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.circuit .tip span { color: var(--dim); font-size: 1rem; line-height: 1.5; }
+/* the 3D page fills the stage behind the rail, caption and controls, so a drag anywhere on it turns the model */
+.overview .edge, .overview .rail, .overview .controls { z-index: 3; }
+.overview .caption { z-index: 2; pointer-events: none; }
+
+.overview .controls button.rate { align-content: center; min-width: 2.4rem; font: inherit; font-size: 1.05rem; letter-spacing: 0.02em; }
+
+.trace { top: 40%; }
+.trace svg { display: block; width: 100%; overflow: visible; }
+.trace-note { margin: 0.4rem 0 0; min-height: 1.6em; color: var(--dim); font-size: 0.95rem; text-align: right; }
+.trace-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 1.2rem 2rem; margin-top: 0.6rem; }
+.trace-controls label { display: grid; gap: 0.35rem; flex: 1 1 14rem; color: var(--dim); font-size: 0.9rem; }
+.trace-controls label b { color: var(--chalk); font-weight: 600; }
+.trace-controls input[type="range"] { width: 100%; accent-color: var(--chalk); }
+.trace-controls button { padding: 0.45rem 0.9rem; background: none; border: 1px solid var(--dim); border-radius: 4px; color: var(--chalk); font: inherit; font-size: 0.9rem; cursor: pointer; }
+.trace-controls button:hover, .trace-controls button[aria-pressed="true"] { border-color: var(--chalk); }
+.trace-controls :focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
+
+.caption.why p { color: var(--chalk); }
+.caption.why p + p { margin-top: 0.7rem; }
+.caption .why-tag { display: block; margin-bottom: 0.5rem; color: var(--dim); font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; }
+.overview .controls button.rate { white-space: nowrap; }
+.overview .next { position: absolute; bottom: 4.5vh; left: 50%; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1.1rem; background: none; border: 1px solid var(--dim); border-radius: 4px; color: var(--chalk); font: inherit; font-size: 0.95rem; letter-spacing: 0.02em; cursor: pointer; animation: fade-in 0.8s ease-out 0.4s backwards; transition: border-color 0.3s, background 0.3s; }
+.overview .next:hover { border-color: var(--chalk); background: rgba(255, 255, 255, 0.06); }
+
+.sandbox { position: fixed; inset: 0; display: grid; grid-template-rows: 1fr auto auto; align-content: center; gap: 1rem; padding: 5rem 5vw 3rem; background: #000; animation: fade-in 0.8s ease-out; }
+.sandbox .kicker { position: absolute; top: 2rem; left: 2.5rem; margin: 0; }
+.sandbox .stage { display: grid; align-content: center; min-height: 0; }
+.sandbox .stage svg { width: min(100%, 150vh); margin: 0 auto; overflow: visible; }
+.sandbox .note { margin: 0.6rem 0 0; min-height: 1.6em; color: var(--dim); text-align: center; font-size: 1.05rem; }
+.sandbox .tones { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+.sandbox .tones button, .sandbox .sound button { display: grid; gap: 0.1rem; padding: 0.55rem 0.9rem; background: none; border: 1px solid var(--dim); border-radius: 4px; color: var(--chalk); font: inherit; cursor: pointer; text-align: center; }
+.sandbox .tones button span { color: var(--dim); font-size: 0.8rem; }
+.sandbox .tones button[aria-pressed="true"], .sandbox .tones button:hover, .sandbox .sound button:hover, .sandbox .sound button[aria-pressed="true"] { border-color: var(--chalk); background: #1a1a18; }
+.sandbox .tones .clear { align-content: center; color: var(--dim); }
+.sandbox .sound { display: flex; justify-content: center; align-items: center; gap: 1.5rem; color: var(--dim); }
+.sandbox .sound label { display: flex; align-items: center; gap: 0.7rem; }
+.sandbox .sound b { color: var(--chalk); font-weight: 600; min-width: 3ch; }
+.sandbox input[type="range"] { accent-color: var(--chalk); width: 12rem; }
+.sandbox :focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
+
+.katex { font-size: 1.05em; }
+.mtext { line-height: 1.1; white-space: nowrap; }
+.mtext .katex { font-size: 1.02em; }
+
+/* diagram pages that use the taller 1000 x 560 canvas fill most of the screen height */
+.frame.tall { width: min(calc((100% - var(--gut)) * 0.96), 128vh); top: 45%; }
+.frame.trace { width: min(calc((100% - var(--gut)) * 0.94), 118vh); top: 43%; }
+.trace-note { font-size: 1.15rem; }
+.trace-controls label { font-size: 1.1rem; }
+.trace-controls input[type="range"] { height: 1.4rem; }
+.trace-controls button { padding: 0.6rem 1.2rem; font-size: 1.05rem; }
+
+/* every page names its section: on screen, and as a heading in the step rail */
+.overview .section-title { position: absolute; top: 2rem; left: 2.5rem; margin: 0; z-index: 3; pointer-events: none; animation: fade-in 0.6s ease-out; }
+.overview .section-title > span { text-transform: none; letter-spacing: 0.02em; font-size: 1.1rem; color: var(--chalk); }
+.rail .group {
+  min-height: 2.43rem; margin-left: 2.5rem; padding: 0.7rem 0 0.2rem 1.6rem; display: flex; align-items: end; line-height: 1.3;
+  color: transparent; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s;
+}
+.edge:hover + .rail .group, .rail:hover .group, .rail:focus-within .group { color: var(--chalk); }
+/* typeset maths inside a title or heading keeps KaTeX's own spacing and sizes, not the heading's letter-spacing */
+.section-title .katex, .rail .group .katex { font-size: 1.05em; letter-spacing: normal; text-transform: none; }
+
+.nw { white-space: nowrap; }
+
+/* each page fades in, so moving between pages is smooth */
+.overview .page { position: absolute; inset: 0; animation: fade-in 0.8s ease-out; }
+
+/* previous / next slide, bottom right */
+.overview .nav { position: absolute; right: 2.5rem; bottom: 2rem; z-index: 3; display: flex; gap: 0.8rem; }
+.overview .nav button { display: flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.9rem; background: none; border: 1px solid var(--dim); border-radius: 4px; color: var(--dim); font: inherit; font-size: 0.9rem; letter-spacing: 0.02em; cursor: pointer; transition: color 0.3s, border-color 0.3s, background 0.3s; }
+.overview .nav button:hover:not(:disabled) { color: var(--chalk); border-color: var(--chalk); background: rgba(255, 255, 255, 0.06); }
+.overview .nav button:disabled { opacity: 0.3; cursor: default; }

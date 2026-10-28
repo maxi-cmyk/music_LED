@@ -1,12 +1,13 @@
 import { seg } from '../overview/ease.js';
 import { wave, X, W, H, MID, AMP, OFF, N } from '../overview/Frame.jsx';
+import { M, TG } from '../math/Tex.jsx';
 
-const STEP = 0.01, FILL = 0.04, FILL_AT = 2.6; // dots appear 0.01 s apart; the scan starts at FILL_AT
-// seconds spent on dot n: 1 s at either end, each step in 35% shorter (50% at the end), down to FILL, so the scan speeds up and slows down smoothly
-const GAP = (n) => Math.max(FILL, 0.65 ** n, 0.5 ** (N - 1 - n));
+const STEP = 0.01, FILL = 0.012, FILL_AT = 2.9, SHRINK = [1.6, 2.8]; // dots appear 0.01 s apart; the graph moves aside over SHRINK; the scan starts at FILL_AT
+// seconds spent on dot n: 1 s at either end, each step in 45% shorter (60% at the end), down to FILL, so the scan speeds up and slows down smoothly
+const GAP = (n) => Math.max(FILL, 0.45 ** n, 0.3 ** (N - 1 - n));
 const AT = [0]; // AT[n]: when dot n is first read
 for (let n = 0; n < N; n++) AT.push(AT[n] + GAP(n));
-export const STOPS = [N * STEP + 0.25, 2.5, FILL_AT + AT[N] + 0.15];
+export const STOPS = [N * STEP + 0.25, FILL_AT - 0.1, FILL_AT + AT[N] + 0.15]; // rests: the dots are in, the graph has moved aside, the slots are full
 // index of the dot being read dt seconds into the scan (-1: not started)
 const reading = (dt) => { if (dt < 0) return -1; let n = 0; while (n < N - 1 && AT[n + 1] <= dt) n++; return n; };
 
@@ -29,46 +30,46 @@ const value = (i) => (MID - Y(i / (N - 1))) / AMP; // height above the zero line
 // the Overview's frame of dots slides left; then each dot in turn lights up and writes its height into its slot of the vector x, which scrolls (with motion blur) to keep that slot centred
 export const END = { s: S, tx: GX - S * 500, ty: CY - S * (TOP + MID) / 2 }; // where the graph rests when the vector is full: Score starts from here
 export function VectorBody({ t, graph = true, fade = 1 }) { // graph=false: just the vector column, fade: its opacity
-  const sh = seg(t, STOPS[0] + 0.05, STOPS[1]), s = 1 - (1 - S) * sh, tx = (GX - S * 500) * sh, ty = (CY - S * (TOP + MID) / 2) * sh; // the graph shrinks to scale S, its drawing centred at (GX, CY)
+  const sh = seg(t, SHRINK[0], SHRINK[1]), s = 1 - (1 - S) * sh, tx = (GX - S * 500) * sh, ty = (CY - S * (TOP + MID) / 2) * sh; // the graph shrinks to scale S, its drawing centred at (GX, CY)
   const dt = t - FILL_AT, c = reading(dt), pos = scrollAt(dt);
   const blur = Math.min(5, (Math.abs(pos - scrollAt(dt - 0.05)) / 0.05) * RH * 0.001); // blur follows scroll speed
   const bot = VY + K * RH;
   return (
     <>
-      {graph && <g transform={`translate(${tx} ${ty}) scale(${s})`}>
+      {graph && <TG transform={`translate(${tx} ${ty}) scale(${s})`}>
         <line className="axis" x1={60} x2={W - 60} y1={MID} y2={MID} />
         {Array.from({ length: N }, (_, i) => {
           const u = i / (N - 1), o = Math.min(1, Math.max(0, (t - i * STEP) / 0.25)), on = i <= c;
           return (
-            <g key={i} className="reading" style={{ animation: 'none', opacity: o }}>
+            <TG key={i} className="reading" style={{ animation: 'none', opacity: o }}>
               <line x1={X(u)} x2={X(u)} y1={MID} y2={Y(u)} />
               <circle cx={X(u)} cy={Y(u)} r={i === c ? 7 : 3.5} style={on ? { fill: '#5cbcff' } : undefined} />
-            </g>
+            </TG>
           );
         })}
-      </g>}
-      <g opacity={sh * fade}>
+      </TG>}
+      <TG opacity={sh * fade}>
         <clipPath id="vec"><rect x={MIDX - HALF - 10} y={VY} width={2 * HALF + 20} height={K * RH} /></clipPath>
         <filter id="vblur"><feGaussianBlur stdDeviation={`0 ${blur}`} /></filter>
-        <text x={MIDX - HALF - 22} y={VY + K * RH / 2 + 8} textAnchor="end" fill="var(--chalk)" fontSize="22">x =</text>
+        <M x={MIDX - HALF - 22} y={VY + K * RH / 2 + 8} textAnchor="end" fill="var(--chalk)" fontSize="22">{String.raw`$\mathbf{x} =$`}</M>
         <path d={`M${MIDX - HALF} ${VY - 6} h-12 V${bot + 6} h12`} fill="none" stroke="var(--chalk)" />
         <path d={`M${MIDX + HALF} ${VY - 6} h12 V${bot + 6} h-12`} fill="none" stroke="var(--chalk)" />
-        <g clipPath="url(#vec)">
-          <g filter={blur > 0.05 ? 'url(#vblur)' : undefined}>
+        <TG clipPath="url(#vec)">
+          <TG filter={blur > 0.05 ? 'url(#vblur)' : undefined}>
             {Array.from({ length: K + 2 }, (_, j) => {
               const n = Math.floor(pos) + j - 1;
               if (n < 0 || n >= N) return null;
               const y = VY + (n - pos) * RH + RH / 2, f = seg(dt, AT[n], AT[n] + Math.min(0.4, GAP(n) * 0.6)), w = n === c ? 1 : 0; // f: fade-in of this number; w: blue only while it is the one being read
               return (
-                <g key={n}>
-                  <text x={MIDX} y={y + 6} textAnchor="middle" fill="var(--chalk)" fontSize="20" opacity={f}>{value(n).toFixed(2)}</text>
-                  <text x={MIDX} y={y + 6} textAnchor="middle" fill="#5cbcff" fontSize="20" opacity={f * w}>{value(n).toFixed(2)}</text>
-                </g>
+                <TG key={n}>
+                  <M x={MIDX} y={y + 6} textAnchor="middle" fill="var(--chalk)" fontSize="20" opacity={f}>{value(n).toFixed(2)}</M>
+                  <M x={MIDX} y={y + 6} textAnchor="middle" fill="#5cbcff" fontSize="20" opacity={f * w}>{value(n).toFixed(2)}</M>
+                </TG>
               );
             })}
-          </g>
-        </g>
-      </g>
+          </TG>
+        </TG>
+      </TG>
     </>
   );
 }
