@@ -162,9 +162,8 @@ function drawGrid(context, width, height) {
   }
 }
 
-// separation 0 draws the composite alone; 1 draws every constituent tone at its own curve.
-export function drawWaveComposition(compositeCanvas, frequencies, selectedSampleIndex = 16, separation = 1) {
-  drawComposite(compositeCanvas, frequencies, selectedSampleIndex, separation);
+export function drawWaveComposition(compositeCanvas, frequencies) {
+  drawComposite(compositeCanvas, frequencies);
 }
 
 function sampleForFrequency(frequencyHz, sampleIndex) {
@@ -175,34 +174,19 @@ function sampleX(sampleIndex, width) {
   return sampleIndex / (SIGNAL_CONFIG.sampleCount - 1) * width;
 }
 
-function drawSampleCursor(context, width, height, pixelRatio, selectedSampleIndex) {
-  const x = sampleX(selectedSampleIndex, width);
-  context.fillStyle = 'rgba(216, 255, 82, 0.08)';
-  context.fillRect(x - 3 * pixelRatio, 0, 6 * pixelRatio, height);
-  context.strokeStyle = '#d8ff52';
-  context.lineWidth = pixelRatio;
-  context.setLineDash([4 * pixelRatio, 4 * pixelRatio]);
-  context.beginPath();
-  context.moveTo(x, 0);
-  context.lineTo(x, height);
-  context.stroke();
-  context.setLineDash([]);
-}
-
 function compositeAmplitude(frequencies, sampleIndex) {
   return frequencies.length
     ? frequencies.reduce((sum, frequencyHz) => sum + sampleForFrequency(frequencyHz, sampleIndex), 0) / frequencies.length
     : 0;
 }
 
-function drawComposite(canvas, frequencies, selectedSampleIndex, separation) {
+function drawComposite(canvas, frequencies) {
   const context = canvas.getContext('2d');
   const { width, height, pixelRatio } = resizeCanvas(canvas);
   context.fillStyle = '#080906';
   context.fillRect(0, 0, width, height);
   drawGrid(context, width, height);
-  if (frequencies.length > 1 && separation > 0) {
-    context.globalAlpha = Math.min(1, separation * 1.4);
+  if (frequencies.length > 1) {
     context.lineWidth = Math.max(1.5 * pixelRatio, 1.5);
     context.setLineDash([6 * pixelRatio, 4 * pixelRatio]);
     for (const frequencyHz of frequencies) {
@@ -210,9 +194,7 @@ function drawComposite(canvas, frequencies, selectedSampleIndex, separation) {
       context.beginPath();
       for (let sampleIndex = 0; sampleIndex < SIGNAL_CONFIG.sampleCount; sampleIndex += 1) {
         const x = sampleX(sampleIndex, width);
-        const componentAmplitude = sampleForFrequency(frequencyHz, sampleIndex) / frequencies.length;
-        const mixedAmplitude = compositeAmplitude(frequencies, sampleIndex);
-        const amplitude = mixedAmplitude + (componentAmplitude - mixedAmplitude) * separation;
+        const amplitude = sampleForFrequency(frequencyHz, sampleIndex) / frequencies.length;
         const y = height / 2 - amplitude * height * 0.32;
         if (sampleIndex === 0) context.moveTo(x, y);
         else context.lineTo(x, y);
@@ -222,9 +204,7 @@ function drawComposite(canvas, frequencies, selectedSampleIndex, separation) {
     context.globalAlpha = 1;
     context.setLineDash([]);
   }
-  // The composite fades out as its tones separate, and back in as they merge.
-  const compositeOpacity = frequencies.length > 1 ? 1 - separation : 1;
-  context.globalAlpha = compositeOpacity;
+  // Keep the sum visible alongside the dashed component waves.
   context.strokeStyle = '#d8ff52';
   context.lineWidth = Math.max(2 * pixelRatio, 2);
   context.beginPath();
@@ -247,7 +227,6 @@ function drawComposite(canvas, frequencies, selectedSampleIndex, separation) {
     context.fill();
   }
   context.globalAlpha = 1;
-  drawSampleCursor(context, width, height, pixelRatio, selectedSampleIndex);
 }
 
 export function drawSampleVector(canvas, samples, selectedSampleIndex = null) {

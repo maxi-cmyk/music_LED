@@ -16,3 +16,5 @@ docs/benchmark-host.svg
 /PRODUCT.md
 .claude
 /nextSteps.md
+exports/
+/spectra/

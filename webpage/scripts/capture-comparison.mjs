@@ -55,6 +55,9 @@ export function mountCaptureComparison(root) {
     const minusBin = butterfly.offset + halfSize;
 
     const offset = butterfly.offset;
+    root.querySelector('#fft-capture-summary').textContent = `128 samples · bin ${frequencyBinIndex}`;
+    root.querySelector('#capture-fft-bin-select').value = String(frequencyBinIndex);
+    root.querySelector('#capture-fft-frequency').textContent = `${frequencyHz.toFixed(1)} Hz`;
     fftBinLabel.textContent = `The last butterfly for bin ${frequencyBinIndex}`;
     updateMath(fftEvenLabel, String.raw`E[${offset}]`);
     updateMath(fftOddLabel, String.raw`O[${offset}]`);
@@ -79,9 +82,11 @@ export function mountCaptureComparison(root) {
     fftConclusion.textContent = `Bin ${frequencyBinIndex} is the highlighted ${butterfly.selectedBranch} output. The same rotated odd value also produced bin ${butterfly.pairedBin}, so that multiplication was done once, not twice.`;
 
     comparisonVerdict.dataset.status = comparison.allEsp32BinsWithinTolerance ? 'match' : 'check';
+    const uniqueBinCount = Math.min(halfSize + 1, comparison.transmittedBinCount);
+    const source = capture.source === 'simulation' ? 'Seeded browser FFT' : 'ESP32 FFT';
     comparisonVerdict.textContent = comparison.allEsp32BinsWithinTolerance
-      ? `Matches the direct DFT: bin ${frequencyBinIndex} differs by ${selectedComparison.esp32Difference.toFixed(4)} ADC counts, and all 65 bins agree within tolerance.`
-      : 'At least one ESP32 coefficient differs from the direct DFT beyond tolerance; inspect the capture before presenting it.';
+      ? `${source} matches the direct DFT: bin ${frequencyBinIndex} differs by ${selectedComparison.esp32Difference.toFixed(4)} ADC counts; all ${uniqueBinCount} unique bins agree within tolerance.${capture.source === 'simulation' ? ' Simulated data, not a hardware measurement.' : ''}`
+      : `At least one ${source} coefficient differs from the direct DFT beyond tolerance; inspect the capture before presenting it.`;
   }
 
   return Object.freeze({ render });

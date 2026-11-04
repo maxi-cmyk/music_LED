@@ -1,6 +1,6 @@
 import { SIGNAL_CONFIG } from './config.mjs?release=20260924-distill-23';
 import { createSimulatedCapture, reconstructCoefficient } from './capture-analysis.mjs?release=20260925-seeded-frame-1';
-import { mountCaptureComparison } from './capture-comparison.mjs?release=20260924-distill-23';
+import { mountCaptureComparison } from './capture-comparison.mjs?release=20261022-fft-derivation-1';
 import { updateMath } from './math-renderer.mjs?release=20260924-distill-23';
 import { allFourierContributions } from './vector-workbench.mjs?release=20260924-distill-23';
 import { drawFourierContributionPath, drawSampleVector, ledDisplayColour } from './visualizations.mjs?release=20260924-distill-23';
@@ -200,6 +200,7 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     if (state.capturedEvidence) playComplexAnimation(state.capturedEvidence, state.selectedCaptureBin);
   });
   binSelect.addEventListener('input', () => selectBin(Number(binSelect.value)));
+  root.querySelector('#capture-fft-bin-select').addEventListener('input', (event) => selectBin(Number(event.target.value)));
   binPreviousButton.addEventListener('click', () => selectBin(store.get().selectedCaptureBin - 1));
   binNextButton.addEventListener('click', () => selectBin(store.get().selectedCaptureBin + 1));
   for (const button of stageButtons) {
