@@ -34,24 +34,24 @@ export default function Butterfly({ t }) {
       <line x1={PX - 70} x2={PX + 300} y1={PY} y2={PY} stroke="var(--dim)" strokeWidth="1.5" opacity="0.5" />
       <line x1={PX} x2={PX} y1={PY - 230} y2={PY + 230} stroke="var(--dim)" strokeWidth="1.5" opacity="0.5" />
       <Arrow from={[0, 0]} to={E} color={BLUE} />
-      <T at={E} fill={BLUE}>$E[k]$</T>
+      <T at={E} fill={BLUE}>$E_k$</T>
       <Arrow from={[0, 0]} to={O} color={ORANGE} dash={twist > 0 ? '6 7' : undefined} opacity={twist > 0 ? 0.4 : 1} />
-      <T at={O} fill={ORANGE} opacity={1 - twist}>$O[k]$</T>
+      <T at={O} fill={ORANGE} opacity={1 - twist}>$O_k$</T>
       <polyline points={arc} fill="none" stroke={ORANGE} strokeWidth="2.5" opacity={twist * 0.9} />
       <g opacity={slide < 0.01 ? 1 : flip}>
         <Arrow from={woTail} to={add(woTail, twist < 1 ? turn(O, A * twist) : WO)} color={ORANGE} opacity={twist > 0 ? 1 : 0} />
       </g>
-      <T at={add(woTail, WO)} fill={ORANGE} opacity={seg(t, 1.4, 1.8) * flip}>{'$W^{k}\\!\\cdot\\!O[k]$'}</T>
+      <T at={add(woTail, WO)} fill={ORANGE} opacity={seg(t, 1.4, 1.8) * flip}>{'$W_{128}^{k}\\!\\cdot\\!O_k$'}</T>
       <g opacity={back}><Arrow from={E} to={DIFF} color={ORANGE} dash="6 7" /></g>
       <Arrow from={[0, 0]} to={lerp([0, 0], SUM, plus)} color="#f2f2ec" opacity={plus} />
-      <T at={SUM} fill="var(--chalk)" opacity={plus}>$X[k]$</T>
+      <T at={SUM} fill="var(--chalk)" opacity={plus}>$X_k$</T>
       <Arrow from={[0, 0]} to={lerp([0, 0], DIFF, minus)} color={GREEN} opacity={minus} />
-      <T at={DIFF} fill={GREEN} opacity={minus}>$X[k+64]$</T>
+      <T at={DIFF} fill={GREEN} opacity={minus}>{'$X_{k+64}$'}</T>
       <M x="40" y="40" fill="var(--dim)" fontSize="22" opacity={twist}>{'twist $= k/128$ of a turn, clockwise (here $k = 16$)'}</M>
 
       <TG textAnchor="middle">
-        <M x="660" y="128" fill={BLUE} fontSize="30">$E[k]$</M>
-        <M x="660" y="378" fill={ORANGE} fontSize="30">$O[k]$</M>
+        <M x="660" y="128" fill={BLUE} fontSize="30">$E_k$</M>
+        <M x="660" y="378" fill={ORANGE} fontSize="30">$O_k$</M>
         <rect x="715" y="345" width="84" height="50" rx="7" fill="none" stroke={ORANGE} strokeWidth="2.5" />
         <M x="757" y="381" fill={ORANGE} fontSize="28">{'$\\times W$'}</M>
         <line x1="690" y1="368" x2="715" y2="368" stroke={ORANGE} strokeWidth="2.5" />
@@ -67,11 +67,11 @@ export default function Butterfly({ t }) {
           <line x1="690" y1="120" x2="880" y2="368" stroke={GREEN} strokeWidth="3.5" />
           <line x1="799" y1="368" x2="880" y2="368" stroke={GREEN} strokeWidth="3.5" />
         </g>
-        <M x="955" y="128" fill="var(--chalk)" opacity={plus} fontSize="28">$X[k]$</M>
-        <M x="950" y="376" fill={GREEN} opacity={minus} fontSize="26">$X[k+64]$</M>
-        <M x="800" y="450" fill="var(--chalk)" opacity={plus} fontSize="30">{'$X[k] = E[k] + W^{k}O[k]$'}</M>
-        <M x="800" y="498" fill={GREEN} opacity={minus} fontSize="30">{'$X[k+64] = E[k] - W^{k}O[k]$'}</M>
-        <M x="800" y="540" fill="var(--dim)" opacity={minus} fontSize="22">{'because $W^{k+64} = -W^{k}$'}</M>
+        <M x="955" y="128" fill="var(--chalk)" opacity={plus} fontSize="28">$X_k$</M>
+        <M x="950" y="376" fill={GREEN} opacity={minus} fontSize="26">{'$X_{k+64}$'}</M>
+        <M x="800" y="450" fill="var(--chalk)" opacity={plus} fontSize="30">{'$X_k = E_k + W_{128}^{k}O_k$'}</M>
+        <M x="800" y="498" fill={GREEN} opacity={minus} fontSize="30">{'$X_{k+64} = E_k - W_{128}^{k}O_k$'}</M>
+        <M x="800" y="540" fill="var(--dim)" opacity={minus} fontSize="22">{'because $W_{128}^{k+64} = -W_{128}^{k}$'}</M>
       </TG>
     </svg>
   );

@@ -13,7 +13,7 @@ const PAGES = [
   { name: 'Vector', title: 'Samples as a vector', labels: ['The snapshots', 'Frame to vector', 'Fill the slots'], View: Vector, stops: S1, speed: 1.2, text: [
     'Each dot is one snapshot: the height of the wave at one instant, just a number.',
     'Move the frame aside to make room for a list with $N = 128$ slots, one per snapshot: the vector $\\mathbf{x}$.',
-    'Read the dots left to right and write each height into the next slot, so the $n$-th entry is $x[n]$. The whole vector becomes one LED colour.',
+    'Read the dots left to right and write each height into the next slot, so the $n$-th entry is $x_n$. The whole vector becomes one LED colour.',
   ] },
   { name: 'Score', title: 'The Fourier transform: inner product and projection', labels: ['The integral', 'Multiply', 'Area becomes a sum', 'Same formula, 250 Hz'], View: Score, stops: S2, fresh: true, speed: 1.8, text: [
     'How much 450 Hz is in this frame? Test it with a 450 Hz cosine wave.',
@@ -42,29 +42,27 @@ const PAGES = [
     'Multiply each sample by its weight. The two turns cancel, so every product points the same way and the four add up to $4$: a big answer, so the tone is there.',
     'With a plus sign the weights would turn with the tone. The products alternate and cancel to $0$, so bin 1 would miss the tone. The highlighted rows point the other way and cancel the rest. The minus matches each tone to its detector.',
   ] },
-  { name: 'Spaces', title: 'The four fundamental spaces', labels: ['The four spaces', 'Where a signal goes', 'Rank 2 loses signals', 'Rank grows to 4', 'The spaces of F'], View: Spaces, stops: S7, fresh: true, speed: 1.0, why: [
-    'Every matrix has these four. Their dimensions are fixed by the rank $r$: the row and column spaces have dimension $r$, and the two null spaces have dimension $4 - r$.',
+  { name: 'Spaces', title: 'The four fundamental spaces', labels: ['F has full rank', 'If it were not full rank', 'Where a signal goes', 'Information is lost'], View: Spaces, stops: S7, fresh: true, speed: 1.0, why: [
+    'Full column rank means the 4 columns are independent, so $r = 4 = N$. The dimensions always add up: $\\dim N(F) = 4 - r = 0$.',
+    'For any matrix, $\\dim C(A^{T}) + \\dim N(A) = 4$, and likewise on the output side. Every dimension the rank loses becomes null space.',
     'The row space and the null space are perpendicular, so every signal splits cleanly into one part from each.',
     undefined,
-    'The null spaces shrink because their dimension is $4 - r$, which reaches $0$ at $r = 4$.',
-    'This is what we asked of $F$: nothing lost (the null space is just $\\{\\mathbf{0}\\}$), and the frequency rows form a basis of the whole signal space.',
   ], text: [
-    'Every matrix splits both spaces in two. Signals: the row space, with dimension $r$, and the null space, with dimension $4 - r$. Outputs: the column space ($r$) and the left null space ($4 - r$).',
+    '$F$ has full column rank, so its rank is $r = 4$. The row space and the column space are all of $\\mathbb{C}^4$, and both null spaces are just $\\{\\mathbf{0}\\}$: every signal has its own output.',
+    'If a matrix $A$ were not full rank, say $r = 2$, its null spaces would grow to dimension $4 - r = 2$.',
     'Any signal is a row-space part plus a null-space part. The null part is sent to $\\mathbf{0}$, so only the row-space part reaches the output $\\mathbf{b}$.',
-    'At rank 2 the null space is a plane. Add any null vector to a signal and the output does not change: different signals, one answer, so information is lost.',
-    'As the rank grows to 4 the null spaces shrink to a point, and the row and column spaces fill everything. Every signal now has its own output.',
-    '$F$ is $4 \\times 4$: four samples in, four frequencies out. Its 4 rows are 4 different frequencies, so $r = 4$ and $\\dim N(F) = 4 - 4 = 0$. Nothing is lost.',
+    'Add any null vector to a signal and the output does not change: different signals, one answer, so information is lost. Full rank is what rules this out.',
   ] },
-  { name: 'Basis', title: 'Change of basis: time to frequency', labels: ['Time axes', 'Frequency axes', 'Same signal, new coordinates', 'Four samples'], View: Basis, stops: S8, fresh: true, speed: 1.0, why: [
+  { name: 'Basis', title: 'Change of basis: time to frequency', labels: ['Time basis', 'Warp to the frequency basis', 'Same vector, new weights', 'Four samples'], View: Basis, stops: S8, fresh: true, speed: 1.0, why: [
     undefined,
-    'Why these axes? They are the columns of $F^{-1}$: the pattern at each frequency, written in time coordinates. For $N = 2$ that is $(\\tfrac12, \\tfrac12)$ and $(\\tfrac12, -\\tfrac12)$.',
+    'Why does the second vector flip? $F$ reverses orientation: for two samples its determinant is $-2$. A smooth warp has to pass through a flat state to get there. $b_0$ and $b_1$ are the columns of $F^{-1}$.',
     undefined,
     undefined,
   ], text: [
-    'Take two samples, $x = (3, 1)$: a point in the plane. On the time axes, one per sample, its coordinates are $3$ and $1$.',
-    'Now use the frequency axes instead: the constant pattern and the alternating pattern. The same point is reached by $4$ steps along the first and $2$ along the second.',
-    'The point never moved, only the axes did. $\\mathbf{X} = F\\mathbf{x}$ is the translation: $X_0 = x_0 + x_1$ and $X_1 = x_0 - x_1$.',
-    'Four samples work the same way, in four dimensions. The frame $(1, 0, -1, 0)$ becomes $(0, 2, 0, 2)$: two spikes, a pure tone that the raw samples hide.',
+    'Two-sample signals form a vector space: a plane. The vector $\\mathbf{x}$ is a combination of the time basis vectors: $3\\,e_0 + 1\\,e_1$.',
+    'Now warp the basis. The grid turns and shrinks into the frequency basis $b_0, b_1$, and the second vector flips through zero. The vector $\\mathbf{x}$ does not move.',
+    'The same vector, a new combination: $\\mathbf{x} = 4\\,b_0 + 2\\,b_1$. The weights $4$ and $2$ come from one product, $F\\mathbf{x}$.',
+    'Four samples work the same way, in a four-dimensional space. $F\\mathbf{x}$ gives the weights $(0, 2, 0, 2)$: the frame is $2\\,b_1 + 2\\,b_3$, a pure tone that the raw samples hide.',
   ] },
   { name: 'Trace', title: 'Putting it together: one bin\'s answer', labels: ['Trace a bin'], View: Trace, stops: S9, hold: true, why: [[
     'Only bins 0 to 64 are shown: bin $128-k$ mirrors bin $k$.',

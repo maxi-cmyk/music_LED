@@ -81,7 +81,7 @@ export default function Score({ t }) {
         const lit = (on, c) => (on ? c : DIM);
         const kk = Math.round(k), hz = 50 * kk;
         const integral = `X(f) = \\textcolor{${lit(t >= 7.9, CHALK)}}{\\int}\\,\\textcolor{${lit(t >= 1.3, CHALK)}}{x(t)}\\,\\textcolor{${lit(pat > 0.4, BLUE)}}{\\cos(2\\pi f t)}\\,\\textcolor{${lit(t >= 7.9, CHALK)}}{dt}`;
-        const sum = `X_{k} = \\textcolor{${lit(t >= 8.7, CHALK)}}{\\sum_{n=0}^{N-1}}\\,\\textcolor{${CHALK}}{x[n]}\\,\\textcolor{${BLUE}}{\\cos\\frac{2\\pi kn}{N}}`;
+        const sum = `X_{k} = \\textcolor{${lit(t >= 8.7, CHALK)}}{\\sum_{n=0}^{N-1}}\\,\\textcolor{${CHALK}}{x_{n}}\\,\\textcolor{${BLUE}}{\\cos\\frac{2\\pi kn}{N}}`;
         const toSum = seg(t, 8.5, 9.1), intro = seg(t, 1.3, 2.0);
         return (
           <TG>

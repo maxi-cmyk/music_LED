@@ -38,13 +38,13 @@ export default function Network({ t }) {
         const y = lerp(Y(i), Y(rev(i)), shuffle);
         return (
           <TG key={i}>
-            <M x={X0 - 16} y={y + 7} textAnchor="end" fill="var(--chalk)" fontSize="20">{`$x[${i}]$`}</M>
+            <M x={X0 - 16} y={y + 7} textAnchor="end" fill="var(--chalk)" fontSize="20">{`$x_{${i}}$`}</M>
             <circle cx={X0} cy={y} r="5.5" fill="var(--chalk)" />
           </TG>
         );
       })}
       <TG opacity={seg(t, 8.0, 8.6)}>
-        {Array.from({ length: N }, (_, r) => <M key={r} x={X0 + 4 * DX + 16} y={Y(r) + 7} fill="var(--chalk)" fontSize="20">{`$X[${r}]$`}</M>)}
+        {Array.from({ length: N }, (_, r) => <M key={r} x={X0 + 4 * DX + 16} y={Y(r) + 7} fill="var(--chalk)" fontSize="20">{`$X_{${r}}$`}</M>)}
       </TG>
       {[1, 2, 3, 4].map((s) => (
         <M key={s} x={X0 + (s - 0.5) * DX} y="548" textAnchor="middle" fill="var(--dim)" fontSize="22" opacity={seg(t, T[s] + 0.1, T[s] + 0.6)}>stage {s}</M>

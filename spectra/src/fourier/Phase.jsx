@@ -81,8 +81,8 @@ export default function Phase({ t }) {
         const intro = seg(t, 1.0, 1.7), sineIn = seg(t, 5.7, 6.4), toPoint = seg(t, 8.7, 9.4), toStrength = seg(t, 10.3, 11.0);
         return (
           <TG>
-            <M x="40" y="490" fontSize="30" opacity={intro * (1 - toPoint)}>{String.raw`$\mathrm{Re}\,X_{k} = \sum_{n} x[n]\cos\frac{2\pi kn}{N}$`}</M>
-            <M x="520" y="490" fontSize="30" opacity={sineIn * (1 - toPoint)}>{String.raw`$\mathrm{Im}\,X_{k} = -\sum_{n} x[n]\sin\frac{2\pi kn}{N}$`}</M>
+            <M x="40" y="490" fontSize="30" opacity={intro * (1 - toPoint)}>{String.raw`$\mathrm{Re}\,X_{k} = \sum_{n} x_{n}\cos\frac{2\pi kn}{N}$`}</M>
+            <M x="520" y="490" fontSize="30" opacity={sineIn * (1 - toPoint)}>{String.raw`$\mathrm{Im}\,X_{k} = -\sum_{n} x_{n}\sin\frac{2\pi kn}{N}$`}</M>
             <M x={PX} y="486" textAnchor="middle" fontSize="42" opacity={toPoint}>{String.raw`$X_{k} = \mathrm{Re}\,X_{k} + i\,\mathrm{Im}\,X_{k}$`}</M>
             <M x={PX} y="540" textAnchor="middle" fontSize="36" opacity={toStrength}>{String.raw`$|X_{k}| = \sqrt{(\mathrm{Re}\,X_{k})^{2} + (\mathrm{Im}\,X_{k})^{2}}$`}</M>
           </TG>
