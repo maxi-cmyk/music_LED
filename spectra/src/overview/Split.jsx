@@ -16,10 +16,27 @@ export const tone = ([cycles, amp, phase], u) => amp * Math.sin(2 * Math.PI * cy
 export const pts = (fn) => Array.from({ length: 513 }, (_, i) => `${X(i / 512)},${fn(i / 512)}`).join(' ');
 export const lerp = (a, b, k) => a + (b - a) * k;
 
-// starts exactly as page 2 ends (tapered frame), then: split into tones, label, group by band, add up each band
-export const STOPS = [2.4, 3.7, 6.2]; // split, grouped, added up
+// starts exactly as page 2 ends (tapered frame), then: scan every pitch to find the tones (the Fourier transform at work), split into tones,
+// label, group by band, add up each band
+const SCAN = 8.0; // the scan takes the first 8 seconds; the original split-and-group timeline runs on a clock that starts there
+export const STOPS = [7.6, SCAN + 2.4, SCAN + 3.7, SCAN + 6.2]; // scanned, split, grouped, added up
 
-export default function Split({ t }) {
+// the scan: the tapered frame's real DFT, one bar per 50 Hz bin. Bars grow as the test wave sweeps past their pitch
+const KMAX = 32, SB = 400, SH = 90, SCAN_BLUE = '#5cbcff', SCAN_ORANGE = '#e8a33d';
+const samples = Array.from({ length: N }, (_, i) => { const u = i / (N - 1); return wave(u) * ham(u); });
+const mags = Array.from({ length: KMAX + 1 }, (_, k) => {
+  let re = 0, im = 0;
+  for (let n = 0; n < N; n++) { const a = (-2 * Math.PI * k * n) / N; re += samples[n] * Math.cos(a); im += samples[n] * Math.sin(a); }
+  return Math.hypot(re, im);
+});
+const MAXM = Math.max(...mags.slice(1));
+const BX = (k) => PAD + (k / KMAX) * (W - 2 * PAD);
+const barH = (k) => (SH * mags[k]) / MAXM;
+
+export default function Split({ t: clock }) {
+  const t = clock - SCAN; // the original timeline
+  const kf = 1 + (KMAX - 1) * seg(clock, 0.7, 6.7); // the pitch being tested, in bins of 50 Hz
+  const scanIn = seg(clock, 0.2, 0.8) * (1 - seg(clock, SCAN, SCAN + 0.5)), peaks = seg(clock, 6.9, 7.5);
   const f1 = seg(t, 0, 0.6), emerge = seg(t, 0.3, 0.7), sumFade = seg(t, 0.3, 0.7), move = seg(t, 0.8, 1.9);
   const hzIn = seg(t, 2, 2.4) * (1 - seg(t, 2.6, 3)), colour = seg(t, 2.5, 3.3), names = seg(t, 2.8, 3.4);
   const merge = seg(t, 3.9, 4.9), sumIn = seg(t, 4.3, 4.9), grow = seg(t, 5.1, 5.9);
@@ -40,6 +57,20 @@ export default function Split({ t }) {
           points={Array.from({ length: 129 }, (_, i) => `${X(i / 128)},${MID - s * AMP * ham(i / 128)}`).join(' ')} />
       ))}
       <polyline className="wave" style={{ opacity: 0.5 * (1 - sumFade) }} points={pts((u) => MID - AMP * wave(u) * ham(u))} />
+      <TG opacity={scanIn}>
+        <polyline fill="none" stroke={SCAN_BLUE} strokeWidth="2" strokeDasharray="6 6" opacity={1 - peaks} points={pts((u) => MID - 46 * Math.cos(2 * Math.PI * kf * u))} />
+        <line x1={PAD} x2={W - PAD} y1={SB} y2={SB} stroke="var(--dim)" strokeWidth="1.5" opacity="0.6" />
+        {[0, 10, 20, 30].map((k) => <M key={k} x={BX(k)} y={SB + 28} textAnchor="middle" fill="var(--dim)" fontSize="18">{`${k * 50} Hz`}</M>)}
+        {Array.from({ length: KMAX }, (_, i) => i + 1).map((k) => {
+          const grow = Math.min(1, Math.max(0, kf - k + 0.5)), now = Math.abs(kf - k) < 0.5 && clock < 6.75;
+          return <rect key={k} x={BX(k) - 6} y={SB - barH(k) * grow} width="12" height={Math.max(0, barH(k) * grow)} fill={now ? SCAN_ORANGE : SCAN_BLUE} opacity={now ? 1 : 0.85} />;
+        })}
+        <line x1={BX(kf)} x2={BX(kf)} y1={SB - SH - 6} y2={SB} stroke={SCAN_ORANGE} strokeWidth="1.5" strokeDasharray="3 5" opacity={1 - peaks} />
+        <M x={W - PAD} y={SB - SH - 14} textAnchor="end" fill={SCAN_ORANGE} fontSize="22" opacity={1 - peaks}>{`testing ${Math.round(kf * 50)} Hz`}</M>
+        {TONES.map(([cycles], i) => (
+          <M key={i} x={BX(cycles)} y={SB - barH(Math.round(cycles)) - 14} textAnchor="middle" fill="var(--chalk)" fontSize="19" opacity={peaks}>{`${cycles * 50} Hz`}</M>
+        ))}
+      </TG>
       {Array.from({ length: N }, (_, i) => {
         const u = i / (N - 1), y = MID - AMP * wave(u) * ham(u);
         return (

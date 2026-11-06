@@ -3,8 +3,10 @@ import Vector, { STOPS as S1 } from './Vector.jsx';
 import Score, { STOPS as S2 } from './Score.jsx';
 import Phase, { STOPS as S3 } from './Phase.jsx';
 import Weights, { STOPS as S4 } from './Weights.jsx';
-import Axes, { STOPS as S6 } from './Axes.jsx';
-import Trace, { STOPS as S7 } from './Trace.jsx';
+import Minus, { STOPS as S5 } from './Minus.jsx';
+import Spaces, { STOPS as S7 } from './Spaces.jsx';
+import Basis, { STOPS as S8 } from './Basis.jsx';
+import Trace, { STOPS as S9 } from './Trace.jsx';
 
 // short on purpose: one sentence per step, with the extra detail behind "Why?"; fresh pages play their opening animation on entry
 const PAGES = [
@@ -28,27 +30,43 @@ const PAGES = [
     'Plot $\\mathrm{Re}\\,X_9$ across and $\\mathrm{Im}\\,X_9$ up: one point on a plane, the complex number $X_9 = \\mathrm{Re}\\,X_9 + i\\,\\mathrm{Im}\\,X_9$.',
     'Delay the tone all the way round and the point circles, but its distance from the centre, $|X_9|$, never changes: the strength. The point keeps both strength and delay, so the tone can be rebuilt exactly (dashed). Nothing is lost.',
   ] },
-  { name: 'Weights', title: 'Fourier weights and Euler\'s formula', labels: ['Angle to weight', 'Cosine and sine together', 'One weight per sample'], View: Weights, stops: S4, fresh: true, speed: 1.0, why: [
+  { name: 'Weights', title: 'Fourier weights: the entries of the matrix', labels: ['One row of weights'], View: Weights, stops: S4, fresh: true, speed: 1.0, text: [
+    'The weight for sample $n$ is $e^{-i\\theta}$, a point on the unit circle, with $\\theta = 2\\pi kn/N$. For $N = 4$ and $k = 1$ the arrow turns a quarter turn clockwise per sample, giving $1, -i, -1, i$: row 1 of the Fourier matrix.',
+  ] },
+  { name: 'Minus', title: 'Why the minus sign', labels: ['Tone against weights', 'The turns cancel', 'A plus would cancel'], View: Minus, stops: S5, fresh: true, speed: 1.0, why: [
     undefined,
-    'Why the minus? The complex inner product conjugates the pattern, which flips the exponent: $X_{k} = \\sum_{n} x[n]\\,e^{-i2\\pi kn/N}$.',
-    'Why a quarter turn? $\\theta = 2\\pi kn/N = n\\pi/2$ for $N = 4$ and $k = 1$. With larger $k$ the arrow turns $k$ times as fast, which is how the other rows differ.',
+    'A real cosine is half of this tone plus half of its mirror, $e^{-i\\theta}$. That mirror is why a single cosine lights up two bins.',
+    'Why this sign? The complex inner product conjugates the pattern being tested: $\\overline{e^{i\\theta}} = e^{-i\\theta}$. Either sign gives a valid transform, but with a plus every tone would be reported at its mirrored bin.',
   ], text: [
-    'An angle becomes a point on a circle: $e^{i\\theta} = \\cos\\theta + i\\sin\\theta$ (Euler\'s formula). Across is the cosine of the angle, up is its sine.',
-    'Turn it clockwise instead: $e^{-i\\theta} = \\cos\\theta - i\\sin\\theta$. One complex weight holds a cosine check and a sine check together, so a tone can be measured whatever its starting phase.',
-    'The angle for sample $n$ is $\\theta = 2\\pi kn/N$. For $N = 4$ and $k = 1$ the arrow turns a quarter turn per sample, giving the weights $1, -i, -1, i$. These weights are the entries of the Fourier matrix.',
+    'Test a tone that turns counterclockwise, $e^{i\\theta}$ with $\\theta = n\\pi/2$, against row 1. The minus sign makes the weights turn clockwise, against the tone.',
+    'Multiply each sample by its weight. The two turns cancel, so every product points the same way and the four add up to $4$: a big answer, so the tone is there.',
+    'With a plus sign the weights would turn with the tone. The products alternate and cancel to $0$, so bin 1 would miss the tone. The highlighted rows point the other way and cancel the rest. The minus matches each tone to its detector.',
   ] },
-  { name: 'Axes', title: 'Change of basis: time to frequency', labels: ['The Fourier matrix', 'Perpendicular rows', 'Frequency basis', 'Same signal'], View: Axes, stops: S6, fresh: true, speed: 1.0, why: [
-    ['Why $e^{-i\\theta}$? Euler\'s formula: $e^{-i\\theta} = \\cos\\theta - i\\sin\\theta$ is a point on the unit circle, and the minus sign makes it turn clockwise. $\\theta$ grows by $2\\pi k/N$ per sample, so row $k$ turns $k$ times round the frame.', 'What is the "time basis"? The frame $\\mathbf{x}$ is already a list of coordinates on the time axes (one axis per sample), and the identity matrix changes nothing: $I\\mathbf{x} = \\mathbf{x}$. The Fourier matrix describes the same frame on different axes.'],
-    ['Why does it matter? If two axes overlapped, a tone in one would also register in the other. Perpendicular axes keep every coordinate independent, so each coordinate is just a dot product with its row.', 'For complex rows the dot product conjugates the second row. A row with itself gives $N$ (here 4), so $FF^{*} = NI$, and that is also why the transform can be undone: $\\mathbf{x} = \\tfrac{1}{N}F^{*}\\mathbf{X}$.'],
-    'In the time basis a pure tone is a list of numbers rising and falling. In the frequency basis it is a few large coordinates, so finding the tone means reading off which ones are big.',
-    'The squared length is preserved exactly only when the matrix is divided by $\\sqrt{N}$.',
+  { name: 'Spaces', title: 'The four fundamental spaces', labels: ['The four spaces', 'Where a signal goes', 'Rank 2 loses signals', 'Rank grows to 4', 'The spaces of F'], View: Spaces, stops: S7, fresh: true, speed: 1.0, why: [
+    'Every matrix has these four. Their dimensions are fixed by the rank $r$: the row and column spaces have dimension $r$, and the two null spaces have dimension $4 - r$.',
+    'The row space and the null space are perpendicular, so every signal splits cleanly into one part from each.',
+    undefined,
+    'The null spaces shrink because their dimension is $4 - r$, which reaches $0$ at $r = 4$.',
+    'This is what we asked of $F$: nothing lost (the null space is just $\\{\\mathbf{0}\\}$), and the frequency rows form a basis of the whole signal space.',
   ], text: [
-    'Change of basis, from time to frequency. The frame $\\mathbf{x} = (1, 0, -1, 0)$ is a $4\\times 1$ vector. The Fourier matrix comes from one formula, $F[k,n] = e^{-i\\theta_{k,n}}$ with $\\theta_{k,n} = 2\\pi kn/N$. For $N = 4$, $k = 1$ it gives $(1, -i, -1, i)$, and all four values of $k$ fill the $4\\times 4$ matrix.',
-    'Good axes must not overlap, so every pair of rows must be perpendicular: $(1,-i,-1,i)\\cdot(1,-1,1,-1) = 0$. Each pair is a plane with its axes at $90^{\\circ}$, and the frame casts a shadow on it. All 6 pairs check out: an orthogonal basis.',
-    'Multiply: $\\mathbf{X} = F\\mathbf{x}$, a $4\\times 4$ matrix times a $4\\times 1$ vector. Each coordinate is the frame\'s dot product with a row: $(0, 2, 0, 2)$. Two spikes: the frame is a pure tone (bin 1, and its mirror bin 3), which the raw samples hide.',
-    'Same signal, new description. The squared length grows by $N = 4$ (divide $F$ by $\\sqrt{N}$ to keep it exact). The project does this with 128 samples, then reads off bass, mids and treble.',
+    'Every matrix splits both spaces in two. Signals: the row space, with dimension $r$, and the null space, with dimension $4 - r$. Outputs: the column space ($r$) and the left null space ($4 - r$).',
+    'Any signal is a row-space part plus a null-space part. The null part is sent to $\\mathbf{0}$, so only the row-space part reaches the output $\\mathbf{b}$.',
+    'At rank 2 the null space is a plane. Add any null vector to a signal and the output does not change: different signals, one answer, so information is lost.',
+    'As the rank grows to 4 the null spaces shrink to a point, and the row and column spaces fill everything. Every signal now has its own output.',
+    '$F$ is $4 \\times 4$: four samples in, four frequencies out. Its 4 rows are 4 different frequencies, so $r = 4$ and $\\dim N(F) = 4 - 4 = 0$. Nothing is lost.',
   ] },
-  { name: 'Trace', title: 'Putting it together: one bin\'s answer', labels: ['Trace a bin'], View: Trace, stops: S7, hold: true, why: [[
+  { name: 'Basis', title: 'Change of basis: time to frequency', labels: ['Time axes', 'Frequency axes', 'Same signal, new coordinates', 'Four samples'], View: Basis, stops: S8, fresh: true, speed: 1.0, why: [
+    undefined,
+    'Why these axes? They are the columns of $F^{-1}$: the pattern at each frequency, written in time coordinates. For $N = 2$ that is $(\\tfrac12, \\tfrac12)$ and $(\\tfrac12, -\\tfrac12)$.',
+    undefined,
+    undefined,
+  ], text: [
+    'Take two samples, $x = (3, 1)$: a point in the plane. On the time axes, one per sample, its coordinates are $3$ and $1$.',
+    'Now use the frequency axes instead: the constant pattern and the alternating pattern. The same point is reached by $4$ steps along the first and $2$ along the second.',
+    'The point never moved, only the axes did. $\\mathbf{X} = F\\mathbf{x}$ is the translation: $X_0 = x_0 + x_1$ and $X_1 = x_0 - x_1$.',
+    'Four samples work the same way, in four dimensions. The frame $(1, 0, -1, 0)$ becomes $(0, 2, 0, 2)$: two spikes, a pure tone that the raw samples hide.',
+  ] },
+  { name: 'Trace', title: 'Putting it together: one bin\'s answer', labels: ['Trace a bin'], View: Trace, stops: S9, hold: true, why: [[
     'Only bins 0 to 64 are shown: bin $128-k$ mirrors bin $k$.',
     'The small bars at bins 1, 2, 4 and 5 are the frame\'s 75 and 225 Hz tones, which fall between slots and spread.',
   ]], text: [

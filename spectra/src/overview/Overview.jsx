@@ -10,7 +10,8 @@ import Mixer, { STOPS as S5 } from './Mixer.jsx';
 import Circuit, { STOPS as S6 } from '../hardware/Circuit.jsx';
 
 // text[k] appears as soon as the page starts moving to stop k, so the words change together with the picture
-const SPLIT = 'The cleaned frame is split into pure tones of different pitch, much like how colors can be split into red, green and blue. This split is the Fourier transform.';
+const SCANNED = 'To find the tones, test the frame against a wave at every pitch, 50 Hz apart. A tall bar means that pitch is in the frame.';
+const SPLIT = 'The tall bars are the pure tones the frame is made of, much like how colors can be split into red, green and blue. Pulling them out is the Fourier transform.';
 
 const TAPER = "Then it is faded at the edges so that sharp cut-offs don't smear the result.";
 
@@ -23,7 +24,8 @@ const OVERVIEW = [
     'Each frame is cleaned first. It is shifted to be centred around zero.',
     TAPER,
   ] },
-  { name: 'Splitting', title: 'The Fourier transform: splitting into pitches', labels: ['Split into tones', 'Group by pitch', 'Add up each band'], View: Split, stops: S3, fresh: true, speed: 1.4, why: ['Bin 0 is just the average level, and the code ignores everything above bin 50 (2,500 Hz).'], text: [
+  { name: 'Splitting', title: 'The Fourier transform: splitting into pitches', labels: ['Test every pitch', 'Split into tones', 'Group by pitch', 'Add up each band'], View: Split, stops: S3, fresh: true, speed: 1.4, why: ['Why 50 Hz apart? 128 snapshots at 6,400 per second: 6,400 ÷ 128 = 50 Hz. Each bar is one coefficient, the frame multiplied by a test wave and added up. The bars shown are the real result for this frame.', undefined, 'Bin 0 is just the average level, and the code ignores everything above bin 50 (2,500 Hz).'], text: [
+    SCANNED,
     SPLIT,
     'The tones are then grouped by pitch into bass, mids and treble.',
     'Add up the strength in each band.',

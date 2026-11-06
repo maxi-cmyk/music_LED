@@ -2,6 +2,7 @@ import Overview from '../overview/Overview.jsx';
 import EvenOdd, { STOPS as S1 } from './EvenOdd.jsx';
 import Butterfly, { STOPS as S2 } from './Butterfly.jsx';
 import Network, { STOPS as S3 } from './Network.jsx';
+import Matrix, { STOPS as S3b } from './Matrix.jsx';
 import Compare, { STOPS as S4 } from './Compare.jsx';
 
 // the same route as the demo's derivation: split the sum, pull out the extra step, reuse the halves, repeat
@@ -27,6 +28,15 @@ const PAGES = [
     'Each half splits again, down to single samples. The ESP32 shuffles the samples into bit-reversed order so every split lines up.',
     'Then four stages of butterflies rebuild the answer: 2-sample results, then 4, 8 and 16.',
     'Every row joins one butterfly per stage: $4 \\times 8$ butterflies for 16 samples, and $7 \\times 64 = 448$ for 128.',
+  ] },
+  { name: 'Matrix', title: 'The FFT as a matrix factorisation', labels: ['One split as matrices', 'Worked for N = 4', 'Every stage is a factor'], View: Matrix, stops: S3b, fresh: true, speed: 1.2, why: [
+    'Multiply it out: the top half is $E + DO$ and the bottom half is $E - DO$. The minus is because $W^{N/2} = -1$, so bin $k+N/2$ uses $-W^{k}$.',
+    undefined,
+    'Each $A_s$ has its own twiddles: stage $s$ uses $W_m = e^{-i2\\pi/m}$ with $m = 2^{s}$. The shuffle $P$ is the bit-reversal from the last page.',
+  ], text: [
+    'The same split, written as matrices. $P$ puts the even samples first, two half-size DFTs work on the halves, and the left factor twists the odd half by $D$, then adds and subtracts.',
+    'For $N = 4$ and $\\mathbf{x} = (1, 0, -1, 0)$: shuffle to $(1, -1, 0, 0)$, two $F_2$ blocks give $(0, 2, 0, 0)$, and the butterflies give $(0, 2, 0, 2)$, the direct answer.',
+    'Split each half again, and again, down to $F_2$. $F_N$ becomes $\\log_2 N$ sparse factors, each with two non-zeros per row, times the reordering $P$.',
   ] },
   { name: 'Compare', title: 'Complexity: $O(N^2)$ vs $O(N\\log N)$', labels: ['Slide the size'], View: Compare, stops: S4, hold: true, text: [
     'Slide the sample count. The direct method grows with $N^2$, the FFT only a little faster than $N$, and the answers are identical.',
