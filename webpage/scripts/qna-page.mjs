@@ -1,6 +1,6 @@
 // Q&A page: grouped, expandable answers with a filter. #qna/12 opens answer 12.
-import { QNA_GROUPS } from './qna-data.mjs?release=20261107-qna-5';
-import { appendInline, plainText } from './qna-render.mjs?release=20261107-qna-5';
+import { QNA_GROUPS } from './qna-data.mjs?release=20261107-qna-11';
+import { appendInline, plainText } from './qna-render.mjs?release=20261107-qna-11';
 import { renderMath } from './math-renderer.mjs?release=20260924-distill-23';
 
 function element(tag, className, text) {
