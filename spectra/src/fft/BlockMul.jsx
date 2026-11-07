@@ -2,7 +2,7 @@ import { seg } from '../overview/ease.js';
 import { M, TG } from '../math/Tex.jsx';
 import { BLUE, ORANGE, GREEN, DIMC } from '../fourier/Grid.jsx';
 
-export const STOPS = [3.6, 12.0, 20.4, 26.0]; // the product of blocks, block row 0, block row 1, the factorisation
+export const STOPS = [2.4, 13, 15.4]; // the product of blocks, all four result blocks, the factorisation
 
 const PINK = '#f08ad0', LIME = '#d9ff52';
 const BW = 112, BH = 80, Y0 = 130;
@@ -39,11 +39,11 @@ function Blocks({ x, texts, colours, tag, opacities }) {
 
 // block-wise multiplication: C_ij is the sum over l of A_il B_lj, block by block
 export default function BlockMul({ t }) {
-  const show = seg(t, 0.2, 1.0);
-  const step = [seg(t, 4.0, 5.2), seg(t, 8.0, 9.2), seg(t, 12.6, 13.8), seg(t, 16.6, 17.8)]; // each result block fills in
-  const hot = [step[0] * (1 - seg(t, 7.4, 8.0)), step[1] * (1 - seg(t, 11.6, 12.4)), step[2] * (1 - seg(t, 16.2, 16.8)), step[3] * (1 - seg(t, 20.0, 20.6))];
-  const eqs = [seg(t, 5.0, 6.4), seg(t, 9.0, 10.4), seg(t, 13.6, 15.0), seg(t, 17.6, 19.0)];
-  const fin = seg(t, 21.6, 22.4), out = seg(t, 20.8, 21.4);
+  const show = seg(t, 0.2, 1);
+  const step = [seg(t, 2.8, 3.8), seg(t, 5.4, 6.4), seg(t, 8, 9), seg(t, 10.6, 11.6)]; // each result block fills in
+  const hot = [step[0] * (1 - seg(t, 5, 5.6)), step[1] * (1 - seg(t, 7.6, 8.2)), step[2] * (1 - seg(t, 10.2, 10.8)), step[3] * (1 - seg(t, 12.2, 12.8))];
+  const eqs = [seg(t, 3.6, 4.8), seg(t, 6.2, 7.4), seg(t, 8.8, 10), seg(t, 11.4, 12.6)];
+  const fin = seg(t, 14.2, 15), out = seg(t, 13.4, 14);
   const C_OP = step;
   return (
     <svg className="frame tall" viewBox="0 0 1000 560" role="img" aria-label="Block-wise multiplication of the four blocks. The left matrix has blocks I, D, I and minus D, the right matrix has blocks F of N over 2 on the diagonal and zeros elsewhere. Each block of the product is the sum over l of A sub i l times B sub l j. The four results are F of N over 2, D F of N over 2, F of N over 2 and minus D F of N over 2, exactly the four blocks of the Fourier matrix with its columns reordered. So F sub N equals the left matrix times the block diagonal matrix of two copies of F of N over 2, times the permutation matrix Pi.">
@@ -78,7 +78,7 @@ export default function BlockMul({ t }) {
 
       <TG fill="var(--chalk)" opacity={1 - out}>
         {EQ.map((e, i) => <M key={i} x="60" y={338 + 46 * i} fontSize="23" fill={COL[i]} opacity={eqs[i]} w={900}>{e}</M>)}
-        <M x="60" y="540" fill="var(--dim)" fontSize="20" opacity={seg(t, 1.2, 2.0) * (1 - seg(t, 3.9, 4.4))} w={900}>{'block row $i$ of $A$ times block column $j$ of $B$, added up: $C_{ij} = \\sum_l A_{il}B_{lj}$'}</M>
+        <M x="60" y="540" fill="var(--dim)" fontSize="20" opacity={seg(t, 1.2, 2) * (1 - seg(t, 2.7, 3.2))} w={900}>{'block row $i$ of $A$ times block column $j$ of $B$, added up: $C_{ij} = \\sum_l A_{il}B_{lj}$'}</M>
       </TG>
 
       <TG fill="var(--chalk)" opacity={fin}>

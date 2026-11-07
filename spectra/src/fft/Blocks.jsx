@@ -2,7 +2,7 @@ import { seg } from '../overview/ease.js';
 import { M, TG } from '../math/Tex.jsx';
 import { BLUE, ORANGE, DIMC } from '../fourier/Grid.jsx';
 
-export const STOPS = [4.6, 9.4, 14.6, 22.0]; // the matrix F_N, evens first, four blocks, why these blocks
+export const STOPS = [4.6, 9.4, 14.6]; // the matrix F_N, evens first, four blocks
 
 const PINK = '#f08ad0', LIME = '#d9ff52';
 const X0 = 84, Y0 = 150, CW = 64, RH = 54, FS = 28; // the numeric 4 x 4 matrix
@@ -21,8 +21,8 @@ export default function Blocks({ t }) {
   const show = seg(t, 0.2, 1.2), move = seg(t, 5.2, 7.2), lines = seg(t, 7.0, 7.8), paint = seg(t, 9.8, 10.6);
   const blk = [seg(t, 10.6, 11.4), seg(t, 11.4, 12.2), seg(t, 12.2, 13.0), seg(t, 13.0, 13.8)];
   const label = seg(t, 13.6, 14.4);
-  const num = 1 - 0.55 * seg(t, 15.0, 15.8); // the numbers step back while the reasons are shown
-  const sym = 1 - 0.35 * seg(t, 15.0, 15.8);
+  const num = 1;
+  const sym = 1;
   const x = (c) => X0 + CW * (c + 0.5), y = (r) => Y0 + RH * (r + 0.5) + 0.32 * FS;
   return (
     <svg className="frame tall" viewBox="0 0 1000 560" role="img" aria-label="Splitting the Fourier matrix into blocks. Reorder the columns so the even columns come first, then the odd ones. The matrix falls into four blocks: top left F of N over 2, top right D times F of N over 2, bottom left F of N over 2, bottom right minus D times F of N over 2. The top right block has each odd column equal to the matching even column times W to the k, the bottom half has W to the k plus N over 2 equal to minus W to the k.">
@@ -81,15 +81,7 @@ export default function Blocks({ t }) {
         })}
       </TG>
 
-      <TG fill="var(--chalk)">
-        <M x="60" y="452" fontSize="24" opacity={seg(t, 15.2, 16.0)} w={900}>{'$W_N^{k(2m+1)} = W_N^{k}\\,W_{N/2}^{km}$'}</M>
-        <M x="470" y="452" fill={ORANGE} fontSize="22" opacity={seg(t, 15.8, 16.6)} w={500}>{'odd columns: row $k$ times $W_N^{k}$, so $D F_{N/2}$'}</M>
-        <M x="60" y="494" fontSize="24" opacity={seg(t, 17.0, 17.8)} w={900}>{'$W_N^{k + N/2} = -W_N^{k}$'}</M>
-        <M x="470" y="494" fill={PINK} fontSize="22" opacity={seg(t, 17.6, 18.4)} w={500}>{'lower rows: the factor flips sign, so $-D F_{N/2}$'}</M>
-        <M x="60" y="536" fontSize="24" opacity={seg(t, 18.8, 19.6)} w={900}>{'$W_{N/2}^{(k + N/2)m} = W_{N/2}^{km}$'}</M>
-        <M x="470" y="536" fill={BLUE} fontSize="22" opacity={seg(t, 19.4, 20.2)} w={500}>{'even columns repeat: $F_{N/2}$ again'}</M>
-        <M x="60" y="412" fill="var(--dim)" fontSize="20" opacity={seg(t, 14.9, 15.7)} w={900}>{'$D = \\mathrm{diag}(W_N^{0}, W_N^{1}, \\dots, W_N^{N/2-1})$, here $\\mathrm{diag}(1, -i)$'}</M>
-      </TG>
+      <M x={SX + BW} y="420" textAnchor="middle" fontSize="22" fill="var(--dim)" opacity={label} w={460}>{'$D = \\mathrm{diag}(W_N^{0}, \\dots, W_N^{N/2-1})$, here $\\mathrm{diag}(1, -i)$'}</M>
     </svg>
   );
 }

@@ -11,6 +11,7 @@ const sc = (p, k) => [p[0] * k, p[1] * k];
 const lerp = (p, q, k) => [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k];
 const WO = turn(O, A), SUM = add(E, WO), DIFF = add(E, sc(WO, -1));
 const px = ([x, y]) => [PX + U * x, PY - U * y];
+const IN = 665, BOX = 680, BOXW = 76, X0 = BOX + BOXW, X1 = 895; // the schematic: both inputs reach the crossing at X0, and both diagonals span X0 to X1, so the X is symmetric
 
 function Arrow({ from, to, color, width = 4.5, dash, opacity = 1 }) {
   const [x1, y1] = px(from), [x2, y2] = px(to), a = Math.atan2(y2 - y1, x2 - x1), h = 16;
@@ -41,7 +42,7 @@ export default function Butterfly({ t }) {
       <g opacity={slide < 0.01 ? 1 : flip}>
         <Arrow from={woTail} to={add(woTail, twist < 1 ? turn(O, A * twist) : WO)} color={ORANGE} opacity={twist > 0 ? 1 : 0} />
       </g>
-      <T at={add(woTail, WO)} fill={ORANGE} opacity={seg(t, 1.4, 1.8) * flip}>{'$W_{N}^{k}O_k$'}</T>
+      <M x={px(add(woTail, sc(WO, 0.5)))[0] + 16} y={px(add(woTail, sc(WO, 0.5)))[1] + 38} fill={ORANGE} fontSize="26" opacity={seg(t, 1.4, 1.8) * flip}>{'$W_{N}^{k}O_k$'}</M>
       <g opacity={back}><Arrow from={E} to={DIFF} color={ORANGE} dash="6 7" /></g>
       <Arrow from={[0, 0]} to={lerp([0, 0], SUM, plus)} color="#f2f2ec" opacity={plus} />
       <T at={SUM} fill="var(--chalk)" opacity={plus}>$X_k$</T>
@@ -50,22 +51,23 @@ export default function Butterfly({ t }) {
       <M x="40" y="40" fill="var(--dim)" fontSize="22" opacity={twist}>{'twist $= k/N$ of a turn, clockwise (here $k = N/8$)'}</M>
 
       <TG textAnchor="middle">
-        <M x="660" y="128" fill={BLUE} fontSize="30">$E_k$</M>
-        <M x="660" y="378" fill={ORANGE} fontSize="30">$O_k$</M>
-        <rect x="715" y="345" width="84" height="50" rx="7" fill="none" stroke={ORANGE} strokeWidth="2.5" />
-        <M x="757" y="381" fill={ORANGE} fontSize="26">{'$W_{N}^{k}$'}</M>
-        <line x1="690" y1="368" x2="715" y2="368" stroke={ORANGE} strokeWidth="2.5" />
-        <line x1="690" y1="120" x2="880" y2="120" stroke="var(--dim)" strokeWidth="2" opacity="0.5" />
-        <line x1="690" y1="120" x2="880" y2="368" stroke="var(--dim)" strokeWidth="2" opacity="0.5" />
-        <line x1="799" y1="368" x2="880" y2="120" stroke={ORANGE} strokeWidth="2" opacity="0.5" />
-        <line x1="799" y1="368" x2="880" y2="368" stroke={ORANGE} strokeWidth="2" opacity="0.5" />
+        <M x="635" y="128" fill={BLUE} fontSize="30">$E_k$</M>
+        <M x="635" y="378" fill={ORANGE} fontSize="30">$O_k$</M>
+        <rect x={BOX} y="345" width={BOXW} height="50" rx="7" fill="none" stroke={ORANGE} strokeWidth="2.5" />
+        <M x={BOX + BOXW / 2} y="381" fill={ORANGE} fontSize="24">{'$W_{N}^{k}$'}</M>
+        <line x1={IN} y1="368" x2={BOX} y2="368" stroke={ORANGE} strokeWidth="2.5" />
+        <line x1={IN} y1="120" x2={X0} y2="120" stroke={BLUE} strokeWidth="2.5" />
+        <line x1={X0} y1="120" x2={X1} y2="120" stroke="var(--dim)" strokeWidth="2" opacity="0.5" />
+        <line x1={X0} y1="120" x2={X1} y2="368" stroke="var(--dim)" strokeWidth="2" opacity="0.5" />
+        <line x1={X0} y1="368" x2={X1} y2="120" stroke={ORANGE} strokeWidth="2" opacity="0.5" />
+        <line x1={X0} y1="368" x2={X1} y2="368" stroke={ORANGE} strokeWidth="2" opacity="0.5" />
         <g opacity={plus}>
-          <line x1="690" y1="120" x2="880" y2="120" stroke="var(--chalk)" strokeWidth="3.5" />
-          <line x1="799" y1="368" x2="880" y2="120" stroke="var(--chalk)" strokeWidth="3.5" />
+          <line x1={X0} y1="120" x2={X1} y2="120" stroke="var(--chalk)" strokeWidth="3.5" />
+          <line x1={X0} y1="368" x2={X1} y2="120" stroke="var(--chalk)" strokeWidth="3.5" />
         </g>
         <g opacity={minus}>
-          <line x1="690" y1="120" x2="880" y2="368" stroke={GREEN} strokeWidth="3.5" />
-          <line x1="799" y1="368" x2="880" y2="368" stroke={GREEN} strokeWidth="3.5" />
+          <line x1={X0} y1="120" x2={X1} y2="368" stroke={GREEN} strokeWidth="3.5" />
+          <line x1={X0} y1="368" x2={X1} y2="368" stroke={GREEN} strokeWidth="3.5" />
         </g>
         <M x="955" y="128" fill="var(--chalk)" opacity={plus} fontSize="28">$X_k$</M>
         <M x="950" y="376" fill={GREEN} opacity={minus} fontSize="24">{'$X_{k+N/2}$'}</M>
