@@ -161,7 +161,7 @@ export default function Overview({ onHome, next, pages: PAGES = OVERVIEW }) { //
             <div key={`g${p}`} className="group"><Rich>{pg.title ?? pg.name}</Rich></div>,
             ...pg.stops.map((_, i) => (
               <button key={`${p}.${i}`} className={`${i === 0 ? 'first ' : ''}${p === view.p && i === view.shown ? 'on' : ''}`}
-                onClick={() => s.current.jump(p, i)}>{pg.labels[i]}</button>
+                onClick={() => s.current.jump(p, i)}><Rich>{pg.labels[i]}</Rich></button>
             )),
           ])}
         </animated.div>

@@ -10,10 +10,16 @@ const EXPR = new RegExp(String.raw`(?<![A-Za-z\d.,-])[-−]?${TERM}(?:\s*[×÷+�
 const OPS = { '→': String.raw`\to`, '×': String.raw`\times`, '÷': String.raw`\div`, '−': '-', '≈': String.raw`\approx`, '·': String.raw`\cdot`, '–': String.raw`\text{–}` };
 const UNITS = { kHz: String.raw`\mathrm{kHz}`, Hz: String.raw`\mathrm{Hz}`, ms: String.raw`\mathrm{ms}`, V: String.raw`\mathrm{V}`, '%': String.raw`\%`, '°': String.raw`^{\circ}` };
 
+// the course (LA4CS) sets matrices in bold italic. Inside <BoldMatrices.Provider value> the matrix letters used on the FFT pages get it automatically
+export const BoldMatrices = createContext(false);
+const boldTex = (tex) => tex
+  .replace(/\\Pi/g, String.raw`\boldsymbol{\Pi}`)
+  .replace(/(?<!\\boldsymbol\{)(?<![A-Za-z\\])([ABCDFIP])(?![A-Za-z])/g, String.raw`\boldsymbol{$1}`);
+
 const cache = new Map();
-const render = (tex, display = false) => {
-  const key = (display ? 'D' : 'I') + tex;
-  if (!cache.has(key)) cache.set(key, katex.renderToString(tex, { throwOnError: false, strict: 'ignore', displayMode: display }));
+const render = (tex, display = false, bold = false) => {
+  const key = (bold ? 'B' : '') + (display ? 'D' : 'I') + tex;
+  if (!cache.has(key)) cache.set(key, katex.renderToString(bold ? boldTex(tex) : tex, { throwOnError: false, strict: 'ignore', displayMode: display }));
   return cache.get(key);
 };
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -25,10 +31,10 @@ const toTex = (run) => run
   .replace(/\s*([×÷−≈·–→])\s*/g, (_, o) => (o === '–' ? OPS[o] : ` ${OPS[o]} `))
   .replace(/\s*([+=/])\s*/g, ' $1 ');
 
-export function richHtml(text) {
+export function richHtml(text, bold = false) {
   const items = []; // { html, math }: plain text or one typeset piece
   String(text).split(/(\$[^$]+\$)/).forEach((part) => {
-    if (part.length > 1 && part.startsWith('$') && part.endsWith('$')) { items.push({ html: render(part.slice(1, -1)), math: true }); return; }
+    if (part.length > 1 && part.startsWith('$') && part.endsWith('$')) { items.push({ html: render(part.slice(1, -1), false, bold), math: true }); return; }
     let last = 0;
     for (const m of part.matchAll(EXPR)) {
       if (m.index > last) items.push({ html: escapeHtml(part.slice(last, m.index)), math: false });
@@ -52,7 +58,8 @@ export function richHtml(text) {
 
 // inline prose
 export function Rich({ children, as: Tag = 'span', ...props }) {
-  return <Tag {...props} dangerouslySetInnerHTML={{ __html: richHtml([].concat(children).flat(Infinity).join('')) }} />;
+  const bold = useContext(BoldMatrices);
+  return <Tag {...props} dangerouslySetInnerHTML={{ __html: richHtml([].concat(children).flat(Infinity).join(''), bold) }} />;
 }
 
 // SVG text replacement: same props as <text>, set by KaTeX inside a foreignObject
@@ -62,14 +69,14 @@ export function TG({ children, ...props }) { // a <g> whose font size, anchor an
   return <g {...props}><Ctx.Provider value={{ ...parent, ...(fontSize && { fontSize }), ...(textAnchor && { textAnchor }), ...(fill && { fill }) }}>{children}</Ctx.Provider></g>;
 }
 export function M({ x = 0, y = 0, fontSize, textAnchor, fill, opacity, transform, display, children, w = 640 }) {
-  const c = useContext(Ctx);
+  const c = useContext(Ctx), bold = useContext(BoldMatrices);
   const size = +(fontSize ?? c.fontSize ?? 16), anchor = textAnchor ?? c.textAnchor ?? 'start', colour = fill ?? c.fill ?? 'var(--chalk)';
   const text = [].concat(children).flat(Infinity).filter((v) => v !== false && v != null).join('');
   const left = anchor === 'end' ? x - w : anchor === 'middle' ? x - w / 2 : x;
   return (
     <foreignObject x={left} y={y - 0.86 * size} width={w} height={size * 1.4} opacity={opacity} transform={transform} style={{ overflow: 'visible', pointerEvents: 'none' }}>
       <div className="mtext" style={{ fontSize: size, color: colour, textAlign: anchor === 'end' ? 'right' : anchor === 'middle' ? 'center' : 'left' }}
-        dangerouslySetInnerHTML={{ __html: display ? render(text, true) : richHtml(text) }} />
+        dangerouslySetInnerHTML={{ __html: display ? render(text, true, bold) : richHtml(text, bold) }} />
     </foreignObject>
   );
 }

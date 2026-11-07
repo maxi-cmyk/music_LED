@@ -1,8 +1,8 @@
 import { seg } from '../overview/ease.js';
 import { M, TG } from '../math/Tex.jsx';
 
-const T = [0, 1.8, 3.4, 5.0, 6.6, 8.2, 9.6]; // when each part of the animation rests
-export const STOPS = [1.8, 8.2, 9.6]; // shuffle done, all four stages done, totals
+const T = [0, 0, 1.6, 3.2, 4.8, 6.4, 7.8]; // when each part of the animation rests
+export const STOPS = [6.4, 7.8]; // all four stages done, totals
 const BLUE = '#5cbcff';
 const N = 16, X0 = 175, DX = 170, Y = (r) => 40 + r * 31;
 const rev = (i) => parseInt(i.toString(2).padStart(4, '0').split('').reverse().join(''), 2);
@@ -14,11 +14,11 @@ const stages = [1, 2, 3, 4].map((s) => {
   return pairs;
 });
 
-// a 16-sample FFT drawn out: shuffle the samples, then four stages of eight butterflies each
+// an N = 16 FFT drawn out: the bit-reversed samples, then log2 N = 4 stages of N/2 = 8 butterflies each
 export default function Network({ t }) {
-  const shuffle = seg(t, 0.2, 1.7);
+  const shuffle = 1; // the samples arrive already in bit-reversed order
   return (
-    <svg className="frame tall" viewBox="0 0 1000 560" role="img" aria-label="A 16-sample FFT: the samples are shuffled, then four stages of eight butterflies combine them into 16 answers">
+    <svg className="frame tall" viewBox="0 0 1000 560" role="img" aria-label="An FFT drawn for N equals 16: the bit-reversed samples go through log base 2 of N, here 4, stages of N over 2, here 8, butterflies and come out as 16 answers">
       {stages.map((pairs, i) => {
         const s = i + 1, p = seg(t, T[s] + 0.1, T[s + 1] - 0.25);
         const dim = s < 4 ? seg(t, T[s + 1] + 0.1, T[s + 1] + 0.6) : 0; // fades once the next stage starts drawing
@@ -43,7 +43,7 @@ export default function Network({ t }) {
           </TG>
         );
       })}
-      <TG opacity={seg(t, 8.0, 8.6)}>
+      <TG opacity={seg(t, 6.2, 6.8)}>
         {Array.from({ length: N }, (_, r) => <M key={r} x={X0 + 4 * DX + 16} y={Y(r) + 7} fill="var(--chalk)" fontSize="20">{`$X_{${r}}$`}</M>)}
       </TG>
       {[1, 2, 3, 4].map((s) => (
