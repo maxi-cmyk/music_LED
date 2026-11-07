@@ -1,7 +1,7 @@
 import { seg } from '../overview/ease.js';
 import { M, TG } from '../math/Tex.jsx';
 
-export const STOPS = [4.8, 7.6, 12.6, 18.6]; // F has full rank, a matrix that is not full rank, where a signal goes, information is lost
+export const STOPS = [4.4, 7.2, 10.9, 13.1]; // F has full rank, a matrix that is not full rank, where a signal goes, information is lost
 
 // the big picture of a matrix, after Strang: the signal space on the left holds the row space and the null space, the output space on the
 // right holds the column space and the left null space. A vector x splits into a row-space part and a null-space part; the null part goes to 0
@@ -53,17 +53,17 @@ function Dot({ p, label, dx = 0, dy = -12, anchor = 'middle', colour = 'var(--ch
 
 export default function Spaces({ t }) {
   // F first: full column rank, so r = 4 and nothing hides. Then a matrix A that is not full rank: r drops to 2 and the null spaces appear
-  const r = 4 - 2 * seg(t, 5.0, 7.2), sR = UNIT * r, sN = UNIT * (4 - r), nf = clamp((4 - r) / 2); // nf: how much null space there is
+  const r = 4 - 2 * seg(t, 4.6, 6.8), sR = UNIT * r, sN = UNIT * (4 - r), nf = clamp((4 - r) / 2); // nf: how much null space there is
   const OL = [OLX, TOP + VX * sR], OR = [ORX, TOP + VX * sR]; // the zero vectors: up + down always add to the same height
-  const into = [seg(t, 0.3, 1.2), seg(t, 0.8, 1.6), seg(t, 1.2, 2.0), seg(t, 1.6, 2.4)];
-  const fw = 1 - seg(t, 5.2, 5.8); // 1 while we look at the Fourier matrix F, 0 for the generic matrix A
+  const into = [seg(t, 0.3, 1.2), seg(t, 0.8, 1.6), seg(t, 1.2, 2), seg(t, 1.6, 2.4)];
+  const fw = 1 - seg(t, 4.8, 5.4); // 1 while we look at the Fourier matrix F, 0 for the generic matrix A
   const isF = fw > 0.5, nm = isF ? 'F' : 'A', out = isF ? String.raw`\mathbf{X}` : String.raw`\mathbf{b}`;
   const dimR = isF ? `$\\dim = 4$` : `$\\dim = r$`, dimN = isF ? `$\\dim = 0$` : `$\\dim = 4 - r$`; // numbers for F, symbols for A
   const xPar = at(OL, sR, 0.95, 0.5), xPerp = at(OL, sN, 0.12, 0.9, -1), xFull = add(xPar, sub(xPerp, OL)), b = at(OR, sR, 0.4, 0.9); // the points sit high in their diamonds, so the arrows pass above the labels
   const xPerp2 = at(OL, sN, 0.04, 0.55, -1), xFull2 = add(xPar, sub(xPerp2, OL));
-  const pPar = seg(t, 2.8, 3.4), pPerp = seg(t, 8.4, 8.9) * nf, pFull = seg(t, 9.1, 9.8);
-  const k1 = seg(t, 3.2, 4.0), k2 = seg(t, 10.1, 10.8), k4 = seg(t, 10.6, 11.2), k3 = seg(t, 10.9, 11.5);
-  const second = seg(t, 13.6, 14.4) * nf, k5 = seg(t, 14.4, 15.2);
+  const pPar = seg(t, 2.8, 3.4), pPerp = seg(t, 7.4, 7.9) * nf, pFull = seg(t, 8.1, 8.8);
+  const k1 = seg(t, 3.2, 4), k2 = seg(t, 9.1, 9.8), k4 = seg(t, 9.6, 10.2), k3 = seg(t, 9.9, 10.5);
+  const second = seg(t, 11.1, 11.9) * nf, k5 = seg(t, 11.9, 12.7);
   const zero = seg(t, 2.6, 3.4) * (1 - clamp(nf * 5)) * fw; // at full rank the null spaces are just the zero vector
   return (
     <svg className="frame tall" viewBox="0 0 1000 560" role="img" aria-label="The four fundamental spaces. The Fourier matrix F has full column rank, so its rank is 4: the row space and column space are all of C to the 4 and both null spaces are just zero, so every signal maps to its own output. A matrix of rank 2 instead has null spaces of dimension 2: any signal is a row-space part plus a null-space part, the null part is sent to zero, and different signals can give the same output, so information is lost.">

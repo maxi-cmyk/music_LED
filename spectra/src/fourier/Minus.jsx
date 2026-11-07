@@ -2,7 +2,7 @@ import { seg } from '../overview/ease.js';
 import { M, TG } from '../math/Tex.jsx';
 import { BLUE, ORANGE, GREEN, Arrow } from './Grid.jsx';
 
-export const STOPS = [3.8, 8.0, 13.6]; // tone against weights, the turns cancel, a plus would cancel the tone
+export const STOPS = [2.55, 6.75, 11.55]; // tone against weights, the turns cancel, a plus would cancel the tone
 const HALF = Math.PI / 2;
 const RY = [150, 245, 340, 435]; // row centres
 const CX = { tone: 185, weight: 365, prod: 545 }, R = 34; // mini circles
@@ -21,20 +21,20 @@ function Dial({ cx, cy, ang, color, opacity = 1 }) {
 // why the minus sign: test the tone e^{+i theta} (theta = n pi/2) against row 1 of F. With the minus the weights turn against the tone,
 // so every product points the same way and the four add to 4. With a plus they would turn with it and the products would cancel to 0
 export default function Minus({ t }) {
-  const sigma = -1 + 2 * seg(t, 8.6, 10.6); // the sign of the weights' turn: -1 is the Fourier matrix, +1 is the "wrong" sign
-  const rowIn = (n) => seg(t, 0.3 + 0.45 * n, 0.8 + 0.45 * n), prodIn = (n) => seg(t, 4.2 + 0.4 * n, 4.7 + 0.4 * n), chainIn = (n) => seg(t, 5.0 + 0.4 * n, 5.5 + 0.4 * n);
+  const sigma = -1 + 2 * seg(t, 7.35, 9.35); // the sign of the weights' turn: -1 is the Fourier matrix, +1 is the "wrong" sign
+  const rowIn = (n) => seg(t, 0.3 + 0.45 * n, 0.8 + 0.45 * n), prodIn = (n) => seg(t, 2.95 + 0.4 * n, 3.45 + 0.4 * n), chainIn = (n) => seg(t, 3.75 + 0.4 * n, 4.25 + 0.4 * n);
   const prodAng = (n) => HALF * n * (1 + sigma); // tone angle plus weight angle
   const xs = [X0];
   for (let n = 0; n < 4; n++) xs.push(xs[n] + U * Math.cos(prodAng(n)));
   const total = Math.round((xs[4] - X0) / U);
-  const minusHead = 1 - seg(t, 8.6, 9.6);
-  const flip = seg(t, 10.4, 11.2); // once the weights have turned round, the odd rows are the ones that differ
+  const minusHead = 1 - seg(t, 7.35, 8.35);
+  const flip = seg(t, 9.15, 9.95); // once the weights have turned round, the odd rows are the ones that differ
   return (
     <svg className="frame tall" viewBox="0 0 1000 560" role="img" aria-label="A tone that turns counterclockwise is tested against the weights of row 1 of the Fourier matrix. With the minus sign the weights turn clockwise, every product points the same way and the four products add up to 4. With a plus sign the products alternate and cancel to zero.">
       <TG fill="var(--dim)" fontSize="24" textAnchor="middle">
         <M x={CX.tone} y="68" opacity={seg(t, 0.2, 0.8)}>{String.raw`tone $e^{i\theta}$`}</M>
-        <M x={CX.weight} y="68" opacity={seg(t, 0.4, 1.0) * minusHead}>{String.raw`weight $e^{-i\theta}$`}</M>
-        <M x={CX.weight} y="68" fill={ORANGE} opacity={seg(t, 9.0, 10.0)}>{String.raw`weight $e^{+i\theta}$`}</M>
+        <M x={CX.weight} y="68" opacity={seg(t, 0.4, 1) * minusHead}>{String.raw`weight $e^{-i\theta}$`}</M>
+        <M x={CX.weight} y="68" fill={ORANGE} opacity={seg(t, 7.75, 8.75)}>{String.raw`weight $e^{+i\theta}$`}</M>
         <M x={CX.prod} y="68" opacity={prodIn(0)}>product</M>
         <M x="800" y="68" opacity={chainIn(0)}>add them up</M>
       </TG>
@@ -67,8 +67,8 @@ export default function Minus({ t }) {
         <Arrow x1={X0} y1="506" x2={xs[4]} y2="506" color="var(--chalk)" width={6} head={8} />
       </g>
       <TG fill="var(--chalk)" fontSize="32">
-        <M x={X0} y="548" opacity={seg(t, 7.0, 7.6) * (1 - seg(t, 8.4, 8.8))}>{`$X_1 = ${total}$`}</M>
-        <M x={X0} y="548" fill={ORANGE} opacity={seg(t, 11.8, 12.4)}>{`$X_1 = ${total}$`}</M>
+        <M x={X0} y="548" opacity={seg(t, 5.75, 6.35) * (1 - seg(t, 7.15, 7.55))}>{`$X_1 = ${total}$`}</M>
+        <M x={X0} y="548" fill={ORANGE} opacity={seg(t, 10.55, 11.15)}>{`$X_1 = ${total}$`}</M>
       </TG>
     </svg>
   );

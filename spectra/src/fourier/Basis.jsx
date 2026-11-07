@@ -2,7 +2,7 @@ import { seg } from '../overview/ease.js';
 import { M, TG } from '../math/Tex.jsx';
 import { BLUE, ORANGE, GREEN, ENTRY, POW, fz, Mat, Arrow } from './Grid.jsx';
 
-export const STOPS = [4.6, 10.4, 15.6, 22.4]; // the time basis, the warp, the same vector in the new basis, four samples
+export const STOPS = [4.6, 10.4, 14.6, 21.4]; // the time basis, the warp, the same vector in the new basis, four samples
 
 // the vector space of two-sample signals is a plane. The vector x stays where it is; only the basis vectors change. The time basis e0, e1
 // is carried to the frequency basis b0, b1 (the columns of F^{-1}) by one smooth warp: the grid turns 45 degrees, shrinks by sqrt(2), and the
@@ -23,9 +23,9 @@ export default function Basis({ t }) {
   const l0 = sc, l1 = sc * Math.cos(Math.PI * w); // the lengths of the two basis vectors; l1 passes through zero
   const m0 = [l0 * u0[0], l0 * u0[1]], m1 = [l1 * u1[0], l1 * u1[1]];
   const colour = mix(w);
-  const plane = 1 - seg(t, 15.8, 16.6), four = seg(t, 16.8, 17.6);
-  const gridIn = seg(t, 0.2, 1.0), xIn = seg(t, 1.0, 1.8);
-  const timeParts = seg(t, 2.0, 2.8), timeParts2 = seg(t, 2.8, 3.4), timeFade = 1 - seg(t, 4.8, 5.4);
+  const plane = 1 - seg(t, 14.8, 15.6), four = seg(t, 15.8, 16.6);
+  const gridIn = seg(t, 0.2, 1), xIn = seg(t, 1, 1.8);
+  const timeParts = seg(t, 2, 2.8), timeParts2 = seg(t, 2.8, 3.4), timeFade = 1 - seg(t, 4.8, 5.4);
   const freqParts = seg(t, 10.8, 11.8), freqParts2 = seg(t, 11.8, 12.6);
   const tip0 = P(m0), tip1 = P(m1), xp = P(X2);
   const eLab = 1 - seg(w, 0.35, 0.5), bLab = seg(w, 0.5, 0.65);
@@ -75,12 +75,12 @@ export default function Basis({ t }) {
         <M x={xp[0] + 16} y={xp[1] - 14} fill="var(--chalk)" fontSize="28" opacity={xIn} w={120}>{String.raw`$\mathbf{x}$`}</M>
 
         <TG fill="var(--chalk)" fontSize="28">
-          <M x="610" y="116" opacity={seg(t, 3.4, 4.2) * (1 - seg(t, 5.0, 5.6))}>{String.raw`$\mathbf{x} = 3\,e_0 + 1\,e_1$`}</M>
-          <M x="610" y="152" fill={BLUE} fontSize="22" opacity={seg(t, 3.6, 4.4) * (1 - seg(t, 5.0, 5.6))}>time basis: one vector per sample</M>
+          <M x="610" y="116" opacity={seg(t, 3.4, 4.2) * (1 - seg(t, 5, 5.6))}>{String.raw`$\mathbf{x} = 3\,e_0 + 1\,e_1$`}</M>
+          <M x="610" y="152" fill={BLUE} fontSize="22" opacity={seg(t, 3.6, 4.4) * (1 - seg(t, 5, 5.6))}>time basis: one vector per sample</M>
           <M x="610" y="116" fill="var(--dim)" fontSize="24" opacity={seg(t, 5.8, 6.4) * (1 - seg(t, 9.8, 10.2))}>{String.raw`the vector $\mathbf{x}$ does not move`}</M>
-          <M x="610" y="116" fill={ORANGE} opacity={seg(t, 12.0, 12.8)}>{String.raw`$\mathbf{x} = 4\,b_0 + 2\,b_1$`}</M>
-          <M x="610" y="152" fill={ORANGE} fontSize="22" opacity={seg(t, 12.2, 13.0)}>frequency basis: one vector per pitch</M>
-          <M x="610" y="226" fill="var(--dim)" fontSize="21" opacity={seg(t, 9.0, 9.8)}>{String.raw`$b_0 = (\tfrac12, \tfrac12)$: constant`}</M>
+          <M x="610" y="116" fill={ORANGE} opacity={seg(t, 12, 12.8)}>{String.raw`$\mathbf{x} = 4\,b_0 + 2\,b_1$`}</M>
+          <M x="610" y="152" fill={ORANGE} fontSize="22" opacity={seg(t, 12.2, 13)}>frequency basis: one vector per pitch</M>
+          <M x="610" y="226" fill="var(--dim)" fontSize="21" opacity={seg(t, 9, 9.8)}>{String.raw`$b_0 = (\tfrac12, \tfrac12)$: constant`}</M>
           <M x="610" y="258" fill="var(--dim)" fontSize="21" opacity={seg(t, 9.3, 10.1)}>{String.raw`$b_1 = (\tfrac12, -\tfrac12)$: alternating`}</M>
           <g opacity={seg(t, 13.2, 14.2)}>
             <M x="610" y="330" fill="var(--dim)" fontSize="21">the weights come from one product:</M>
@@ -103,14 +103,14 @@ export default function Basis({ t }) {
         <Mat x={388} y={120} rows={4} cols={1} cw={60} rh={52} fontSize={26} cell={(r) => ({ text: String(X4[r]) })} />
         <M x="500" y="238" textAnchor="middle" fontSize="34">{String.raw`$=$`}</M>
         <Mat x={610} y={120} rows={4} cols={1} cw={60} rh={52} fontSize={26}
-          cell={(r) => ({ text: String(Xs[r]), fill: ORANGE, opacity: seg(t, 18.0 + 0.6 * r, 18.6 + 0.6 * r) })} />
+          cell={(r) => ({ text: String(Xs[r]), fill: ORANGE, opacity: seg(t, 17 + 0.6 * r, 17.6 + 0.6 * r) })} />
         <TG fill="var(--chalk)" fontSize="26">
-          <M x="706" y="170" fontSize="24" opacity={seg(t, 17.8, 18.4)}>{String.raw`$\mathbf{x}$: one cycle of a cosine`}</M>
-          <M x="706" y="268" fontSize="24" fill={ORANGE} opacity={seg(t, 20.0, 20.8)}>{String.raw`weights $(0, 2, 0, 2)$`}</M>
+          <M x="706" y="170" fontSize="24" opacity={seg(t, 16.8, 17.4)}>{String.raw`$\mathbf{x}$: one cycle of a cosine`}</M>
+          <M x="706" y="268" fontSize="24" fill={ORANGE} opacity={seg(t, 19, 19.8)}>{String.raw`weights $(0, 2, 0, 2)$`}</M>
         </TG>
-        <M x="40" y="400" fill="var(--chalk)" fontSize="32" opacity={seg(t, 20.4, 21.2)}>{String.raw`$\mathbf{x} = 0\,b_0 + 2\,b_1 + 0\,b_2 + 2\,b_3$`}</M>
-        <M x="40" y="446" fill="var(--dim)" fontSize="23" opacity={seg(t, 20.8, 21.6)}>{String.raw`$b_k$ is column $k$ of $F^{-1}$: the pattern at frequency $k$`}</M>
-        <M x="40" y="486" fill="var(--dim)" fontSize="23" opacity={seg(t, 21.2, 22.0)}>a pure tone is just two of the four basis vectors, with weight 2 on bin 1 and its mirror, bin 3</M>
+        <M x="40" y="400" fill="var(--chalk)" fontSize="32" opacity={seg(t, 19.4, 20.2)}>{String.raw`$\mathbf{x} = 0\,b_0 + 2\,b_1 + 0\,b_2 + 2\,b_3$`}</M>
+        <M x="40" y="446" fill="var(--dim)" fontSize="23" opacity={seg(t, 19.8, 20.6)}>{String.raw`$b_k$ is column $k$ of $F^{-1}$: the pattern at frequency $k$`}</M>
+        <M x="40" y="486" fill="var(--dim)" fontSize="23" opacity={seg(t, 20.2, 21)}>a pure tone is just two of the four basis vectors, with weight 2 on bin 1 and its mirror, bin 3</M>
       </g>
     </svg>
   );
