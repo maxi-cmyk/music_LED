@@ -42,7 +42,18 @@ function hexWithAlpha(hexColour, alpha) {
   return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
 }
 
-export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleMaximum = 1) {
+// Which frequency bin sits under a pointer? Mirrors the plot geometry in drawSpectrum
+// (58px left margin, 12px right margin, equal-width slots). Returns null outside the plot.
+export function spectrumBinAtPosition(canvas, clientX, binCount) {
+  const rect = canvas.getBoundingClientRect();
+  const plotLeft = 58;
+  const plotWidth = rect.width - plotLeft - 12;
+  const offset = clientX - rect.left - plotLeft;
+  if (offset < 0 || offset >= plotWidth || binCount < 1) return null;
+  return Math.floor(offset / (plotWidth / binCount));
+}
+
+export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleMaximum = 1, hoveredBin = null) {
   const context = canvas.getContext('2d');
   const { width, height, pixelRatio } = resizeCanvas(canvas);
   const magnitudes = frame?.magnitudes ?? new Array(SIGNAL_CONFIG.nyquistBin + 1).fill(0);
@@ -117,6 +128,15 @@ export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleM
     );
   });
   context.globalAlpha = 1;
+
+  if (hoveredBin !== null && hoveredBin >= 0 && hoveredBin < magnitudes.length) {
+    context.fillStyle = 'rgba(255, 255, 255, 0.10)';
+    context.fillRect(plot.left + hoveredBin * slotWidth, plot.top, Math.max(1, slotWidth - pixelRatio), plotHeight);
+    const hoverHeight = Math.log1p(magnitudes[hoveredBin]) / Math.log1p(scaleMaximum) * plotHeight;
+    context.strokeStyle = '#f2f4ec';
+    context.lineWidth = pixelRatio;
+    context.strokeRect(plot.left + hoveredBin * slotWidth, plot.bottom - hoverHeight, Math.max(1, slotWidth - pixelRatio), hoverHeight);
+  }
 
   for (const frequencyHz of selectedFrequencies) {
     const x = plot.left + frequencyHz / (SIGNAL_CONFIG.sampleRateHz / 2) * plotWidth;

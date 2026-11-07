@@ -23,13 +23,13 @@ $$
 In this demonstration, we will be using an ESP32 which does not receive every value of a continuous signal. It records a finite vector of $N$ samples. The discrete Fourier transform is therefore the transform used by this project:
 
 $$
-X[k] = \sum_{n=0}^{N-1} x[n]e^{-2\pi i kn/N},
+X_{k} = \sum_{n=0}^{N-1} x_{n}e^{-2\pi i kn/N},
 \qquad k = 0,1,\ldots,N-1.
 $$
 
 The continuous equation establishes the idea. The finite sum and its matrix form are the linear algebra demonstrated in the presentation.
 
-Each $x[n]$ is the microphone reading at sample time $t_n=n/f_s$. The ESP32 records a 12-bit ADC count from $0$ to $4095$ rather than a calibrated voltage. Subtracting the mean keeps the values in ADC-count units; multiplying by the unitless Hamming window does not change those units. The browser teaching vector instead uses normalized, unitless amplitudes so that its shape is easy to edit.
+Each $x_{n}$ is the microphone reading at sample time $t_n=n/f_s$. The ESP32 records a 12-bit ADC count from $0$ to $4095$ rather than a calibrated voltage. Subtracting the mean keeps the values in ADC-count units; multiplying by the unitless Hamming window does not change those units. The browser teaching vector instead uses normalized, unitless amplitudes so that its shape is easy to edit.
 
 ## Why complex numbers appear
 
@@ -60,7 +60,7 @@ $$
 Then turn that phase into a cosine-and-sine measuring weight. This defines each Fourier matrix entry:
 
 $$
-F[k,n]
+F_{k,n}
 =e^{-i\theta_{k,n}}
 =\cos\theta_{k,n}-i\sin\theta_{k,n}
 =e^{-2\pi i kn/N}.
@@ -72,7 +72,7 @@ $$
 \mathbf{X} = F\mathbf{x}.
 $$
 
-Row $k$ of $F$ represents one complex sinusoidal frequency pattern. Multiplying that row by $\mathbf{x}$ produces coefficient $X[k]$. The nested loops in `compute_direct_dft` perform exactly these row-by-vector products without storing the whole matrix.
+Row $k$ of $F$ represents one complex sinusoidal frequency pattern. Multiplying that row by $\mathbf{x}$ produces coefficient $X_{k}$. The nested loops in `compute_direct_dft` perform exactly these row-by-vector products without storing the whole matrix.
 
 For example, row $k=1$ of $F_4$ uses the four phases
 
@@ -91,7 +91,7 @@ which is exactly the second row of the four-sample matrix below.
 Equivalently, define the positive-exponent basis vector
 
 $$
-s_k[n] = e^{2\pi i kn/N}.
+s_{k,n} = e^{2\pi i kn/N}.
 $$
 
 Using the complex inner product, which conjugates its first vector,
@@ -99,9 +99,9 @@ Using the complex inner product, which conjugates its first vector,
 $$
 \begin{aligned}
 \langle \mathbf{s}_k,\mathbf{x}\rangle
-&= \sum_{n=0}^{N-1} \overline{s_k[n]}x[n] \\
-&= \sum_{n=0}^{N-1} x[n]e^{-2\pi i kn/N} \\
-&= X[k].
+&= \sum_{n=0}^{N-1} \overline{s_{k,n}}x_{n} \\
+&= \sum_{n=0}^{N-1} x_{n}e^{-2\pi i kn/N} \\
+&= X_{k}.
 \end{aligned}
 $$
 
@@ -126,10 +126,10 @@ F =
 \end{bmatrix}.
 $$
 
-The second row gives $X[1]$:
+The second row gives $X_{1}$:
 
 $$
-X[1] = 1(1) + 0(-i) + (-1)(-1) + 0(i) = 2.
+X_{1} = 1(1) + 0(-i) + (-1)(-1) + 0(i) = 2.
 $$
 
 Repeating the row calculation gives
@@ -171,7 +171,7 @@ The DFT of a mixture is the same mixture of the individual DFTs. This explains w
 
 Taking magnitudes, applying a silence threshold, normalizing the strongest colour channel to full brightness, and mapping bands to RGB are nonlinear operations. The complete sound-to-colour pipeline should not be described as one linear transformation.
 
-## From the DFT to the FFT
+## From DFT to FFT
 
 The direct DFT makes the transformation visible as $N$ matrix-row calculations. The live firmware computes the same coefficient vector with a radix-2 fast Fourier transform, which factors the DFT into reusable smaller calculations.
 

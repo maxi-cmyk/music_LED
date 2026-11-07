@@ -1,6 +1,6 @@
 import { FREQUENCIES, PRESETS, SIGNAL_CONFIG, bandRangeHz } from './config.mjs?release=20260924-distill-23';
 import { selectionLabel } from './selection-label.mjs?release=20260924-distill-23';
-import { drawWaveComposition } from './visualizations.mjs?release=20261009-demo-simplify-1';
+import { drawWaveComposition } from './visualizations.mjs?release=20261023-fft-steps-20';
 
 function createPresetButtons(container, onSelect) {
   for (const preset of PRESETS) {
@@ -49,7 +49,7 @@ function renderComposerLegend(container, frequencies) {
   const signature = frequencies.join(',');
   if (container.dataset.signature === signature) return;
   container.dataset.signature = signature;
-  const entries = [{ label: 'Combined x[n]', colour: '#d8ff52' }];
+  const entries = [{ label: 'Combined x_n', colour: '#d8ff52' }];
   if (frequencies.length > 1) {
     for (const frequencyHz of frequencies) {
       const detail = FREQUENCIES.find((item) => item.frequencyHz === frequencyHz);

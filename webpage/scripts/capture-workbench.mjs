@@ -1,9 +1,9 @@
 import { SIGNAL_CONFIG } from './config.mjs?release=20260924-distill-23';
 import { createSimulatedCapture, reconstructCoefficient } from './capture-analysis.mjs?release=20260925-seeded-frame-1';
-import { mountCaptureComparison } from './capture-comparison.mjs?release=20261022-fft-derivation-1';
+import { mountCaptureComparison } from './capture-comparison.mjs?release=20261023-fft-steps-20';
 import { updateMath } from './math-renderer.mjs?release=20260924-distill-23';
 import { allFourierContributions } from './vector-workbench.mjs?release=20260924-distill-23';
-import { drawFourierContributionPath, drawSampleVector, ledDisplayColour } from './visualizations.mjs?release=20260924-distill-23';
+import { drawFourierContributionPath, drawSampleVector, ledDisplayColour } from './visualizations.mjs?release=20261023-fft-steps-20';
 
 const STAGE_COUNT = 4;
 const DFT_STAGE = 1;
@@ -261,14 +261,14 @@ export function mountCaptureWorkbench(root, { store, serialSource, reducedMotion
     drawSampleVector(preparedCanvas, capture.prepared);
     updateMath(
       preparationEquation,
-      String.raw`\begin{aligned}\mu&=\frac{1}{128}\sum_{m=0}^{127}a[m]=${capture.mean.toFixed(2)}\ \text{ADC counts}\\w_H[n]&=0.54-0.46\cos\!\left(\frac{2\pi n}{127}\right)\\x[n]&=(a[n]-\mu)w_H[n]\end{aligned}`,
+      String.raw`\begin{aligned}\mu&=\frac{1}{128}\sum_{m=0}^{127}a_{m}=${capture.mean.toFixed(2)}\ \text{ADC counts}\\w_{H,n}&=0.54-0.46\cos\!\left(\frac{2\pi n}{127}\right)\\x_{n}&=(a_{n}-\mu)w_{H,n}\end{aligned}`,
       true,
     );
 
     const reconstructed = reconstructCoefficient(capture.prepared, frequencyBinIndex);
     updateMath(
       complexEquation,
-      String.raw`\begin{aligned}X[${frequencyBinIndex}]&=\sum_{n=0}^{127}x[n]\,e^{-i2\pi(${frequencyBinIndex})n/128}=${reconstructed.real.toFixed(2)}${signedImaginary(reconstructed.imaginary)}\\|X[${frequencyBinIndex}]|&=${Math.hypot(reconstructed.real, reconstructed.imaginary).toFixed(2)}\end{aligned}`,
+      String.raw`\begin{aligned}X_{${frequencyBinIndex}}&=\sum_{n=0}^{127}x_{n}\,e^{-i2\pi(${frequencyBinIndex})n/128}=${reconstructed.real.toFixed(2)}${signedImaginary(reconstructed.imaginary)}\\|X_{${frequencyBinIndex}}|&=${Math.hypot(reconstructed.real, reconstructed.imaginary).toFixed(2)}\end{aligned}`,
       true,
     );
     const contributions = allFourierContributions(capture.prepared, frequencyBinIndex);

@@ -1,5 +1,7 @@
-import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20261022-fft-derivation-1';
-import { drawSpectrum } from './visualizations.mjs?release=20261009-demo-simplify-1';
+import { mountCaptureWorkbench } from './capture-workbench.mjs?release=20261023-fft-steps-20';
+import { mountHalvingTree } from './fft-halving-tree.mjs?release=20261023-fft-steps-20';
+import { mountFftStepper } from './fft-stepper.mjs?release=20261023-fft-steps-20';
+import { drawSpectrum, ledDisplayColour, spectrumBinAtPosition } from './visualizations.mjs?release=20261023-fft-steps-20';
 
 export function mount(root, { store, serialSource }) {
   const connectButton = root.querySelector('#connect-serial');
@@ -7,8 +9,21 @@ export function mount(root, { store, serialSource }) {
   const serialMessage = root.querySelector('#serial-message');
   const spectrumCanvas = root.querySelector('#spectrum-canvas');
   const spectrumSummary = root.querySelector('#spectrum-summary');
+  const spectrumTooltip = root.querySelector('#spectrum-tooltip');
+  const colourPanel = root.querySelector('#spectrum-colour');
+  const colourSwatch = root.querySelector('#spectrum-colour-swatch');
+  const colourTitle = root.querySelector('#spectrum-colour-title');
+  const colourDetail = root.querySelector('#spectrum-colour-detail');
+  const colourChannels = [...colourPanel.querySelectorAll('[data-channel]')];
+  let hoveredBin = null;
+  let pointerPosition = null;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const captureWorkbench = mountCaptureWorkbench(root, { store, serialSource, reducedMotion });
+  const halvingTree = mountHalvingTree(root, { reducedMotion });
+  const FFT_TREE_PANEL = 3;
+  const cleanupFftStepper = mountFftStepper(root, {
+    onShow: (panelIndex) => { if (panelIndex === FFT_TREE_PANEL) halvingTree.play(); else halvingTree.stop(); },
+  });
   let animationFrameId = null;
   let previousAnimationTime = 0;
   let targetFrame = null;
@@ -30,8 +45,39 @@ export function mount(root, { store, serialSource }) {
 
   const drawAnimatedSpectrum = (state, frame, magnitudes) => {
     const displayFrame = frame ? { ...frame, magnitudes } : null;
-    drawSpectrum(spectrumCanvas, displayFrame, [], animatedScaleMaximum);
+    drawSpectrum(spectrumCanvas, displayFrame, [], animatedScaleMaximum, hoveredBin);
+    updateTooltip(displayFrame);
   };
+
+  const updateTooltip = (displayFrame) => {
+    const magnitudes = displayFrame?.magnitudes;
+    if (hoveredBin === null || !magnitudes || hoveredBin >= magnitudes.length || !pointerPosition) {
+      spectrumTooltip.hidden = true;
+      return;
+    }
+    const frequencyHz = hoveredBin * displayFrame.sampleRateHz / (2 * (magnitudes.length - 1));
+    spectrumTooltip.textContent = `${frequencyHz.toFixed(0)} Hz · bin ${hoveredBin} · |X_${hoveredBin}| = ${magnitudes[hoveredBin].toFixed(1)}`;
+    spectrumTooltip.hidden = false;
+    const stage = spectrumCanvas.parentElement.getBoundingClientRect();
+    const tooltipWidth = spectrumTooltip.offsetWidth;
+    const left = Math.min(Math.max(pointerPosition.x - stage.left + 14, 4), stage.width - tooltipWidth - 4);
+    spectrumTooltip.style.left = `${left}px`;
+    spectrumTooltip.style.top = `${Math.max(pointerPosition.y - stage.top - 34, 4)}px`;
+  };
+
+  const onPointerMove = (event) => {
+    const magnitudes = (store.get().isFrozen ? store.get().frozenFrame : store.get().analysisFrame)?.magnitudes;
+    hoveredBin = magnitudes ? spectrumBinAtPosition(spectrumCanvas, event.clientX, magnitudes.length) : null;
+    pointerPosition = { x: event.clientX, y: event.clientY };
+    render(store.get());
+  };
+  const onPointerLeave = () => {
+    hoveredBin = null;
+    pointerPosition = null;
+    render(store.get());
+  };
+  spectrumCanvas.addEventListener('pointermove', onPointerMove);
+  spectrumCanvas.addEventListener('pointerleave', onPointerLeave);
 
   const animateSpectrum = (timestamp) => {
     const state = store.get();
@@ -93,6 +139,24 @@ export function mount(root, { store, serialSource }) {
     if (!animationFrameId) animationFrameId = window.requestAnimationFrame(animateSpectrum);
   };
 
+  const updateColourReadout = (frame, isFrozen) => {
+    if (!frame?.rgb) {
+      colourPanel.hidden = true;
+      return;
+    }
+    const { css, brightnessPercent } = ledDisplayColour(frame.rgb);
+    colourPanel.hidden = false;
+    colourSwatch.style.backgroundColor = css;
+    colourSwatch.setAttribute('aria-label', `LED colour: red ${frame.rgb.red}, green ${frame.rgb.green}, blue ${frame.rgb.blue}`);
+    colourTitle.textContent = isFrozen ? 'Captured colour' : 'Live colour';
+    colourDetail.textContent = `LED brightness ${brightnessPercent}%`;
+    for (const row of colourChannels) {
+      const value = frame.rgb[row.dataset.channel];
+      row.querySelector('.spectrum-colour-bar span').style.width = `${(value / 255) * 100}%`;
+      row.querySelector('output').textContent = String(value);
+    }
+  };
+
   const render = (state) => {
     const frame = state.isFrozen ? state.frozenFrame : state.analysisFrame;
     connectButton.disabled = ['requesting', 'waiting', 'live', 'warning'].includes(state.serialStatus);
@@ -103,13 +167,14 @@ export function mount(root, { store, serialSource }) {
     serialMessage.hidden = state.serialStatus === 'live';
 
     updateSpectrum(state, frame);
+    updateColourReadout(frame, state.isFrozen);
 
     const frameStateLabel = state.isFrozen
       ? frame?.source === 'simulation' ? 'Simulated capture' : 'Captured'
       : 'Live';
     spectrumSummary.textContent = frame
-      ? `${frameStateLabel} · bar height |X[k]| on a log scale · strongest at ${frame.dominantHz.toFixed(0)} Hz · ${frame.sampleRateHz.toFixed(0)} Hz sample rate`
-      : 'Waiting for ESP32 data · bar height will be |X[k]| on a log scale';
+      ? `${frameStateLabel} · bar height |X_k| on a log scale · strongest at ${frame.dominantHz.toFixed(0)} Hz · ${frame.sampleRateHz.toFixed(0)} Hz sample rate`
+      : 'Waiting for ESP32 data · bar height will be |X_k| on a log scale';
 
   };
 
@@ -119,7 +184,11 @@ export function mount(root, { store, serialSource }) {
   return () => {
     if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
     captureWorkbench.cleanup();
+    cleanupFftStepper();
+    halvingTree.cleanup();
     unsubscribe();
     window.removeEventListener('resize', onResize);
+    spectrumCanvas.removeEventListener('pointermove', onPointerMove);
+    spectrumCanvas.removeEventListener('pointerleave', onPointerLeave);
   };
 }

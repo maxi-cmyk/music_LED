@@ -9,7 +9,7 @@ A microphone voltage changes continuously with time. The ESP32 cannot store ever
 For a frame of $N$ measurements, name the samples
 
 $$
-x[0],\;x[1],\;x[2],\;\ldots,\;x[N-1].
+x_{0},\;x_{1},\;x_{2},\;\ldots,\;x_{N-1}.
 $$
 
 These values are written as a column vector:
@@ -17,11 +17,11 @@ These values are written as a column vector:
 $$
 \mathbf{x} =
 \begin{bmatrix}
-x[0] \\
-x[1] \\
-x[2] \\
+x_{0} \\
+x_{1} \\
+x_{2} \\
 \vdots \\
-x[N-1]
+x_{N-1}
 \end{bmatrix}.
 $$
 
@@ -31,7 +31,7 @@ Using a column rather than a row is a convention that lets a matrix act on the s
 
 ## 2. One frequency requires one weighted sum
 
-Suppose we want to measure frequency bin $k$. We compare every sample $x[n]$ with the complex sinusoidal pattern for that bin.
+Suppose we want to measure frequency bin $k$. We compare every sample $x_{n}$ with the complex sinusoidal pattern for that bin.
 
 The weight applied to sample $n$ is
 
@@ -42,24 +42,24 @@ $$
 Multiplying each sample by its weight and adding the results gives one DFT coefficient:
 
 $$
-X[k] = \sum_{n=0}^{N-1} x[n]e^{-2\pi i kn/N}.
+X_{k} = \sum_{n=0}^{N-1} x_{n}e^{-2\pi i kn/N}.
 $$
 
 Writing the sum term by term makes its structure visible:
 
 $$
 \begin{aligned}
-X[k] ={}& e^{-2\pi i k(0)/N}x[0] \\
-&+ e^{-2\pi i k(1)/N}x[1] \\
+X_{k} ={}& e^{-2\pi i k(0)/N}x_{0} \\
+&+ e^{-2\pi i k(1)/N}x_{1} \\
 &+ \cdots \\
-&+ e^{-2\pi i k(N-1)/N}x[N-1].
+&+ e^{-2\pi i k(N-1)/N}x_{N-1}.
 \end{aligned}
 $$
 
 This is a row-by-column multiplication. The weights form a row vector and the samples form the column vector:
 
 $$
-X[k] =
+X_{k} =
 \begin{bmatrix}
 e^{-2\pi i k(0)/N} &
 e^{-2\pi i k(1)/N} &
@@ -67,21 +67,21 @@ e^{-2\pi i k(1)/N} &
 e^{-2\pi i k(N-1)/N}
 \end{bmatrix}
 \begin{bmatrix}
-x[0] \\
-x[1] \\
+x_{0} \\
+x_{1} \\
 \vdots \\
-x[N-1]
+x_{N-1}
 \end{bmatrix}.
 $$
 
-The result is one number, $X[k]$, describing how strongly the input matches frequency bin $k$, including phase information.
+The result is one number, $X_{k}$, describing how strongly the input matches frequency bin $k$, including phase information.
 
 ## 3. Every frequency produces another row
 
 The DFT calculates $N$ output coefficients:
 
 $$
-X[0],\;X[1],\;X[2],\;\ldots,\;X[N-1].
+X_{0},\;X_{1},\;X_{2},\;\ldots,\;X_{N-1}.
 $$
 
 Each coefficient uses the same sample vector but a different set of frequency weights. Stacking all $N$ weight rows creates the Fourier matrix $F$:
@@ -100,7 +100,7 @@ $$
 The entry in row $k$ and column $n$ is therefore
 
 $$
-F[k,n] = e^{-2\pi i kn/N}.
+F_{k,n} = e^{-2\pi i kn/N}.
 $$
 
 The row index $k$ chooses the frequency bin. The column index $n$ chooses the time sample that receives the weight.
@@ -112,11 +112,11 @@ Because every matrix row produces one coefficient, the results naturally stack i
 $$
 \mathbf{X} =
 \begin{bmatrix}
-X[0] \\
-X[1] \\
-X[2] \\
+X_{0} \\
+X_{1} \\
+X_{2} \\
 \vdots \\
-X[N-1]
+X_{N-1}
 \end{bmatrix}.
 $$
 
@@ -153,7 +153,7 @@ $$
 The matrix entries are powers of $\omega$:
 
 $$
-F[k,n] = \omega^{kn}.
+F_{k,n} = \omega^{kn}.
 $$
 
 Evaluating those powers gives
@@ -193,7 +193,7 @@ For example, the second matrix row produces the second output entry:
 
 $$
 \begin{aligned}
-X[1]
+X_{1}
 &= 1(1) + (-i)(0) + (-1)(-1) + i(0) \\
 &= 2.
 \end{aligned}

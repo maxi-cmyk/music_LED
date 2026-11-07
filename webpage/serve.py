@@ -17,8 +17,8 @@ class NoCacheRequestHandler(SimpleHTTPRequestHandler):
 def main():
     webpage_directory = Path(__file__).resolve().parent
     handler = partial(NoCacheRequestHandler, directory=webpage_directory)
-    server = ThreadingHTTPServer(("", 8080), handler)
-    url = "http://127.0.0.1:8080"
+    server = ThreadingHTTPServer(("", 5137), handler)
+    url = f"http://127.0.0.1:{server.server_port}"
     print(f"Fourier Signal Bench: {url}", flush=True)
     webbrowser.open(url)
     server.serve_forever()

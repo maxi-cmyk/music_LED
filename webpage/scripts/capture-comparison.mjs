@@ -59,8 +59,8 @@ export function mountCaptureComparison(root) {
     root.querySelector('#capture-fft-bin-select').value = String(frequencyBinIndex);
     root.querySelector('#capture-fft-frequency').textContent = `${frequencyHz.toFixed(1)} Hz`;
     fftBinLabel.textContent = `The last butterfly for bin ${frequencyBinIndex}`;
-    updateMath(fftEvenLabel, String.raw`E[${offset}]`);
-    updateMath(fftOddLabel, String.raw`O[${offset}]`);
+    updateMath(fftEvenLabel, String.raw`E_{${offset}}`);
+    updateMath(fftOddLabel, String.raw`O_{${offset}}`);
     updateMath(fftEven, latexComplex(butterfly.evenInput));
     updateMath(fftOdd, latexComplex(butterfly.oddInput));
     const twiddle = butterfly.twiddle;
@@ -68,15 +68,15 @@ export function mountCaptureComparison(root) {
     const twiddleText = latexComplex(twiddle, 3);
     updateMath(
       fftWorking,
-      String.raw`\begin{aligned}W_{128}^{${offset}}&=${twiddleText}\\W_{128}^{${offset}}O[${offset}]&=(${twiddleText})(${latexComplex(odd)})=${latexComplex(butterfly.rotatedOdd)}\\X[${plusBin}]&=E[${offset}]+W_{128}^{${offset}}O[${offset}]=${latexComplex(butterfly.plusOutput)}\\X[${minusBin}]&=E[${offset}]-W_{128}^{${offset}}O[${offset}]=${latexComplex(butterfly.minusOutput)}\end{aligned}`,
+      String.raw`\begin{aligned}W_{128}^{${offset}}&=${twiddleText}\\W_{128}^{${offset}}O_{${offset}}&=(${twiddleText})(${latexComplex(odd)})=${latexComplex(butterfly.rotatedOdd)}\\X_{${plusBin}}&=E_{${offset}}+W_{128}^{${offset}}O_{${offset}}=${latexComplex(butterfly.plusOutput)}\\X_{${minusBin}}&=E_{${offset}}-W_{128}^{${offset}}O_{${offset}}=${latexComplex(butterfly.minusOutput)}\end{aligned}`,
       true,
     );
     updateMath(fftTwiddle, String.raw`\times\,W_{128}^{${offset}}\;\rightarrow`);
     updateMath(fftRotatedOdd, latexComplex(butterfly.rotatedOdd));
     updateMath(fftPlusValue, latexComplex(butterfly.plusOutput));
     updateMath(fftMinusValue, latexComplex(butterfly.minusOutput));
-    updateMath(fftPlusLabel, String.raw`X[${plusBin}]`);
-    updateMath(fftMinusLabel, String.raw`X[${minusBin}]`);
+    updateMath(fftPlusLabel, String.raw`X_{${plusBin}}`);
+    updateMath(fftMinusLabel, String.raw`X_{${minusBin}}`);
     fftPlusCard.dataset.selected = String(butterfly.selectedBranch === 'plus');
     fftMinusCard.dataset.selected = String(butterfly.selectedBranch === 'minus');
     fftConclusion.textContent = `Bin ${frequencyBinIndex} is the highlighted ${butterfly.selectedBranch} output. The same rotated odd value also produced bin ${butterfly.pairedBin}, so that multiplication was done once, not twice.`;

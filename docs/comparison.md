@@ -17,7 +17,7 @@ The direct DFT and the radix-2 FFT in this project use the same negative-exponen
 For an input vector with $N$ samples, the DFT coefficient at frequency bin $k$ is
 
 $$
-X[k] = \sum_{n=0}^{N-1} x[n]e^{-2\pi i kn/N}.
+X_{k} = \sum_{n=0}^{N-1} x_{n}e^{-2\pi i kn/N}.
 $$
 
 A **twiddle factor** is a complex rotation used to give a sample or partial DFT result the phase required for a particular frequency bin. The base twiddle factor for an $N$-sample transform is
@@ -29,7 +29,7 @@ $$
 The same equation can then be written more compactly as
 
 $$
-X[k] = \sum_{n=0}^{N-1}x[n]W_N^{kn}.
+X_{k} = \sum_{n=0}^{N-1}x_{n}W_N^{kn}.
 $$
 
 The direct implementation evaluates this complete sum for every $k$. There are $N$ output coefficients and each uses $N$ input terms, so its work grows as
@@ -46,11 +46,11 @@ Assume that $N$ is even. Every sample index is either $n=2r$ or $n=2r+1$, so spl
 
 $$
 \begin{aligned}
-X[k]
-&=\sum_{r=0}^{N/2-1}x[2r]W_N^{k(2r)}
-+\sum_{r=0}^{N/2-1}x[2r+1]W_N^{k(2r+1)} \\
-&=\sum_{r=0}^{N/2-1}x[2r]\left(W_N^2\right)^{kr}
-+W_N^k\sum_{r=0}^{N/2-1}x[2r+1]\left(W_N^2\right)^{kr}.
+X_{k}
+&=\sum_{r=0}^{N/2-1}x_{2r}W_N^{k(2r)}
++\sum_{r=0}^{N/2-1}x_{2r+1}W_N^{k(2r+1)} \\
+&=\sum_{r=0}^{N/2-1}x_{2r}\left(W_N^2\right)^{kr}
++W_N^k\sum_{r=0}^{N/2-1}x_{2r+1}\left(W_N^2\right)^{kr}.
 \end{aligned}
 $$
 
@@ -63,15 +63,15 @@ $$
 the two sums are themselves DFTs of length $N/2$. Name them
 
 $$
-E[k]=\sum_{r=0}^{N/2-1}x[2r]W_{N/2}^{kr},
+E_{k}=\sum_{r=0}^{N/2-1}x_{2r}W_{N/2}^{kr},
 \qquad
-O[k]=\sum_{r=0}^{N/2-1}x[2r+1]W_{N/2}^{kr}.
+O_{k}=\sum_{r=0}^{N/2-1}x_{2r+1}W_{N/2}^{kr}.
 $$
 
 Therefore,
 
 $$
-X[k]=E[k]+W_N^kO[k].
+X_{k}=E_{k}+W_N^kO_{k}.
 $$
 
 The FFT has not changed the transformation. It has recognized two smaller DFTs already contained inside the original sum.
@@ -87,19 +87,19 @@ $$
 That gives the paired output
 
 $$
-X[k+N/2]=E[k]-W_N^kO[k].
+X_{k+N/2}=E_{k}-W_N^kO_{k}.
 $$
 
 Together, the two butterfly equations are
 
 $$
 \begin{aligned}
-X[k]&=E[k]+W_N^kO[k], \\
-X[k+N/2]&=E[k]-W_N^kO[k].
+X_{k}&=E_{k}+W_N^kO_{k}, \\
+X_{k+N/2}&=E_{k}-W_N^kO_{k}.
 \end{aligned}
 $$
 
-The rotated odd result $W_N^kO[k]$ is calculated once and reused: addition gives one output and subtraction gives its paired output. This reuse is the basic FFT butterfly.
+The rotated odd result $W_N^kO_{k}$ is calculated once and reused: addition gives one output and subtraction gives its paired output. This reuse is the basic FFT butterfly.
 
 ## 4. Worked comparison for four samples
 
@@ -161,17 +161,17 @@ $$
 For $k=0$, $W_4^0=1$:
 
 $$
-X[0]=4+6=10,
+X_{0}=4+6=10,
 \qquad
-X[2]=4-6=-2.
+X_{2}=4-6=-2.
 $$
 
-For $k=1$, $W_4^1=-i$ and $W_4^1O[1]=(-i)(-2)=2i$:
+For $k=1$, $W_4^1=-i$ and $W_4^1O_{1}=(-i)(-2)=2i$:
 
 $$
-X[1]=-2+2i,
+X_{1}=-2+2i,
 \qquad
-X[3]=-2-2i.
+X_{3}=-2-2i.
 $$
 
 Both methods therefore produce the same result:

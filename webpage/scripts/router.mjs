@@ -1,6 +1,7 @@
 const ROUTES = Object.freeze({
-  demo: Object.freeze({ partial: 'pages/demo.html?release=20261009-demo-simplify-1', module: './demo-page.mjs?release=20261009-demo-simplify-1' }),
-  live: Object.freeze({ partial: 'pages/live.html?release=20261022-fft-derivation-1', module: './live-page.mjs?release=20261022-fft-derivation-1' }),
+  demo: Object.freeze({ partial: 'pages/demo.html?release=20261023-fft-steps-20', module: './demo-page.mjs?release=20261023-fft-steps-20' }),
+  live: Object.freeze({ partial: 'pages/live.html?release=20261023-fft-steps-20', module: './live-page.mjs?release=20261023-fft-steps-20' }),
+  qna: Object.freeze({ partial: 'pages/qna.html?release=20261023-fft-steps-20', module: './qna-page.mjs?release=20261023-fft-steps-20' }),
 });
 export function createRouter({ outlet, context, onRouteChange }) {
   let unmount = () => {};
