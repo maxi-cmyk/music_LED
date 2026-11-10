@@ -1,6 +1,6 @@
 // Mock circuit on a half-size breadboard: ESP32, KY-037 microphone, HW-479 RGB module, jumper wires.
 // Flat fills with crisp edge lines (line-art, like the home scene); drag to orbit, hover a part to name it.
-// Pins follow the README table: A0 -> GPIO 4, R/G/B -> GPIO 19/18/5, mic power -> 3V3, grounds -> a shared rail.
+// Pins follow the README table: A0 -> GPIO 4, R/G/B -> GPIO 19/18/23, mic power -> 3V3, grounds -> a shared rail.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -128,7 +128,7 @@ export default function start(host, onHover, onSelect = () => {}) {
 
   // ---- ESP32 dev board: USB end on the left, the lower pin row (the one that is wired) towards the viewer ----
   const BOTTOM = ['3V3', 'GND', 'D15', 'D2', 'D4', 'RX2', 'TX2', 'D5', 'D18', 'D19', 'D21', 'RX0', 'TX0', 'D22', 'D23'];
-  const USED = { '3V3': 1, D4: 1, D5: 1, D18: 1, D19: 1, GND: 1 };
+  const USED = { '3V3': 1, D4: 1, D23: 1, D18: 1, D19: 1, GND: 1 };
   const pinCol = (name) => 11 + BOTTOM.indexOf(name);
   const esp = new THREE.Group();
   const pcbY = H + 2.5, topY = pcbY + 1.6;
@@ -260,7 +260,7 @@ export default function start(host, onHover, onSelect = () => {}) {
   wire('wire-a0', micPin(-3.81), hole(pinCol('D4'), 8), 0xffa040, 22, 'in');
   wire('wire-gnd-mic', micPin(-1.27), rail(5), 0x9a6a4a, 18, 'dc');
   // ESP32 -> LED: the pulse starts at the board end and grows with that colour's band
-  wire('wire-b', rgbPin(-1.5 * P), hole(pinCol('D5'), 8), BLUE, 16, 'out', (lv) => lv[2], true);
+  wire('wire-b', rgbPin(-1.5 * P), hole(pinCol('D23'), 8), BLUE, 16, 'out', (lv) => lv[2], true);
   wire('wire-g', rgbPin(-0.5 * P), hole(pinCol('D18'), 8), GREEN, 20, 'out', (lv) => lv[1], true);
   wire('wire-r', rgbPin(0.5 * P), hole(pinCol('D19'), 8), RED, 24, 'out', (lv) => lv[0], true);
   wire('wire-gnd-led', rgbPin(1.5 * P), rail(19), 0xcfcfc8, 12, 'dc');

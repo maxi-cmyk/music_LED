@@ -13,7 +13,7 @@ const INFO = {
   'wire-gnd-esp': ['Ground jumper', 'Ties the ESP32 ground to the rail that the microphone and LED share.'],
   'wire-r': ['Red wire (GPIO 19)', 'Sends the bass strength to the red LED as a brightness.'],
   'wire-g': ['Green wire (GPIO 18)', 'Sends the mids strength to the green LED as a brightness.'],
-  'wire-b': ['Blue wire (GPIO 5)', 'Sends the treble strength to the blue LED as a brightness.'],
+  'wire-b': ['Blue wire (GPIO 23)', 'Sends the treble strength to the blue LED as a brightness.'],
   'esp-chip': ['ESP32 processor', 'Takes 128 readings per frame, runs the FFT, and works out how strong bass, mids and treble are.'],
   'esp-board': ['ESP32 board', 'Carries the processor and the pins that everything else plugs into.'],
   rgb: ['RGB LED module (HW-479)', 'Holds red, green and blue LEDs in one bulb, so their three brightnesses blend into one colour.'],
