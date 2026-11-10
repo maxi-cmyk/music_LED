@@ -44,10 +44,12 @@ function hexWithAlpha(hexColour, alpha) {
 
 // Which frequency bin sits under a pointer? Mirrors the plot geometry in drawSpectrum
 // (58px left margin, 12px right margin, equal-width slots). Returns null outside the plot.
+const SPECTRUM_MARGIN = { left: 78, right: 12, top: 34, bottom: 58 };
+
 export function spectrumBinAtPosition(canvas, clientX, binCount) {
   const rect = canvas.getBoundingClientRect();
-  const plotLeft = 58;
-  const plotWidth = rect.width - plotLeft - 12;
+  const plotLeft = SPECTRUM_MARGIN.left;
+  const plotWidth = rect.width - plotLeft - SPECTRUM_MARGIN.right;
   const offset = clientX - rect.left - plotLeft;
   if (offset < 0 || offset >= plotWidth || binCount < 1) return null;
   return Math.floor(offset / (plotWidth / binCount));
@@ -58,10 +60,10 @@ export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleM
   const { width, height, pixelRatio } = resizeCanvas(canvas);
   const magnitudes = frame?.magnitudes ?? new Array(SIGNAL_CONFIG.nyquistBin + 1).fill(0);
   const plot = {
-    left: 58 * pixelRatio,
-    right: width - 12 * pixelRatio,
-    top: 34 * pixelRatio,
-    bottom: height - 38 * pixelRatio,
+    left: SPECTRUM_MARGIN.left * pixelRatio,
+    right: width - SPECTRUM_MARGIN.right * pixelRatio,
+    top: SPECTRUM_MARGIN.top * pixelRatio,
+    bottom: height - SPECTRUM_MARGIN.bottom * pixelRatio,
   };
   const plotWidth = plot.right - plot.left;
   const plotHeight = plot.bottom - plot.top;
@@ -89,18 +91,34 @@ export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleM
   const unusedLeft = plot.left + (SIGNAL_CONFIG.bands.blue.lastBin + 1) * slotWidth;
   context.fillText('not mapped', (unusedLeft + plot.right) / 2, plot.top - 12 * pixelRatio);
 
-  for (let row = 0; row <= 4; row += 1) {
-    const y = plot.top + (row / 4) * plotHeight;
-    context.strokeStyle = '#252920';
+  // Log axis: the bar height is log(1 + magnitude), so gridlines sit at powers of ten
+  // (0, 1, 10, 100, 1k…) with faint 2–9× lines between them, like log graph paper.
+  const logY = (magnitude) => plot.bottom - Math.log1p(magnitude) / Math.log1p(scaleMaximum) * plotHeight;
+  const decades = [];
+  for (let decade = 1; decade <= scaleMaximum; decade *= 10) decades.push(decade);
+
+  context.lineWidth = 1;
+  context.strokeStyle = '#1b1e17';
+  for (const decade of decades) {
+    for (let multiple = 2; multiple <= 9; multiple += 1) {
+      if (decade * multiple > scaleMaximum) break;
+      const y = logY(decade * multiple);
+      context.beginPath();
+      context.moveTo(plot.left, y);
+      context.lineTo(plot.right, y);
+      context.stroke();
+    }
+  }
+  context.textAlign = 'right';
+  for (const magnitude of [0, ...decades]) {
+    const y = logY(magnitude);
+    context.strokeStyle = '#3d4235';
     context.beginPath();
-    context.moveTo(plot.left, y);
+    context.moveTo(plot.left - 5 * pixelRatio, y);
     context.lineTo(plot.right, y);
     context.stroke();
-    const logPosition = 1 - row / 4;
-    const magnitude = Math.expm1(logPosition * Math.log1p(scaleMaximum));
-    context.fillStyle = '#94998c';
-    context.textAlign = 'right';
-    context.fillText(formatMagnitude(magnitude), plot.left - 8 * pixelRatio, y + 3 * pixelRatio);
+    context.fillStyle = '#c9cdc0';
+    context.fillText(formatMagnitude(magnitude), plot.left - 9 * pixelRatio, y + 3 * pixelRatio);
   }
 
   for (let frequencyHz = 0; frequencyHz <= 3000; frequencyHz += 500) {
@@ -108,12 +126,33 @@ export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleM
     context.strokeStyle = '#20241c';
     context.beginPath();
     context.moveTo(x, plot.top);
-    context.lineTo(x, plot.bottom);
+    context.lineTo(x, plot.bottom + 5 * pixelRatio);
     context.stroke();
-    context.fillStyle = '#94998c';
+    context.fillStyle = '#c9cdc0';
     context.textAlign = frequencyHz === 0 ? 'left' : 'center';
-    context.fillText(frequencyHz === 3000 ? '3000 Hz' : `${frequencyHz}`, x, height - 12 * pixelRatio);
+    context.fillText(`${frequencyHz}`, x, plot.bottom + 19 * pixelRatio);
   }
+
+  // Axes drawn over the grid, then a title on each.
+  context.strokeStyle = '#94998c';
+  context.lineWidth = 1.5 * pixelRatio;
+  context.beginPath();
+  context.moveTo(plot.left, plot.top);
+  context.lineTo(plot.left, plot.bottom);
+  context.lineTo(plot.right, plot.bottom);
+  context.stroke();
+  context.lineWidth = 1;
+
+  context.font = `${11 * pixelRatio}px "SFMono-Regular", monospace`;
+  context.fillStyle = '#e4e7dc';
+  context.textAlign = 'center';
+  context.fillText('Frequency (Hz)', (plot.left + plot.right) / 2, height - 8 * pixelRatio);
+  context.save();
+  context.translate(14 * pixelRatio, (plot.top + plot.bottom) / 2);
+  context.rotate(-Math.PI / 2);
+  context.fillText('Magnitude |X_k| · log scale (×10 per line)', 0, 0);
+  context.restore();
+  context.font = `${10 * pixelRatio}px "SFMono-Regular", monospace`;
 
   magnitudes.forEach((magnitude, binIndex) => {
     const normalized = Math.log1p(magnitude) / Math.log1p(scaleMaximum);
@@ -156,11 +195,10 @@ export function drawSpectrum(canvas, frame, selectedFrequencies, requestedScaleM
   return visibleMaximum;
 }
 
+// Axis ticks are 0 and powers of ten, so they print as whole numbers: 0, 1, 10, 100, 1k, 10k.
 function formatMagnitude(magnitude) {
-  if (magnitude >= 10000) return `${(magnitude / 1000).toFixed(0)}k`;
-  if (magnitude >= 1000) return `${(magnitude / 1000).toFixed(1)}k`;
-  if (magnitude >= 100) return magnitude.toFixed(0);
-  return magnitude.toFixed(magnitude > 0 ? 1 : 0);
+  if (magnitude >= 1000) return `${magnitude / 1000}k`;
+  return String(magnitude);
 }
 
 function drawGrid(context, width, height) {

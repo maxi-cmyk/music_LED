@@ -86,6 +86,11 @@
 .connection-message[data-status="live"] { border-color: var(--signal); color: var(--signal); }
 .connection-message[data-status="error"] { border-color: var(--red); color: var(--red); }
 .spectrum-toolbar { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin: 22px 0 12px; }
+.speed-toggle { display: inline-flex; }
+.speed-toggle .tool-button { border-radius: 0; }
+.speed-toggle .tool-button:first-child { border-radius: 8px 0 0 8px; }
+.speed-toggle .tool-button:last-child { border-radius: 0 8px 8px 0; margin-left: -1px; }
+.speed-toggle .tool-button[aria-pressed="true"] { background: var(--surface-soft); color: var(--signal); border-color: var(--signal); position: relative; }
 .capture-status { margin-right: auto; color: var(--muted); font-family: var(--measure); font-size: 0.66rem; overflow-wrap: anywhere; }
 .capture-status[data-status="capturing"],
 .capture-status[data-status="captured"] { color: var(--signal); }
@@ -112,7 +117,7 @@
 .spectrum-colour-channels dd { display: grid; grid-template-columns: minmax(0, 1fr) 3ch; align-items: center; gap: 12px; margin: 0; }
 .spectrum-colour-channels output { color: var(--ink); font-family: var(--measure); font-size: 0.78rem; text-align: right; }
 .spectrum-colour-bar { display: block; height: 8px; border-radius: 4px; background: var(--surface-soft); overflow: hidden; }
-.spectrum-colour-bar span { display: block; height: 100%; border-radius: 4px; background: var(--channel); transition: width 160ms ease; }
+.spectrum-colour-bar span { display: block; height: 100%; border-radius: 4px; background: var(--channel); transition: width 40ms linear; }
 @media (max-width: 640px) { .spectrum-colour { grid-template-columns: auto 1fr; } .spectrum-colour-channels { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: reduce) { .spectrum-colour-bar span { transition: none; } }
 .spectrum-summary { padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--measure); font-size: 0.7rem; }

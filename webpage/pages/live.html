@@ -1,12 +1,12 @@
 <div class="live-page page-frame">
   <header class="demo-intro">
-    <h1>Live ESP32 spectrum</h1>
+    <h1>ESP32 demo spectrum</h1>
     <div class="physical-route" aria-label="Physical signal route">
       <span>Music</span><b>→</b><span>Speaker</span><b>→</b><span>Air</span><b>→</b><span>Microphone</span><b>→</b><span>ESP32</span>
     </div>
   </header>
 
-  <section class="measurement-stage" aria-label="Live ESP32 measurement">
+  <section class="measurement-stage" aria-label="ESP32 demo measurement">
     <header class="measurement-heading">
       <p>Play music near the microphone. Coloured bars show the measured spectrum; the LED shows its colour.</p>
       <div class="serial-actions"><button id="connect-serial" class="primary-button" type="button">Connect ESP32</button><button id="disconnect-serial" class="secondary-button" type="button" disabled>Disconnect</button></div>
@@ -14,6 +14,10 @@
     <p id="serial-message" class="connection-message" role="status" aria-live="polite">Close Arduino Serial Monitor, then connect the board.</p>
     <div class="spectrum-toolbar" aria-label="Spectrum display controls">
       <span id="capture-status" class="capture-status" role="status" aria-live="polite">Connect ESP32 for measured data, or press Shift+E to load a seeded demo frame.</span>
+      <div class="speed-toggle" role="group" aria-label="Display smoothing for the live colour and bars">
+        <button id="speed-live" class="tool-button" type="button" aria-pressed="true" title="Show every update as it arrives, like the LED">Live</button>
+        <button id="speed-slow" class="tool-button" type="button" aria-pressed="false" title="Smooth the display so changes are easier to follow. The LED itself is not slowed.">Slow</button>
+      </div>
       <button id="capture-button" class="tool-button" type="button" aria-pressed="false" disabled>Capture frame</button>
     </div>
     <figure class="spectrum-stage"><canvas id="spectrum-canvas" width="1200" height="430" role="img" aria-label="Live positive-frequency spectrum measured by the ESP32 microphone, shaded by LED band"></canvas><div id="spectrum-tooltip" class="spectrum-tooltip" role="status" hidden></div>

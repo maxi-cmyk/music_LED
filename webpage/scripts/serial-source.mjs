@@ -55,6 +55,12 @@ export function parseSpectrumFrame(line) {
   };
 }
 
+// Per-frame LED colour, sent far more often than SPECTRUM_FRAME so the page tracks the LED.
+export function parseColourFrame(line) {
+  if (!line.startsWith('COLOUR,')) return null;
+  return { rgb: parseRgb(fieldsFromLine(line).rgb ?? ''), receivedAt: performance.now() };
+}
+
 export function parseSampleFrame(line) {
   if (!line.startsWith('SAMPLE_FRAME,')) return null;
   const fields = fieldsFromLine(line);
@@ -279,6 +285,7 @@ export class SerialLineBuffer {
 export class Esp32SerialSource {
   constructor({ onFrame, onSampleFrame, onCapture, onBenchmark, onLiveComparison, onStatus }) {
     this.callbacks = { onFrame, onSampleFrame, onCapture, onBenchmark, onLiveComparison, onStatus };
+    this.colourListeners = new Set();
     this.port = null;
     this.reader = null;
     this.readLoopPromise = null;
@@ -294,6 +301,11 @@ export class Esp32SerialSource {
         this.pendingCapture = null;
       }
     });
+  }
+
+  subscribeColour(listener) {
+    this.colourListeners.add(listener);
+    return () => this.colourListeners.delete(listener);
   }
 
   get supported() {
@@ -335,6 +347,11 @@ export class Esp32SerialSource {
       return;
     }
 
+    if (line.startsWith('COLOUR,')) {
+      const colour = parseColourFrame(line);
+      this.colourListeners.forEach((listener) => listener(colour));
+      return;
+    }
     const frame = parseSpectrumFrame(line);
     if (frame) return this.callbacks.onFrame(frame);
     const sampleFrame = parseSampleFrame(line);

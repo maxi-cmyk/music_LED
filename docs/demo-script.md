@@ -1,15 +1,15 @@
 # Live demo script (about 3 minutes)
 
-Where it sits: after the slides on the DFT as $\mathbf{X}=\boldsymbol{F}\mathbf{x}$ and the $N=4$ toy example. The slides carry the ideas. This demo is the `main` site (Toy example and Live ESP32 pages), and it ends by showing the FFT tab for the same captured frame. The `sh_branch` helper site is the "more info" link, not part of the live demo.
+Where it sits: after the slides on the DFT as $\mathbf{X}=\boldsymbol{F}\mathbf{x}$ and the $N=4$ toy example. The slides carry the ideas. This demo is the `main` site (Toy example and ESP32 demo pages), and it ends by showing the FFT tab for the same captured frame. The `sh_branch` helper site is the "more info" link, not part of the live demo.
 
 Spoken lines are in quotes. Actions are in brackets.
 
 ## Before the talk
 
 - Run `python3 -B webpage/serve.py` and open `http://127.0.0.1:5137` in desktop Chrome or Edge.
-- Close Arduino Serial Monitor (only one program can own the USB port). Connect the board on Live ESP32 and check the LED.
+- Close Arduino Serial Monitor (only one program can own the USB port). Connect the board on ESP32 demo and check the LED.
 - Set the speaker volume to the rehearsed level (the page starts at 20%). Have a music track cued.
-- Fallback if USB or the mic fails: press Shift+E on Live ESP32 for the labelled seeded frame, and say aloud that it is simulated.
+- Fallback if USB or the mic fails: press Shift+E on ESP32 demo for the labelled seeded frame, and say aloud that it is simulated.
 
 ## 1. Toy example: build a sound from frequencies (0:30)
 
@@ -17,9 +17,9 @@ Spoken lines are in quotes. Actions are in brackets.
 
 "Here the sound is built from pure tones: 200 Hz and 500 Hz. With 128 samples at 6400 samples per second, the frequency bins are 50 Hz apart, so these are bin 4 and bin 10. The plot shows each tone and their sum, which is the wave the microphone will hear."
 
-[Stop audio. Switch to Live ESP32.]
+[Stop audio. Switch to ESP32 demo.]
 
-## 2. Live ESP32: the measured spectrum (0:40)
+## 2. ESP32 demo: the measured spectrum (0:40)
 
 [Play the same two tones, then a short piece of music. Point at the bars, then at the LED.]
 

@@ -1,6 +1,7 @@
 #include "AudioReactive.h"
 
 #include <Arduino.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "../config/AudioConfig.h"
@@ -196,6 +197,17 @@ void copy_sampling_diagnostics(
     diagnostics.clipped_samples = sampling_diagnostics.clipped_samples;
     diagnostics.achieved_sampling_frequency_hz
             = sampling_diagnostics.achieved_sampling_frequency_hz;
+}
+
+// One short line per frame (about 20 bytes, one write) so the browser's colour
+// readout tracks the LED instead of waiting for the 200 ms spectrum report.
+void print_colour_frame(const RgbBrightness &brightness) {
+    char line[40];
+    snprintf(line, sizeof(line), "COLOUR,rgb=%u|%u|%u",
+             static_cast<unsigned>(brightness.red),
+             static_cast<unsigned>(brightness.green),
+             static_cast<unsigned>(brightness.blue));
+    Serial.println(line);
 }
 
 void print_serial_diagnostics_if_due(uint32_t now_milliseconds) {
@@ -413,6 +425,7 @@ void update_audio_reactive() {
     if (!diagnostics.signal_above_silence_threshold && !capture_this_frame) {
         clear_frequency_and_color_diagnostics();
         turn_off_rgb_led();
+        print_colour_frame(RgbBrightness{});
         print_spectrum_diagnostics_if_due(millis(), nullptr);
         print_serial_diagnostics_if_due(millis());
         return;
@@ -431,6 +444,7 @@ void update_audio_reactive() {
             = calculate_frequency_band_strengths(frequency_magnitudes);
     const RgbBrightness brightness
             = update_frame_color(dominant_frequency, band_strengths);
+    print_colour_frame(brightness);
 
     if (capture_this_frame) {
         print_synchronized_capture(++capture_sequence, preprocessing_results,
