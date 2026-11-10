@@ -42,7 +42,7 @@ The current setup uses an ESP32, a KY-037 analog microphone output, and an HW-47
 | Microphone `A0` | GPIO 4 |
 | RGB red | GPIO 19 |
 | RGB green | GPIO 18 |
-| RGB blue | GPIO 5 |
+| RGB blue | GPIO 23 |
 | Microphone and RGB ground | GND |
 | Microphone power | 3V3 |
 
