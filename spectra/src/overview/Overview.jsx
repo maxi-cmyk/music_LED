@@ -79,7 +79,7 @@ export default function Overview({ onHome, next, pages: PAGES = OVERVIEW }) { //
     const prev = () => {
       st.rest = performance.now();
       const at = stops();
-      if (st.t !== at[st.i]) {
+      if (st.t !== at[st.i] && (st.i > 0 || st.t > at[0])) { // (a page's opening animation, i = 0 and t < stop 0, has no earlier stop: it falls through to the previous page)
         if (st.t < at[st.i]) st.i--; // moving forward: head back to where it started
         else settle(); // moving back: finish the move
       } else if (st.i > 0) st.i--;
