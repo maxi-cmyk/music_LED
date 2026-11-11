@@ -41,7 +41,7 @@ main {
 }
 .kicker i:nth-child(2) { background: #8fe36a; }
 .kicker i:nth-child(3) { background: #5cbcff; }
-.kicker > span { margin-left: 0.8rem; }
+.kicker > i + i + i + span { margin-left: 0.8rem; }
 
 main > .intro { min-width: 0; container-type: inline-size; }
 
@@ -132,7 +132,7 @@ main > .intro { position: relative; z-index: 1; }
 main { animation: fade-in 0.8s ease-out; }
 
 .overview { --gut: min(18rem, 34vw); } /* room for the step list when it opens */
-.frame { position: absolute; top: 46%; left: calc(var(--gut) + (100% - var(--gut)) / 2); width: min(calc((100% - var(--gut)) * 0.92), 144vh); transform: translate(-50%, -50%); overflow: visible; }
+.frame { position: absolute; top: 46%; left: 50%; width: min(calc((100% - var(--gut)) * 0.92), 144vh); transform: translate(-50%, -50%); overflow: visible; }
 .frame .axis { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 4 6; }
 .frame .wave { fill: none; stroke: var(--dim); stroke-width: 1.5; opacity: 0.5; }
 .frame .reading { opacity: 0; animation: fade-in 0.25s ease-out forwards; }
@@ -142,7 +142,7 @@ main { animation: fade-in 0.8s ease-out; }
 .frame .bracket path { fill: none; stroke: var(--chalk); stroke-width: 1.5; }
 .frame .bracket text { fill: var(--chalk); font-size: 16px; letter-spacing: 0.08em; }
 
-.caption { position: absolute; bottom: 12vh; left: calc(var(--gut, 0px) + (100% - var(--gut, 0px)) / 2); width: min(100ch, calc(100% - var(--gut, 0px) - 2rem)); transform: translateX(-50%); text-align: center; animation: fade-in 0.8s ease-out 2s backwards; }
+.caption { position: absolute; bottom: 12vh; left: 50%; width: min(100ch, calc(100% - var(--gut, 0px) - 2rem)); transform: translateX(-50%); text-align: center; animation: fade-in 0.8s ease-out 2s backwards; }
 .caption p { margin: 0; text-wrap: balance; color: var(--dim); font-size: 1.05rem; line-height: 1.6; }
 
 .frame .avg { stroke: var(--chalk); stroke-width: 1; stroke-dasharray: 2 5; }

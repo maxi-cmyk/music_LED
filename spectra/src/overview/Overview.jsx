@@ -49,7 +49,7 @@ const OVERVIEW = [
 ];
 const holdFor = (caption) => 800 + 18 * caption.length; // autoplay waits long enough to read the caption (ms, at 1x)
 // a page may add a fixed pause (seconds, the same at every speed) after a stop: pause[i] for stop i
-const BASE = 0.7; // the pace that counts as 1x
+const BASE = 0.525;// the pace that counts as 1x
 const RATES = [1, 1.5, 2]; // playback speeds the viewer can cycle through
 
 export default function Overview({ onHome, next, pages: PAGES = OVERVIEW }) { // pages: the same player also runs the Fourier page
@@ -166,7 +166,7 @@ export default function Overview({ onHome, next, pages: PAGES = OVERVIEW }) { //
           ])}
         </animated.div>
       </nav>
-      <div className="kicker section-title" key={`title${view.p}`}><i></i><i></i><i></i><span><Rich>{PAGES[view.p].title ?? PAGES[view.p].name}</Rich></span></div>
+      <div className="kicker section-title" key={`title${view.p}`}><span><Rich>{PAGES[view.p].title ?? PAGES[view.p].name}</Rich></span></div>
       <div className="page" key={`page${view.p}`}><View t={view.t} /></div>
       <div className={`caption${open ? ' why' : ''}`} key={`${open}${caption}`} style={{ animationDelay: '0s' }}>
         {open ? <><span className="why-tag">Why?</span>{[].concat(note).map((x, i) => <Rich as="p" key={i}>{x}</Rich>)}</> : <Rich as="p">{caption}</Rich>}

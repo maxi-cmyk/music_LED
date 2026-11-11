@@ -40,7 +40,7 @@ export default function Sandbox({ onHome }) {
 
   return (
     <div className="sandbox">
-      <div className="kicker"><i></i><i></i><i></i><span>Sandbox</span></div>
+      <div className="kicker"><span>Sandbox</span></div>
       <div className="stage">
         <svg viewBox="0 0 1000 400" role="img" aria-label="Waveform, spectrum and LED colour for the selected tones">
           <M x={BX} y="12" fill="var(--dim)" fontSize="18">One 20 ms frame, centred and faded at the edges</M>
